@@ -6,6 +6,7 @@ typedef struct _CONFIG {
     int  cfgParallelity;
     int  cfgBlkCount;
     int  cfgBlkSize;
+    int  cfgSimilarity;
     char *cfgPathRoot;
 } CONFIG;
 

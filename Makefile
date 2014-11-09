@@ -7,6 +7,7 @@ PATH_OBJ            := $(PATH_CUR)/obj/
 PATH_OUT_DBG        := $(PATH_CUR)/debug/
 PATH_OUT_REL        := $(PATH_CUR)/release/
 NAME_OBJ            := cluster
+NAME_ENTRY 			:= entry
 NAME_LIB            := lib$(NAME_OBJ)
 ifeq ($(DEBUG), yes)
 	PATH_OUT := $(PATH_OUT_DBG)
@@ -40,9 +41,15 @@ VPATH               := $(PATH_INC)
 
 
 # List the project building rules.
+build_executable: $(DEPENDENCY) build_entry
+	$(CC) $(FLAG) -I$(PATH_INC) $(PATH_OBJ)*.o -o $(PATH_OUT)$(NAME_ENTRY)
+
 build_static_lib: FLAG := $(FLAG) -fPIC
 build_static_lib: $(DEPENDENCY)
 	$(ARCH) $(ARCH_OPT) $(PATH_OUT)$(NAME_LIB).a $(PATH_OBJ)*.o
+
+build_entry:
+	$(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$(NAME_ENTRY).c -o $(PATH_OBJ)$(NAME_ENTRY).o
 
 $(DEPENDENCY):
 	$(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$@.c -o $(PATH_OBJ)$@.o
