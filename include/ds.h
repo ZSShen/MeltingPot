@@ -13,6 +13,20 @@ typedef struct _SECTION {
 } SECTION;
 
 
+typedef struct _SAMPLE {
+    int     countSection;
+    char    *pathSample;
+    SECTION *arrSection;
+} SAMPLE;
+
+
+typedef struct _GROUPNODE {
+    int  idGroup;
+    int  idxSection;
+    uint offsetSection;
+    uint sizeSection;
+    char *pathSample;   
+} GROUPNODE;
 
 
 #endif

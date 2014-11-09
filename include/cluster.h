@@ -20,4 +20,16 @@ typedef struct _CLUSTER {
 } CLUSTER;
 
 
+int cls_init_ctx(CLUSTER *self, CONFIG *cfgTask);
+
+
+int cls_deinit_ctx(CLUSTER *self);
+
+
+int cls_generate_group(CLUSTER *self);
+
+
+int cls_generate_pattern(CLUSTER *self);
+
+
 #endif

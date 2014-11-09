@@ -9,9 +9,9 @@ PATH_OUT_REL        := $(PATH_CUR)/release/
 NAME_OBJ            := cluster
 NAME_LIB            := lib$(NAME_OBJ)
 ifeq ($(DEBUG), yes)
- PATH_OUT := $(PATH_OUT_DBG)
+	PATH_OUT := $(PATH_OUT_DBG)
 else
- PATH_OUT := $(PATH_OUT_REL)
+	PATH_OUT := $(PATH_OUT_REL)
 endif
 
 
@@ -27,10 +27,10 @@ FLAG                := -fPIC
 ARCH                := ar
 ARCH_OPT            := rcs
 ifeq ($(DEBUG), yes)
- FLAG := $(FLAG) -g
+	FLAG := $(FLAG) -g
 endif
 ifeq ($(COVERAGE), yes)
- FLAG := $(FLAG) -O0 --coverage
+	FLAG := $(FLAG) -O0 --coverage
 endif
 
 
@@ -42,14 +42,14 @@ VPATH               := $(PATH_INC)
 # List the project building rules.
 build_static_lib: FLAG := $(FLAG) -fPIC
 build_static_lib: $(DEPENDENCY)
- $(ARCH) $(ARCH_OPT) $(PATH_OUT)$(NAME_LIB).a $(PATH_OBJ)*.o
+	$(ARCH) $(ARCH_OPT) $(PATH_OUT)$(NAME_LIB).a $(PATH_OBJ)*.o
 
 $(DEPENDENCY):
- $(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$@.c -o $(PATH_OBJ)$@.o
+	$(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$@.c -o $(PATH_OBJ)$@.o
 
 
 # List the project cleaning rule.
 .PHONY: clean
 clean:
- rm -rf $(PATH_OBJ) $(PATH_OUT_DBG) $(PATH_OUT_REL)
+	rm -rf $(PATH_OBJ) $(PATH_OUT_DBG) $(PATH_OUT_REL)
 
