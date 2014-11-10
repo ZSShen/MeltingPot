@@ -2,6 +2,11 @@
 #define _H_DS_
 
 
+#define BUF_SIZE_SMALL      64
+#define BUF_SIZE_MEDIUM     BUF_SIZE_SMALL << 3
+#define BUF_SIZE_LARGE      BUF_SIZE_LARGE << 3
+
+
 typedef unsigned int    uint;
 typedef unsigned char   uchar;
 
@@ -16,7 +21,7 @@ typedef struct _SECTION {
 typedef struct _SAMPLE {
     int     countSection;
     char    *nameSample;
-    SECTION *arrSection;
+    SECTION *arraySection;
 } SAMPLE;
 
 

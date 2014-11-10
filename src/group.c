@@ -15,23 +15,46 @@
  *-----------------------------------------------------------*/
 
 /**
- * The utility to guide utarray for element copy.
+ * The utility to guide utarray for SAMLE structure copy.
  *
- * @param pTge     The pointer to the target.
- * @param pSrc     The pointer to the source object.
+ * @param pTarget     The pointer to the target.
+ * @param pSource     The pointer to the source object.
  */
-void utarray_copy(void *pTge, const void *pSrc);
+void utarray_sample_copy(void *pTarget, const void *pSource);
 
 
 /**
- * The utility to guide utarray for resource release.
+ * The utility to guide utarray for SAMPLE structure release.
  *
- * @param pCur     The pointer to the to be released object.
+ * @param pCurrent     The pointer to the to be released object.
  */
-void utarray_deinit(void *pCur);
+void utarray_sample_deinit(void *pCurrent);
 
 
+/**
+ * This function extracts the physical offset and size of each PE section.
+ *
+ * @param fpSample     The file pointer to the analyzed sample.
+ * @param hSample      The pointer to the SAMPLE structure storing
+ *                     the section information.
+ *
+ * @return             0: Task is finished successfully.
+ *                    <0: Invalid file format or insufficient memory.
+ */
+int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample);
 
+
+/**
+ * This function generate the hash of each PE section.
+ *
+ * @param fpSample     The file pointer to the analyzed sample.
+ * @param hSample      The pointer to the SAMPLE structure storing
+ *                     the section hash.
+ *
+ * @return             0: Task is finished successfully.
+ *                    <0: Invalid file format or insufficient memory.
+ */
+int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample);
 
 
 /*-----------------------------------------------------------*
@@ -55,15 +78,19 @@ int grp_deinit_task(GROUP *self) {
 int grp_generate_hash(GROUP *self) {
     int      rc;
     SAMPLE   instSample;
-    UT_array *arrSample;
+    char     *pathRoot;
+    UT_array *arraySample;
     DIR      *dirRoot;
     SAMPLE   *hSample;
     struct dirent *entFile;
+    FILE     *fpSample;
+    char     pathSample[BUF_SIZE_MEDIUM];
 
     rc = 0;
 
     /* Open the root path of designated sample set. */
-    dirRoot = opendir(self->cfgTask->cfgPathRoot);
+    pathRoot = self->cfgTask->cfgPathRoot;
+    dirRoot = opendir(pathRoot);
     if (dirRoot == NULL) {
         rc = -1;
         Spew1("Error: %s", strerror(errno));
@@ -71,24 +98,50 @@ int grp_generate_hash(GROUP *self) {
     }
 
     /* Initialize the array to record per sample information. */
-    UT_icd icdUtArray = {sizeof(SAMPLE), NULL, utarray_copy, utarray_deinit};
-    utarray_new(arrSample, &icdUtArray);
+    UT_icd icdSample = {sizeof(SAMPLE), NULL, utarray_sample_copy, utarray_sample_deinit};
+    utarray_new(arraySample, &icdSample);
 
     /* Traverse each sample for section hash generation. */
     while ((entFile = readdir(dirRoot)) != NULL) {
+        if ((strcmp(entFile->d_name, ".") == 0) || 
+            (strcmp(entFile->d_name, "..") == 0)) {
+            continue;
+        }
+        memset(pathSample, 0, sizeof(char) * BUF_SIZE_MEDIUM);
+        snprintf(pathSample, BUF_SIZE_MEDIUM, "%s\%s", pathRoot, entFile->d_name);
+        fpSample = fopen(pathSample, "rb");
+        if (fpSample == NULL) {
+            rc = -1;
+            Spew1("Error: %s", strerror(errno));
+            goto FREE;
+        }
+        
+        /* Extract the section information from file header.*/
+        rc = _grp_extract_section_info(fpSample, &instSample);
+        if (rc != 0) {
+            goto FREE;
+        }
+
+        /* Generate the hash of each section. */
+        rc = _grp_generate_section_hash(fpSample, &instSample);
+
         instSample.countSection = 0;
-        instSample.arrSection = NULL;
+        instSample.arraySection = NULL;
         instSample.nameSample = entFile->d_name;
-        utarray_push_back(arrSample, &instSample);
+        utarray_push_back(arraySample, &instSample);
+
+        fclose(fpSample);
     }
 
+    /*
     hSample = NULL;
-    while ((hSample = (SAMPLE*)utarray_next(arrSample, hSample)) != NULL) {
+    while ((hSample = (SAMPLE*)utarray_next(arraySample, hSample)) != NULL) {
         printf("%s\n", hSample->nameSample);
     }
+    */
 
 FREE:
-    utarray_free(arrSample);
+    utarray_free(arraySample);
     closedir(dirRoot);
 
 EXIT:
@@ -109,40 +162,42 @@ int grp_group_hash(GROUP *self) {
  *          Implementation for Internal Functions            *
  *-----------------------------------------------------------*/
 /**
- * utarray_copy(): Guide utarray for element copy.
+ * utarray_sample_copy(): Guide utarray for SAMPLE structure copy.
  */
-void utarray_copy(void *pTge, const void *pSrc) {
-    int    idxSection, countSection;
-    SAMPLE *hTge, *hSrc;
-
-    hTge = (SAMPLE*)pTge;
-    hSrc = (SAMPLE*)pSrc;
+void utarray_sample_copy(void *pTarget, const void *pSource) {
+    int        idxSection, countSection;
+    SAMPLE     *hTarget, *hSource;
+    SECTION *arraySecTge, *arraySecSrc;
 
     /* Copy the section count. */
-    hTge->countSection = hSrc->countSection;
-    hTge->nameSample = NULL;
-    hTge->arrSection = NULL;
+    hTarget = (SAMPLE*)pTarget;
+    hSource = (SAMPLE*)pSource;
+    hTarget->countSection = hSource->countSection;
+    hTarget->nameSample = NULL;
+    hTarget->arraySection = NULL;
 
     /* Copy the sample name. */
-    if (hSrc->nameSample != NULL) {
-        hTge->nameSample = strdup(hSrc->nameSample);
-        assert(hTge->nameSample != NULL);
+    if (hSource->nameSample != NULL) {
+        hTarget->nameSample = strdup(hSource->nameSample);
+        assert(hTarget->nameSample != NULL);
     }
 
     /* Copy the array of SECTION structures. */
-    if (hSrc->arrSection != NULL) {
-        countSection = hTge->countSection;
-        hTge->arrSection = (SECTION*)malloc(sizeof(SECTION) * countSection);
-        assert(hTge->arrSection != NULL);
+    if (hSource->arraySection != NULL) {
+        countSection = hTarget->countSection;
+        hTarget->arraySection = (SECTION*)malloc(sizeof(SECTION) * countSection);
+        assert(hTarget->arraySection != NULL);
+        arraySecTge = hTarget->arraySection;
+        arraySecSrc = hSource->arraySection;
         
         for (idxSection = 0 ; idxSection < countSection ; idxSection++) {
-            hTge->arrSection[idxSection].offsetRaw = hSrc->arrSection[idxSection].offsetRaw;
-            hTge->arrSection[idxSection].sizeRaw = hSrc->arrSection[idxSection].sizeRaw;
+            arraySecTge[idxSection].offsetRaw = arraySecSrc[idxSection].offsetRaw;
+            arraySecTge[idxSection].sizeRaw = arraySecSrc[idxSection].sizeRaw;
             
             /* Copy the hash string. */
-            if (hSrc->arrSection[idxSection].hash != NULL) {
-                hTge->arrSection[idxSection].hash = strdup(hSrc->arrSection[idxSection].hash);
-                assert(hTge->arrSection[idxSection].hash != NULL);
+            if (arraySecSrc[idxSection].hash != NULL) {
+                arraySecTge[idxSection].hash = strdup(arraySecSrc[idxSection].hash);
+                assert(arraySecTge[idxSection].hash != NULL);
             }
         }
     }
@@ -152,28 +207,51 @@ void utarray_copy(void *pTge, const void *pSrc) {
 
 
 /**
- * utarray_deinit(): Guide utarray for resource release.
+ * utarray_sample_deinit(): Guide utarray for SAMPLE structure release.
  */
-void utarray_deinit(void *pCur) {
+void utarray_sample_deinit(void *pCurrent) {
     int    idxSection;
-    SAMPLE *hCur;
-    
-    hCur = (SAMPLE*)pCur;
+    SAMPLE *hCurrent;
     
     /* Free the sample name. */
-    if (hCur->nameSample != NULL) {
-        free(hCur->nameSample);
+    hCurrent = (SAMPLE*)pCurrent;
+    if (hCurrent->nameSample != NULL) {
+        free(hCurrent->nameSample);
     }
 
     /* Free the array of SECTION structures. */
-    if (hCur->arrSection != NULL) {
-        for (idxSection = 0 ; idxSection < hCur->countSection ; idxSection++) {
-            if (hCur->arrSection[idxSection].hash != NULL) {
-                free(hCur->arrSection[idxSection].hash);
+    if (hCurrent->arraySection != NULL) {
+        for (idxSection = 0 ; idxSection < hCurrent->countSection ; idxSection++) {
+            if (hCurrent->arraySection[idxSection].hash != NULL) {
+                free(hCurrent->arraySection[idxSection].hash);
             }
         }
-        free(hCur->arrSection);
+        free(hCurrent->arraySection);
     }
 
     return;
+}
+
+
+/**
+ * _grp_extract_section_info(): Extract the physical offset and size of each PE section.
+ */
+int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample) {
+    int rc;
+
+    rc = 0;
+
+    return rc;
+}
+
+
+/**
+ * _grp_generate_section_hash(): Generate the hash of each PE section.
+ */
+int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample) {
+    int rc;
+
+    rc = 0;
+
+    return rc;
 }
