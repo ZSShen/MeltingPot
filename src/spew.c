@@ -35,7 +35,7 @@ void spew_message(const char* pathFile, int numLine, const char* strFunc, const 
     tmTime = localtime(&nTime);
     strTime = asctime(tmTime);
 
-    printf("[%s, %d, %s] %s%s", pathFile, numLine, strFunc, strTime, bufMsg);
+    printf("[%s, %d, %s] %s%s\n", pathFile, numLine, strFunc, strTime, bufMsg);
 
     return;
 }
