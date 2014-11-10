@@ -6,6 +6,8 @@ PATH_INC            := $(PATH_CUR)/include/
 PATH_OBJ            := $(PATH_CUR)/obj/
 PATH_OUT_DBG        := $(PATH_CUR)/debug/
 PATH_OUT_REL        := $(PATH_CUR)/release/
+PATH_LIB_3PARTY 	:= $(PATH_CUR)/3-party-lib/
+PATH_LIB_UTHASH  	:= $(PATH_LIB_3PARTY)uthash/
 NAME_OBJ            := cluster
 NAME_ENTRY 			:= entry
 NAME_LIB            := lib$(NAME_OBJ)
@@ -52,7 +54,7 @@ build_entry:
 	$(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$(NAME_ENTRY).c -o $(PATH_OBJ)$(NAME_ENTRY).o
 
 $(DEPENDENCY):
-	$(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$@.c -o $(PATH_OBJ)$@.o
+	$(CC) $(FLAG) -I$(PATH_INC) -I$(PATH_LIB_UTHASH) -c $(PATH_SRC)$@.c -o $(PATH_OBJ)$@.o
 
 
 # List the project cleaning rule.

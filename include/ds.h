@@ -9,13 +9,13 @@ typedef unsigned char   uchar;
 typedef struct _SECTION {
     uint  offsetRaw;
     uint  sizeRaw;
-    uchar *hash;
+    char  *hash;
 } SECTION;
 
 
 typedef struct _SAMPLE {
     int     countSection;
-    char    *pathSample;
+    char    *nameSample;
     SECTION *arrSection;
 } SAMPLE;
 

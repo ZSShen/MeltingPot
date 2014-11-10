@@ -81,7 +81,6 @@ int cls_generate_group(CLUSTER *self) {
         goto EXIT;
     }
 
-
 EXIT:
     return rc;
 }
