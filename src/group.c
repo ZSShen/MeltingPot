@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <dirent.h>
 #include <assert.h>
+#include <fuzzy.h>
 #include "ds.h"
 #include "spew.h"
 #include "group.h"
@@ -118,8 +119,8 @@ int grp_generate_hash(GROUP *self) {
     pathRoot = self->cfgTask->cfgPathRoot;
     dirRoot = opendir(pathRoot);
     if (dirRoot == NULL) {
-        rc = -1;
         Spew1("Error: %s", strerror(errno));
+        rc = -1;
         goto EXIT;
     }
 
@@ -137,8 +138,8 @@ int grp_generate_hash(GROUP *self) {
         snprintf(pathSample, BUF_SIZE_MEDIUM, "%s\%s", pathRoot, entFile->d_name);
         fpSample = fopen(pathSample, "rb");
         if (fpSample == NULL) {
-            rc = -1;
             Spew1("Error: %s", strerror(errno));
+            rc = -1;
             goto FREE;
         }
         instSample.nameSample = entFile->d_name;
@@ -166,7 +167,6 @@ int grp_generate_hash(GROUP *self) {
         printf("%s\n", hSample->nameSample);
     }
     */
-    
 FREE:
     utarray_free(arraySample);
     closedir(dirRoot);
@@ -229,6 +229,7 @@ void utarray_sample_copy(void *pTarget, const void *pSource) {
             if (arraySecSrc[i].hash != NULL) {
                 arraySecTge[i].hash = strdup(arraySecSrc[i].hash);
                 assert(arraySecTge[i].hash != NULL);
+                free(arraySecSrc[i].hash);
             }
         }
         free(hSource->arraySection);
@@ -378,9 +379,53 @@ EXIT:
  * _grp_generate_section_hash(): Generate the hash of each PE section.
  */
 int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample) {
-    int rc;
+    int     rc, i;
+    uint    rawOffset, rawSize;
+    size_t  nExptRead, nRealRead;
+    char    *content;
+    SECTION *arraySection;
 
     rc = 0;
+    /* Traverse all the sections with non-zero size. */
+    arraySection = hSample->arraySection;
+    for (i = 0 ; i < hSample->countSection ; i++) {
+        rawOffset = arraySection[i].rawOffset;
+        rawSize = arraySection[i].rawSize;
+        if (rawSize == 0) {
+            continue;
+        }
+        rc = fseek(fpSample, rawOffset, SEEK_SET);
+        if (rc != 0) {
+            Spew0("Error: Invalid PE file (Unreachable section).");
+            rc = -1;
+            goto EXIT;
+        }
+        content = (char*)malloc(sizeof(char) * rawSize);
+        if (content == NULL) {
+            Spew0("Error: Cannot allocate buffer for section content.");
+            rc = -1;
+            goto EXIT;
+        }
+        nExptRead = rawSize;
+        nRealRead = fread(content, sizeof(char), nExptRead, fpSample);
+        if (nExptRead != nRealRead) {
+            Spew0("Error: Cannot read the full section content.");
+            rc = -1;
+            goto FREE;
+        }
+        arraySection[i].hash = (char*)malloc(sizeof(char) * FUZZY_MAX_RESULT);
+        if (arraySection[i].hash == NULL) {
+            Spew0("Error: Cannot allocate buffer for section hash.");
+            rc = -1;
+            goto FREE;
+        }
+        
+        /* Apply the ssdeep library to generate section hash. */
+        fuzzy_hash_buf(content, rawSize, arraySection[i].hash);
+    FREE:
+        free(content);    
+    }
 
+EXIT:
     return rc;
 }

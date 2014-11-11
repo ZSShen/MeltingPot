@@ -27,6 +27,7 @@ FOLDER_OUT_REL      := $(shell mkdir -p $(PATH_OUT_REL))
 # Specify the compilation options.
 CC                  := gcc
 FLAG                := -fPIC
+LIB 				:= -lfuzzy
 ARCH                := ar
 ARCH_OPT            := rcs
 ifeq ($(DEBUG), yes)
@@ -44,7 +45,7 @@ VPATH               := $(PATH_INC)
 
 # List the project building rules.
 build_executable: $(DEPENDENCY) build_entry
-	$(CC) $(FLAG) -I$(PATH_INC) $(PATH_OBJ)*.o -o $(PATH_OUT)$(NAME_ENTRY)
+	$(CC) $(FLAG) -I$(PATH_INC) $(PATH_OBJ)*.o $(LIB) -o $(PATH_OUT)$(NAME_ENTRY)
 
 build_static_lib: FLAG := $(FLAG) -fPIC
 build_static_lib: $(DEPENDENCY)
@@ -54,7 +55,7 @@ build_entry:
 	$(CC) $(FLAG) -I$(PATH_INC) -c $(PATH_SRC)$(NAME_ENTRY).c -o $(PATH_OBJ)$(NAME_ENTRY).o
 
 $(DEPENDENCY):
-	$(CC) $(FLAG) -I$(PATH_INC) -I$(PATH_LIB_UTHASH) -c $(PATH_SRC)$@.c -o $(PATH_OBJ)$@.o
+	$(CC) $(FLAG) -I$(PATH_INC) -I$(PATH_LIB_UTHASH) -c $(PATH_SRC)$@.c $(LIB) -o $(PATH_OBJ)$@.o
 
 
 # List the project cleaning rule.
