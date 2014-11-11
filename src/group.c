@@ -32,6 +32,13 @@
 #define SHIFT_RANGE_8BIT                    (8)
 
 /*======================================================================*
+ *                    Declaration for Private Object                    *
+ *======================================================================*/
+UT_array *_arraySample;
+UT_array *_arrayBinary;
+
+
+/*======================================================================*
  *                  Declaration for Internal Functions                  *
  *======================================================================*/
 
@@ -58,7 +65,9 @@ void utarray_sample_deinit(void *pCurrent);
  *                     the section information.
  *
  * @return             0: Task is finished successfully.
- *                    <0: Invalid file format or insufficient memory.
+ *                    <0: Possible causes:
+ *                          1. insufficient memory.
+ *                          2. Invalid binary of certain samples.
  */
 int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample);
 
@@ -71,6 +80,8 @@ int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample);
  *
  * @return             0: Task is finished successfully.
  *                    <0: Invalid file format or insufficient memory.
+ *                          1. insufficient memory.
+ *                          2. Invalid binary of certain samples.
  */
 int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample);
 
@@ -96,6 +107,8 @@ int grp_init_task(GROUP *self, CONFIG *cfgTask) {
  */
 int grp_deinit_task(GROUP *self) {
 
+    /* Free the array of SAMPLE structure. */
+    utarray_free(_arraySample);
     return 0;
 }
 
@@ -107,7 +120,6 @@ int grp_generate_hash(GROUP *self) {
     int      rc, i;
     SAMPLE   instSample;
     char     *pathRoot;
-    UT_array *arraySample;
     DIR      *dirRoot;
     SAMPLE   *hSample;
     struct dirent *entFile;
@@ -126,7 +138,7 @@ int grp_generate_hash(GROUP *self) {
 
     /* Initialize the array to record per sample information. */
     UT_icd icdSample = {sizeof(SAMPLE), NULL, utarray_sample_copy, utarray_sample_deinit};
-    utarray_new(arraySample, &icdSample);
+    utarray_new(_arraySample, &icdSample);
 
     /* Traverse each sample for section hash generation. */
     while ((entFile = readdir(dirRoot)) != NULL) {
@@ -140,35 +152,29 @@ int grp_generate_hash(GROUP *self) {
         if (fpSample == NULL) {
             Spew1("Error: %s", strerror(errno));
             rc = -1;
-            goto FREE;
+            goto CLOSE_DIR;
         }
         instSample.nameSample = entFile->d_name;
         
         /* Extract the section information from file header.*/
         rc = _grp_extract_section_info(fpSample, &instSample);
         if (rc != 0) {
-            goto CLOSE;
+            goto CLOSE_FILE;
         }
 
         /* Generate the hash of each section. */
         rc = _grp_generate_section_hash(fpSample, &instSample);
         if (rc != 0) {
-            goto CLOSE;
+            goto CLOSE_FILE;
         }
 
-        utarray_push_back(arraySample, &instSample);
-    CLOSE:
+        /* Insert the SAMPLE structure into array. */
+        utarray_push_back(_arraySample, &instSample);
+    CLOSE_FILE:
         fclose(fpSample);
     }
-
-    /*
-    hSample = NULL;
-    while ((hSample = (SAMPLE*)utarray_next(arraySample, hSample)) != NULL) {
-        printf("%s\n", hSample->nameSample);
-    }
-    */
-FREE:
-    utarray_free(arraySample);
+  
+CLOSE_DIR:
     closedir(dirRoot);
 EXIT:
     return rc;
@@ -176,12 +182,20 @@ EXIT:
 
 /**
  * !EXTERNAL
- * grp_group_hash(): Group the hashes via the given similarity threshold.
+ * grp_group_hash(): Group the hashes using the given similarity threshold.
  */
 int grp_group_hash(GROUP *self) {
     int rc;
 
     rc = 0;
+    
+      /*
+    hSample = NULL;
+    while ((hSample = (SAMPLE*)utarray_next(arraySample, hSample)) != NULL) {
+        printf("%s\n", hSample->nameSample);
+    }
+    */
+    
     return rc;
 }
 
@@ -195,9 +209,9 @@ int grp_group_hash(GROUP *self) {
  * utarray_sample_copy(): Guide utarray for SAMPLE structure copy.
  */
 void utarray_sample_copy(void *pTarget, const void *pSource) {
-    int     i, countSection;
-    SAMPLE  *hTarget, *hSource;
-    SECTION *arraySecTge, *arraySecSrc;
+    uint16_t i, countSection;
+    SAMPLE   *hTarget, *hSource;
+    SECTION  *arraySecTge, *arraySecSrc;
 
     /* Copy the section count. */
     hTarget = (SAMPLE*)pTarget;
@@ -243,8 +257,8 @@ void utarray_sample_copy(void *pTarget, const void *pSource) {
  * utarray_sample_deinit(): Guide utarray for SAMPLE structure release.
  */
 void utarray_sample_deinit(void *pCurrent) {
-    int    i;
-    SAMPLE *hCurrent;
+    uint16_t i;
+    SAMPLE   *hCurrent;
     
     /* Free the sample name. */
     hCurrent = (SAMPLE*)pCurrent;
@@ -270,12 +284,12 @@ void utarray_sample_deinit(void *pCurrent) {
  * _grp_extract_section_info(): Extract the physical offset and size of each PE section.
  */
 int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample) {
-    int     rc, i, j;
-    size_t  nExptRead, nRealRead;
-    uint    dwordReg, offsetPEHeader;
-    ushort  wordReg, countSection;
-    SECTION *arraySection;
-    char    buf[BUF_SIZE_LARGE];
+    int      rc;
+    size_t   nExptRead, nRealRead;
+    uint32_t dwordReg, offsetPEHeader;
+    uint16_t i, j, wordReg, countSection;
+    SECTION  *arraySection;
+    char     buf[BUF_SIZE_LARGE];
 
     rc = 0;
     /* Check the MZ header. */
@@ -379,11 +393,12 @@ EXIT:
  * _grp_generate_section_hash(): Generate the hash of each PE section.
  */
 int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample) {
-    int     rc, i;
-    uint    rawOffset, rawSize;
-    size_t  nExptRead, nRealRead;
-    char    *content;
-    SECTION *arraySection;
+    int      rc;
+    uint16_t i;
+    uint32_t rawOffset, rawSize;
+    size_t   nExptRead, nRealRead;
+    char     *content;
+    SECTION  *arraySection;
 
     rc = 0;
     /* Traverse all the sections with non-zero size. */
