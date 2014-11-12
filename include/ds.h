@@ -37,6 +37,7 @@ typedef struct _PARAM {
     uint32_t countBinary;
     uint8_t  idThread;
     uint8_t  countThread;
+    uint8_t  simThreshold;
     RELATION *listRelationHead;
     RELATION *listRelationTail;
 } PARAM;

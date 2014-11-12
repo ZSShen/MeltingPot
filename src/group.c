@@ -4,11 +4,13 @@
 #include <stdbool.h>
 #include <dirent.h>
 #include <assert.h>
+#include <pthread.h>
 #include <fuzzy.h>
 #include "ds.h"
 #include "spew.h"
 #include "group.h"
 #include "utarray.h"
+
 
 /* DOS(MZ) header related information. */
 #define MZ_HEADER_SIZE                      (0x40) /* The size of DOS(MZ) header. */
@@ -31,10 +33,12 @@
 #define DATATYPE_SIZE_WORD                  (2)
 #define SHIFT_RANGE_8BIT                    (8)
 
+
 /*======================================================================*
  *                    Declaration for Private Object                    *
  *======================================================================*/
 UT_array *_arrayBinary;
+
 
 /*======================================================================*
  *                  Declaration for Internal Functions                  *
@@ -83,6 +87,16 @@ int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBin
  */
 int _grp_generate_section_hash(FILE *fpSample, uint32_t idBgnBin, uint32_t idEndBin);
 
+/**
+ * This function calcuates the pairwise similarity scores for the specified
+ * pairs of hashes.
+ * 
+ * @param pParam        The pointer to the thread parameter.
+ * @return              Should be the thread status but currently ignored.
+ */
+void* _grp_compute_hashpair_similarity(void *pParam);
+
+
 /*======================================================================*
  *                Implementation for External Functions                 *
  *======================================================================*/
@@ -115,13 +129,13 @@ int grp_deinit_task(GROUP *self) {
  * grp_generate_hash(): Generate section hashes for all the given samples.
  */
 int grp_generate_hash(GROUP *self) {
-    int      rc;
+    int rc;
     uint32_t idBgnBin, idEndBin;
-    char     *pathRoot;
-    DIR      *dirRoot;
-    FILE     *fpSample;
+    char *pathRoot;
+    DIR *dirRoot;
+    FILE *fpSample;
     struct dirent *entFile;
-    char     pathSample[BUF_SIZE_MEDIUM];
+    char pathSample[BUF_SIZE_MEDIUM];
 
     rc = 0;
     /* Open the root path of designated sample set. */
@@ -183,13 +197,64 @@ EXIT:
 int grp_group_hash(GROUP *self) {
     int rc;
     uint32_t countBinary;
+    uint8_t i, countThread, simThreshold;
+    pthread_t *arrayThread;
+    PARAM *arrayParam;
+    RELATION *linkCurrent, *linkPred;
    
     rc = 0;
-    /* Fork the specified number of threads for parallel similarity computation. */    
+    /* Prepare the thread parameters. */
     countBinary = utarray_len(_arrayBinary);
-        
+    countThread = self->cfgTask->nParallelity;
+    simThreshold = self->cfgTask->nSimilarity;
+    arrayThread = (pthread_t*)malloc(sizeof(pthread_t) * countThread);    
+    if (arrayThread == NULL) {
+        Spew0("Error: Cannot allocate the array for thread id.");
+        rc = -1;
+        goto EXIT;
+    }    
+    arrayParam = (PARAM*)malloc(sizeof(PARAM) * countThread);
+    if (arrayParam == NULL) {
+        Spew0("Error: Cannot allocate the array for thread parameters.");
+        rc = -1;
+        goto FREE_THREAD;
+    }
+
+    /* Fork the specified number of threads for parallel similarity computation. */        
+    for (i = 0 ; i < countThread ; i++) {
+        arrayParam[i].countBinary = countBinary;
+        arrayParam[i].countThread = countThread;
+        arrayParam[i].idThread = i + 1;
+        arrayParam[i].simThreshold = simThreshold;
+        arrayParam[i].listRelationHead = NULL;
+        arrayParam[i].listRelationTail = NULL;
+        pthread_create(&arrayThread[i], NULL, _grp_compute_hashpair_similarity, 
+                       (void*)&(arrayParam[i]));
+    }
+    
+    /* Wait for the thread termination. */
+    for (i = 0 ; i < countThread ; i++) {
+        pthread_join(arrayThread[i], NULL);
+    }
+    
+FREE_PARAM:
+    for (i = 0 ; i < countThread ; i++) {
+        if (arrayParam[i].listRelationHead != NULL) {
+            linkCurrent = arrayParam[i].listRelationHead;
+            while (linkCurrent != NULL) {
+                linkPred = linkCurrent;
+                linkCurrent = linkCurrent->next;
+                free(linkPred);
+            }
+        }
+    }
+    free(arrayParam);
+FREE_THREAD:    
+    free(arrayThread);            
+EXIT:        
     return rc;
 }
+
 
 /*======================================================================*
  *                Implementation for Internal Functions                 *
@@ -209,7 +274,16 @@ void utarray_binary_copy(void *pTarget, const void *pSource) {
     binTarget->idxSection = binSource->idxSection;
     binTarget->offsetSection = binSource->offsetSection;
     binTarget->sizeSection = binSource->sizeSection;
-    binTarget->nameSample = binSource->nameSample;
+    
+    /* Duplicate the sample name. */
+    if (binSource->nameSample != NULL) {
+        binTarget->nameSample = strdup(binSource->nameSample);
+        assert(binTarget->nameSample != NULL);
+        free(binSource->nameSample);
+    } else {
+        binTarget->nameSample = NULL;
+    }
+    /* Duplicate the section hash. */
     if (binSource->hash != NULL) {
         binTarget->hash = strdup(binSource->hash);
         assert(binTarget->hash != NULL);
@@ -229,6 +303,9 @@ void utarray_binary_deinit(void *pCurrent) {
     BINARY *hBinary;
     
     hBinary = (BINARY*)pCurrent;
+    if (hBinary->nameSample != NULL) {
+        free(hBinary->nameSample);
+    }
     if (hBinary->hash != NULL) {
         free(hBinary->hash);
     }
@@ -241,12 +318,12 @@ void utarray_binary_deinit(void *pCurrent) {
  * _grp_extract_section_info(): Extract the physical offset and size of each PE section.
  */
 int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBinary) {
-    int      rc;
-    size_t   nExptRead, nRealRead;
+    int rc, status;
+    size_t nExptRead, nRealRead;
     uint32_t dwordReg, offsetPEHeader;
     uint16_t i, j, wordReg, countSection;
-    BINARY   instBinary;
-    char     buf[BUF_SIZE_LARGE];
+    BINARY instBinary;
+    char buf[BUF_SIZE_LARGE];
 
     rc = 0;
     /* Check the MZ header. */
@@ -265,8 +342,8 @@ int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBin
         dwordReg += buf[MZ_HEADER_OFF_PE_HEADER_OFFSET + DATATYPE_SIZE_DWORD - i] & 0xff;
     }
     offsetPEHeader = dwordReg;
-    rc = fseek(fpSample, offsetPEHeader, SEEK_SET);
-    if (rc != 0) {
+    status = fseek(fpSample, offsetPEHeader, SEEK_SET);
+    if (status != 0) {
         Spew0("Error: Invalid PE file (Unreachable PE header).");
         rc = -1;
         goto EXIT;
@@ -297,8 +374,8 @@ int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBin
     }
         
     /* Move to the starting offset of section header. */
-    rc = fseek(fpSample, (offsetPEHeader + PE_HEADER_SIZE + wordReg), SEEK_SET);
-    if (rc != 0) {
+    status = fseek(fpSample, (offsetPEHeader + PE_HEADER_SIZE + wordReg), SEEK_SET);
+    if (status != 0) {
         Spew0("Error: Invalid PE file (Unreachable section header).");
         rc = -1;
         goto EXIT;
@@ -306,15 +383,10 @@ int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBin
     
     /* Traverse each section header to retrieve the raw section offset and size. */
     for (i = 0 ; i < countSection ; i++) {
-        instBinary.idBinary = *pIdBinary;
-        instBinary.idxSection = i;
-        instBinary.nameSample = nameSample;
-        instBinary.hash = NULL;
-
         nExptRead = SECTION_HEADER_PER_ENTRY_SIZE;
         nRealRead = fread(buf, sizeof(char), nExptRead, fpSample);
         if (nExptRead != nRealRead) {
-            Spew0("Invalid PE file (Invalid section header).");
+            Spew0("Error: Invalid PE file (Invalid section header).");
             rc = -1;
             goto EXIT;
         }
@@ -325,6 +397,9 @@ int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBin
             dwordReg <<= SHIFT_RANGE_8BIT;
             dwordReg += buf[SECTION_HEADER_OFF_RAW_SIZE + DATATYPE_SIZE_DWORD - j] & 0xff;
         }
+        if (dwordReg == 0) {
+            continue;
+        }
         instBinary.sizeSection = dwordReg;
 
         /* Record the raw section offset. */
@@ -334,10 +409,19 @@ int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBin
             dwordReg += buf[SECTION_HEADER_OFF_RAW_OFFSET + DATATYPE_SIZE_DWORD - j] & 0xff;
         }
         instBinary.offsetSection = dwordReg;
+    
+        instBinary.idBinary = *pIdBinary;
+        instBinary.idxSection = i;
+        instBinary.hash = NULL;
+        instBinary.nameSample = strdup(nameSample);
+        if (instBinary.nameSample == NULL) {
+            Spew0("Error: Cannot duplicate the sample name.");
+            rc = -1;
+            goto EXIT;        
+        }
 
         /* Insert the BINARY structure into array. */
         utarray_push_back(_arrayBinary, &instBinary);
-        
         *pIdBinary = *pIdBinary + 1;        
     }
     
@@ -350,11 +434,11 @@ EXIT:
  * _grp_generate_section_hash(): Generate the hash of each PE section.
  */
 int _grp_generate_section_hash(FILE *fpSample, uint32_t idBgnBin, uint32_t idEndBin) {
-    int      rc;
+    int rc, status;
     uint32_t i, rawOffset, rawSize;
-    size_t   nExptRead, nRealRead;
-    char     *content;
-    BINARY   *hBinary;    
+    size_t nExptRead, nRealRead;
+    char *content;
+    BINARY *hBinary;    
 
     rc = 0;
     /* Traverse all the sections with non-zero size. */
@@ -363,11 +447,8 @@ int _grp_generate_section_hash(FILE *fpSample, uint32_t idBgnBin, uint32_t idEnd
         rawOffset = hBinary->offsetSection;
         rawSize = hBinary->sizeSection;
         
-        if (rawSize == 0) {
-            continue;
-        }
-        rc = fseek(fpSample, rawOffset, SEEK_SET);
-        if (rc != 0) {
+        status = fseek(fpSample, rawOffset, SEEK_SET);
+        if (status != 0) {
             Spew0("Error: Invalid PE file (Unreachable section).");
             rc = -1;
             goto EXIT;
@@ -394,11 +475,73 @@ int _grp_generate_section_hash(FILE *fpSample, uint32_t idBgnBin, uint32_t idEnd
         }
         
         /* Apply the ssdeep library to generate section hash. */
-        fuzzy_hash_buf(content, rawSize, hBinary->hash);
+        status = fuzzy_hash_buf(content, rawSize, hBinary->hash);
+        if (status != 0) {
+            Spew0("Error: Fail to generate section hash.");
+            rc = -1;
+        }
     FREE:
         free(content);    
     }
 
 EXIT:
     return rc;
+}
+
+/**
+ * ! INTERNAL
+ * _grp_compute_hashpair_similarity(): Calcuate the pairwise similarity scores 
+ * for the specified pairs of hashes.
+ */
+void* _grp_compute_hashpair_similarity(void *pParam) {
+    uint32_t countBinary, idBinSource, idBinTarget;
+    uint8_t countThread, idThread, simThreshold;
+    int8_t simScore;
+    PARAM *paramThread;
+    BINARY *binSource, *binTarget;
+    RELATION *linkNew;
+
+    paramThread = (PARAM*)pParam;
+    countBinary = paramThread->countBinary;
+    countThread = paramThread->countThread;
+    idThread = paramThread->idThread;
+    simThreshold = paramThread->simThreshold;
+    
+    idBinSource = 0;
+    idBinTarget = idBinSource + idThread - countThread;
+    while (true) {
+        idBinTarget += countThread;
+        while (idBinTarget >= countBinary) {
+            idBinSource++;
+            if (idBinSource == countBinary) {
+                break;
+            }
+            idBinTarget -= countBinary;
+            idBinTarget += (idBinSource + idThread);
+        }
+        if ((idBinSource >= countBinary) || (idBinTarget >= countBinary)) {
+            break;
+        }
+        binSource = (BINARY*)utarray_eltptr(_arrayBinary, idBinSource);
+        binTarget = (BINARY*)utarray_eltptr(_arrayBinary, idBinTarget);
+        
+        /* Apply the ssdeep library to compute similarity score and record the 
+           hash pairs with scores fitting the threshold. */
+        simScore = fuzzy_compare(binSource->hash, binTarget->hash);
+        if (simScore > simThreshold) {
+            linkNew = (RELATION*)malloc(sizeof(RELATION));
+            linkNew->idBinSource = idBinSource;
+            linkNew->idBinTarget = idBinTarget;
+            linkNew->next = NULL;
+            if (paramThread->listRelationHead == NULL) {
+                paramThread->listRelationHead = linkNew;
+                paramThread->listRelationTail = linkNew;
+            } else {
+                paramThread->listRelationTail->next = linkNew;
+                paramThread->listRelationTail = linkNew;
+            }
+        }
+    }
+
+    return;
 }
