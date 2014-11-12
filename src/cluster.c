@@ -81,6 +81,12 @@ int cls_generate_group(CLUSTER *self) {
         goto EXIT;
     }
 
+    /* Group the similar hashes using the given threshold. */
+    rc = _hGroup->group_hash(_hGroup);
+    if (rc != 0) {
+        goto EXIT;
+    }
+
 EXIT:
     return rc;
 }

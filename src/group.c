@@ -34,56 +34,54 @@
 /*======================================================================*
  *                    Declaration for Private Object                    *
  *======================================================================*/
-UT_array *_arraySample;
 UT_array *_arrayBinary;
-
 
 /*======================================================================*
  *                  Declaration for Internal Functions                  *
  *======================================================================*/
 
 /**
- * The utility to guide utarray for SAMLE structure copy.
+ * The utility to guide utarray for BINARY structure copy.
  *
  * @param pTarget     The pointer to the target.
  * @param pSource     The pointer to the source object.
  */
-void utarray_sample_copy(void *pTarget, const void *pSource);
+void utarray_binary_copy(void *pTarget, const void *pSource);
 
 /**
- * The utility to guide utarray for SAMPLE structure release.
+ * The utility to guide utarray for BINARY structure release.
  *
  * @param pCurrent     The pointer to the to be released object.
  */
-void utarray_sample_deinit(void *pCurrent);
+void utarray_binary_deinit(void *pCurrent);
 
 /**
  * This function extracts the physical offset and size of each PE section.
  *
  * @param fpSample     The file pointer to the analyzed sample.
- * @param hSample      The pointer to the SAMPLE structure storing
- *                     the section information.
+ * @param nameSample   The name of the given PE.
+ * @param pIdBinary    The pointer to the binary id.
  *
  * @return             0: Task is finished successfully.
  *                    <0: Possible causes:
  *                          1. insufficient memory.
  *                          2. Invalid binary of certain samples.
  */
-int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample);
+int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBinary);
 
 /**
  * This function generate the hash of each PE section.
  *
  * @param fpSample     The file pointer to the analyzed sample.
- * @param hSample      The pointer to the SAMPLE structure storing
- *                     the section hash.
+ * @param idBgnBin     The beginning binary id of the given PE.
+ * @param idEndBin     The ending binary id of the given PE.
  *
  * @return             0: Task is finished successfully.
  *                    <0: Invalid file format or insufficient memory.
  *                          1. insufficient memory.
  *                          2. Invalid binary of certain samples.
  */
-int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample);
+int _grp_generate_section_hash(FILE *fpSample, uint32_t idBgnBin, uint32_t idEndBin);
 
 /*======================================================================*
  *                Implementation for External Functions                 *
@@ -108,7 +106,7 @@ int grp_init_task(GROUP *self, CONFIG *cfgTask) {
 int grp_deinit_task(GROUP *self) {
 
     /* Free the array of SAMPLE structure. */
-    utarray_free(_arraySample);
+    utarray_free(_arrayBinary);
     return 0;
 }
 
@@ -117,13 +115,12 @@ int grp_deinit_task(GROUP *self) {
  * grp_generate_hash(): Generate section hashes for all the given samples.
  */
 int grp_generate_hash(GROUP *self) {
-    int      rc, i;
-    SAMPLE   instSample;
+    int      rc;
+    uint32_t idBgnBin, idEndBin;
     char     *pathRoot;
     DIR      *dirRoot;
-    SAMPLE   *hSample;
-    struct dirent *entFile;
     FILE     *fpSample;
+    struct dirent *entFile;
     char     pathSample[BUF_SIZE_MEDIUM];
 
     rc = 0;
@@ -137,10 +134,11 @@ int grp_generate_hash(GROUP *self) {
     }
 
     /* Initialize the array to record per sample information. */
-    UT_icd icdSample = {sizeof(SAMPLE), NULL, utarray_sample_copy, utarray_sample_deinit};
-    utarray_new(_arraySample, &icdSample);
+    UT_icd icdBinary = {sizeof(BINARY), NULL, utarray_binary_copy, utarray_binary_deinit};
+    utarray_new(_arrayBinary, &icdBinary);
 
     /* Traverse each sample for section hash generation. */
+    idBgnBin = idEndBin = 0;
     while ((entFile = readdir(dirRoot)) != NULL) {
         if ((strcmp(entFile->d_name, ".") == 0) || 
             (strcmp(entFile->d_name, "..") == 0)) {
@@ -154,26 +152,24 @@ int grp_generate_hash(GROUP *self) {
             rc = -1;
             goto CLOSE_DIR;
         }
-        instSample.nameSample = entFile->d_name;
         
         /* Extract the section information from file header.*/
-        rc = _grp_extract_section_info(fpSample, &instSample);
+        rc = _grp_extract_section_info(fpSample, entFile->d_name, &idEndBin);
         if (rc != 0) {
             goto CLOSE_FILE;
         }
 
         /* Generate the hash of each section. */
-        rc = _grp_generate_section_hash(fpSample, &instSample);
+        rc = _grp_generate_section_hash(fpSample, idBgnBin, idEndBin);
         if (rc != 0) {
             goto CLOSE_FILE;
         }
+        idBgnBin = idEndBin;
 
-        /* Insert the SAMPLE structure into array. */
-        utarray_push_back(_arraySample, &instSample);
     CLOSE_FILE:
         fclose(fpSample);
     }
-  
+
 CLOSE_DIR:
     closedir(dirRoot);
 EXIT:
@@ -186,16 +182,9 @@ EXIT:
  */
 int grp_group_hash(GROUP *self) {
     int rc;
-
+   
     rc = 0;
-    
-      /*
-    hSample = NULL;
-    while ((hSample = (SAMPLE*)utarray_next(arraySample, hSample)) != NULL) {
-        printf("%s\n", hSample->nameSample);
-    }
-    */
-    
+        
     return rc;
 }
 
@@ -206,47 +195,25 @@ int grp_group_hash(GROUP *self) {
 
 /**
  * !INTERNAL
- * utarray_sample_copy(): Guide utarray for SAMPLE structure copy.
+ * utarray_binary_copy(): Guide utarray for BINARY structure copy.
  */
-void utarray_sample_copy(void *pTarget, const void *pSource) {
-    uint16_t i, countSection;
-    SAMPLE   *hTarget, *hSource;
-    SECTION  *arraySecTge, *arraySecSrc;
-
-    /* Copy the section count. */
-    hTarget = (SAMPLE*)pTarget;
-    hSource = (SAMPLE*)pSource;
-    hTarget->countSection = hSource->countSection;
-    hTarget->nameSample = NULL;
-    hTarget->arraySection = NULL;
-
-    /* Copy the sample name. */
-    if (hSource->nameSample != NULL) {
-        hTarget->nameSample = strdup(hSource->nameSample);
-        assert(hTarget->nameSample != NULL);
-    }
-
-    /* Copy the array of SECTION structures. */
-    if (hSource->arraySection != NULL) {
-        countSection = hTarget->countSection;
-        hTarget->arraySection = (SECTION*)malloc(sizeof(SECTION) * countSection);
-        assert(hTarget->arraySection != NULL);
-        arraySecTge = hTarget->arraySection;
-        arraySecSrc = hSource->arraySection;
-        
-        for (i = 0 ; i < countSection ; i++) {
-            arraySecTge[i].rawOffset = arraySecSrc[i].rawOffset;
-            arraySecTge[i].rawSize = arraySecSrc[i].rawSize;
-            arraySecTge[i].hash = NULL;
-            
-            /* Copy the hash string. */
-            if (arraySecSrc[i].hash != NULL) {
-                arraySecTge[i].hash = strdup(arraySecSrc[i].hash);
-                assert(arraySecTge[i].hash != NULL);
-                free(arraySecSrc[i].hash);
-            }
-        }
-        free(hSource->arraySection);
+void utarray_binary_copy(void *pTarget, const void *pSource) {
+    BINARY *binSource, *binTarget;
+    
+    binSource = (BINARY*)pSource;
+    binTarget = (BINARY*)pTarget;
+    
+    binTarget->idBinary = binSource->idBinary;
+    binTarget->idxSection = binSource->idxSection;
+    binTarget->offsetSection = binSource->offsetSection;
+    binTarget->sizeSection = binSource->sizeSection;
+    binTarget->nameSample = binSource->nameSample;
+    if (binSource->hash != NULL) {
+        binTarget->hash = strdup(binSource->hash);
+        assert(binTarget->hash != NULL);
+        free(binSource->hash);
+    } else {
+        binTarget->hash = NULL;
     }
 
     return;
@@ -254,28 +221,16 @@ void utarray_sample_copy(void *pTarget, const void *pSource) {
 
 /**
  * !INTERNAL
- * utarray_sample_deinit(): Guide utarray for SAMPLE structure release.
+ * utarray_binary_deinit(): Guide utarray for BINARY structure release.
  */
-void utarray_sample_deinit(void *pCurrent) {
-    uint16_t i;
-    SAMPLE   *hCurrent;
+void utarray_binary_deinit(void *pCurrent) {
+    BINARY *hBinary;
     
-    /* Free the sample name. */
-    hCurrent = (SAMPLE*)pCurrent;
-    if (hCurrent->nameSample != NULL) {
-        free(hCurrent->nameSample);
+    hBinary = (BINARY*)pCurrent;
+    if (hBinary->hash != NULL) {
+        free(hBinary->hash);
     }
 
-    /* Free the array of SECTION structures. */
-    if (hCurrent->arraySection != NULL) {
-        for (i = 0 ; i < hCurrent->countSection ; i++) {
-            if (hCurrent->arraySection[i].hash != NULL) {
-                free(hCurrent->arraySection[i].hash);
-            }
-        }
-        free(hCurrent->arraySection);
-    }
-    
     return;
 }
 
@@ -283,12 +238,12 @@ void utarray_sample_deinit(void *pCurrent) {
  * !INTERNAL
  * _grp_extract_section_info(): Extract the physical offset and size of each PE section.
  */
-int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample) {
+int _grp_extract_section_info(FILE *fpSample, char *nameSample, uint32_t *pIdBinary) {
     int      rc;
     size_t   nExptRead, nRealRead;
     uint32_t dwordReg, offsetPEHeader;
     uint16_t i, j, wordReg, countSection;
-    SECTION  *arraySection;
+    BINARY   instBinary;
     char     buf[BUF_SIZE_LARGE];
 
     rc = 0;
@@ -347,17 +302,13 @@ int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample) {
         goto EXIT;
     }
     
-    hSample->countSection = countSection;
-    hSample->arraySection = (SECTION*)malloc(sizeof(SECTION) * countSection);
-    if (hSample->arraySection == NULL) {
-        Spew0("Error: Cannot allocate an array of SECTION structures.");
-        rc = -1;
-        goto EXIT;
-    }
-    arraySection = hSample->arraySection;
-    
     /* Traverse each section header to retrieve the raw section offset and size. */
     for (i = 0 ; i < countSection ; i++) {
+        instBinary.idBinary = *pIdBinary;
+        instBinary.idxSection = i;
+        instBinary.nameSample = nameSample;
+        instBinary.hash = NULL;
+
         nExptRead = SECTION_HEADER_PER_ENTRY_SIZE;
         nRealRead = fread(buf, sizeof(char), nExptRead, fpSample);
         if (nExptRead != nRealRead) {
@@ -372,7 +323,7 @@ int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample) {
             dwordReg <<= SHIFT_RANGE_8BIT;
             dwordReg += buf[SECTION_HEADER_OFF_RAW_SIZE + DATATYPE_SIZE_DWORD - j] & 0xff;
         }
-        arraySection[i].rawSize = dwordReg;
+        instBinary.sizeSection = dwordReg;
 
         /* Record the raw section offset. */
         dwordReg = 0;
@@ -380,8 +331,12 @@ int _grp_extract_section_info(FILE *fpSample, SAMPLE *hSample) {
             dwordReg <<= SHIFT_RANGE_8BIT;
             dwordReg += buf[SECTION_HEADER_OFF_RAW_OFFSET + DATATYPE_SIZE_DWORD - j] & 0xff;
         }
-        arraySection[i].rawOffset = dwordReg;
-        arraySection[i].hash = NULL;
+        instBinary.offsetSection = dwordReg;
+
+        /* Insert the BINARY structure into array. */
+        utarray_push_back(_arrayBinary, &instBinary);
+        
+        *pIdBinary = *pIdBinary + 1;        
     }
     
 EXIT:
@@ -392,20 +347,20 @@ EXIT:
  * !INTERNAL
  * _grp_generate_section_hash(): Generate the hash of each PE section.
  */
-int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample) {
+int _grp_generate_section_hash(FILE *fpSample, uint32_t idBgnBin, uint32_t idEndBin) {
     int      rc;
-    uint16_t i;
-    uint32_t rawOffset, rawSize;
+    uint32_t i, rawOffset, rawSize;
     size_t   nExptRead, nRealRead;
     char     *content;
-    SECTION  *arraySection;
+    BINARY   *hBinary;    
 
     rc = 0;
     /* Traverse all the sections with non-zero size. */
-    arraySection = hSample->arraySection;
-    for (i = 0 ; i < hSample->countSection ; i++) {
-        rawOffset = arraySection[i].rawOffset;
-        rawSize = arraySection[i].rawSize;
+    for (i = idBgnBin ; i < idEndBin ; i++) {
+        hBinary = (BINARY*)utarray_eltptr(_arrayBinary, i);
+        rawOffset = hBinary->offsetSection;
+        rawSize = hBinary->sizeSection;
+        
         if (rawSize == 0) {
             continue;
         }
@@ -428,15 +383,16 @@ int _grp_generate_section_hash(FILE *fpSample, SAMPLE *hSample) {
             rc = -1;
             goto FREE;
         }
-        arraySection[i].hash = (char*)malloc(sizeof(char) * FUZZY_MAX_RESULT);
-        if (arraySection[i].hash == NULL) {
+    
+        hBinary->hash = (char*)malloc(sizeof(char) * FUZZY_MAX_RESULT);
+        if (hBinary->hash == NULL) {
             Spew0("Error: Cannot allocate buffer for section hash.");
             rc = -1;
             goto FREE;
         }
         
         /* Apply the ssdeep library to generate section hash. */
-        fuzzy_hash_buf(content, rawSize, arraySection[i].hash);
+        fuzzy_hash_buf(content, rawSize, hBinary->hash);
     FREE:
         free(content);    
     }
