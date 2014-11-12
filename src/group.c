@@ -125,7 +125,7 @@ int grp_generate_hash(GROUP *self) {
 
     rc = 0;
     /* Open the root path of designated sample set. */
-    pathRoot = self->cfgTask->cfgPathRoot;
+    pathRoot = self->cfgTask->pathRoot;
     dirRoot = opendir(pathRoot);
     if (dirRoot == NULL) {
         Spew1("Error: %s", strerror(errno));
@@ -182,12 +182,14 @@ EXIT:
  */
 int grp_group_hash(GROUP *self) {
     int rc;
+    uint32_t countBinary;
    
     rc = 0;
+    /* Fork the specified number of threads for parallel similarity computation. */    
+    countBinary = utarray_len(_arrayBinary);
         
     return rc;
 }
-
 
 /*======================================================================*
  *                Implementation for Internal Functions                 *

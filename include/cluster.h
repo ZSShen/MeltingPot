@@ -1,14 +1,15 @@
 #ifndef _CLUSTER_H_
 #define _CLUSTER_H_
 
+#include <stdint.h>
 
 typedef struct _CONFIG {
-    int  cfgParallelity;
-    int  cfgBlkCount;
-    int  cfgBlkSize;
-    int  cfgSimilarity;
-    char *cfgPathRoot;
-    char *cfgPathPat;
+    uint8_t nParallelity;
+    uint8_t nBlkCount;
+    uint8_t nBlkSize;
+    uint8_t nSimilarity;
+    char    *pathRoot;
+    char    *pathPattern;
 } CONFIG;
 
 

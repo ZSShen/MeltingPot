@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <getopt.h>
 #include "cluster.h"
@@ -12,8 +13,9 @@ void print_usage();
 
 
 int main(int argc, char **argv, char *envp) {
-    int     rc, opt, idxOpt, nParallelity, nSimilarity, nBlkCount, nBlkSize;
-    char    *pathRoot, *pathPat;
+    int     rc, opt, idxOpt;
+    uint8_t nParallelity, nSimilarity, nBlkCount, nBlkSize;
+    char    *pathRoot, *pathPattern;
     CONFIG  *hConfig;
     CLUSTER *hCluster;
     char    bufOrder[BUF_SIZE_SMALL];
@@ -46,7 +48,7 @@ int main(int argc, char **argv, char *envp) {
                 break;
             }
             case OPT_PATH_PATTERN: {
-                pathPat = optarg;
+                pathPattern = optarg;
                 break;
             }
             case OPT_PARALLELITY: {
@@ -72,7 +74,7 @@ int main(int argc, char **argv, char *envp) {
     }
 
     /* Check the configuration parameters. */
-    if ((pathRoot == NULL) || (pathPat == NULL)) {
+    if ((pathRoot == NULL) || (pathPattern == NULL)) {
         EARLY_RETURN(rc);
     }
     if ((nParallelity <= 0) || (nSimilarity <= 0) ||
@@ -92,12 +94,12 @@ int main(int argc, char **argv, char *envp) {
         rc = -1;
         goto DEINIT;
     }
-    hConfig->cfgParallelity = nParallelity;
-    hConfig->cfgSimilarity = nSimilarity;
-    hConfig->cfgBlkCount = nBlkCount;
-    hConfig->cfgBlkSize = nBlkSize;
-    hConfig->cfgPathRoot = pathRoot;
-    hConfig->cfgPathPat = pathPat;
+    hConfig->nParallelity = nParallelity;
+    hConfig->nSimilarity = nSimilarity;
+    hConfig->nBlkCount = nBlkCount;
+    hConfig->nBlkSize = nBlkSize;
+    hConfig->pathRoot = pathRoot;
+    hConfig->pathPattern = pathPattern;
     rc = hCluster->init_ctx(hCluster, hConfig);
     if (rc != 0) {
         rc = -1;

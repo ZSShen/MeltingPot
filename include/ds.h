@@ -27,4 +27,18 @@ typedef struct _GROUPNODE {
     struct _GROUPNODE *pPresent;
 } GROUPNODE;
 
+typedef struct _RELATION {
+    uint32_t idBinSource;
+    uint32_t idBinTarget;
+    struct _RELATION *next;
+} RELATION;
+
+typedef struct _PARAM {
+    uint32_t countBinary;
+    uint8_t  idThread;
+    uint8_t  countThread;
+    RELATION *listRelationHead;
+    RELATION *listRelationTail;
+} PARAM;
+
 #endif
