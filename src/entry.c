@@ -13,9 +13,9 @@ void print_usage();
 
 
 int main(int argc, char **argv, char *envp) {
-    int     rc, opt, idxOpt;
+    int     iRtnCode, opt, idxOpt;
     uint8_t nParallelity, nSimilarity, nBlkCount, nBlkSize;
-    char    *pathRoot, *pathPattern;
+    char    *szPathRoot, *pathPattern;
     CONFIG  *hConfig;
     CLUSTER *hCluster;
     char    bufOrder[BUF_SIZE_SMALL];
@@ -35,8 +35,8 @@ int main(int argc, char **argv, char *envp) {
     sprintf(bufOrder, "%c%c:%c:%c:%c:%c:%c:", OPT_HELP, OPT_PATH_SAMPLE_SET, OPT_PATH_PATTERN,
                                               OPT_PARALLELITY, OPT_BLK_COUNT, OPT_BLK_SIZE, 
                                               OPT_SIMILARITY);    
-    rc = 0;
-    pathRoot = NULL;
+    iRtnCode = 0;
+    szPathRoot = NULL;
     nParallelity = nSimilarity = nBlkCount = nBlkSize = -1;
 
     /* Get the command line options. */
@@ -44,7 +44,7 @@ int main(int argc, char **argv, char *envp) {
     while ((opt = getopt_long(argc, argv, bufOrder, options, &idxOpt)) != -1) {
         switch (opt) {
             case OPT_PATH_SAMPLE_SET: {
-                pathRoot = optarg;
+                szPathRoot = optarg;
                 break;
             }
             case OPT_PATH_PATTERN: {
@@ -68,48 +68,48 @@ int main(int argc, char **argv, char *envp) {
                 break;
             }
             default: {
-                EARLY_RETURN(rc);
+                EARLY_RETURN(iRtnCode);
             }
         }
     }
 
     /* Check the configuration parameters. */
-    if ((pathRoot == NULL) || (pathPattern == NULL)) {
-        EARLY_RETURN(rc);
+    if ((szPathRoot == NULL) || (pathPattern == NULL)) {
+        EARLY_RETURN(iRtnCode);
     }
-    if ((nParallelity <= 0) || (nSimilarity <= 0) ||
-        (nBlkCount <= 0) || (nBlkSize <= 0)) {
-        EARLY_RETURN(rc);
+    if ((nParallelity < 1) || (nSimilarity < 0) ||
+        (nBlkCount < 1) || (nBlkSize <= 1)) {
+        EARLY_RETURN(iRtnCode);
     }
 
     /* Initialize the clustering library. */
     INIT_CLUSTER(hCluster);
     if (hCluster == NULL) {
-        EARLY_RETURN(rc);
+        EARLY_RETURN(iRtnCode);
     }
 
     /* Set up the context. */
     hConfig = (CONFIG*)malloc(sizeof(CONFIG));
     if (hConfig == NULL) {
-        rc = -1;
+        iRtnCode = -1;
         goto DEINIT;
     }
     hConfig->nParallelity = nParallelity;
     hConfig->nSimilarity = nSimilarity;
     hConfig->nBlkCount = nBlkCount;
     hConfig->nBlkSize = nBlkSize;
-    hConfig->pathRoot = pathRoot;
+    hConfig->szPathRoot = szPathRoot;
     hConfig->pathPattern = pathPattern;
-    rc = hCluster->init_ctx(hCluster, hConfig);
-    if (rc != 0) {
-        rc = -1;
+    iRtnCode = hCluster->init_ctx(hCluster, hConfig);
+    if (iRtnCode != 0) {
+        iRtnCode = -1;
         goto DEINIT;   
     }
 
     /* Group the binaries of the given sample set. */
-    rc = hCluster->generate_group(hCluster);
-    if (rc != 0) {
-        rc = -1;
+    iRtnCode = hCluster->generate_group(hCluster);
+    if (iRtnCode != 0) {
+        iRtnCode = -1;
         goto FREECTX;
     }
 
@@ -125,7 +125,7 @@ DEINIT:
     DEINIT_CLUSTER(hCluster);
 
 EXIT:
-    return rc;
+    return iRtnCode;
 }
 
 

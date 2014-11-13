@@ -41,63 +41,63 @@ int cls_deinit_task(CLUSTER *self) {
 }
 
 
-int cls_init_ctx(CLUSTER *self, CONFIG *cfgTask) {
-    int rc;
+int cls_init_ctx(CLUSTER *self, CONFIG *pCfg) {
+    int iRtnCode;
 
-    rc = 0;
+    iRtnCode = 0;
     
     /* Initialize the handle of binary grouping. */
-    INIT_GROUP(_hGroup, cfgTask);
+    INIT_GROUP(_hGroup, pCfg);
     if (_hGroup == NULL) {
-        rc = -1;
+        iRtnCode = -1;
         goto EXIT;
     }
 
 EXIT:
-    return rc;
+    return iRtnCode;
 }
 
 
 int cls_deinit_ctx(CLUSTER *self) {
-    int rc;
+    int iRtnCode;
 
-    rc = 0;
+    iRtnCode = 0;
 
     /* Deinitialize the handle of binary grouping.  */
     DEINIT_GROUP(_hGroup);
 
-    return rc;
+    return iRtnCode;
 }
 
 
 int cls_generate_group(CLUSTER *self) {
-    int rc;
+    int iRtnCode;
 
-    rc = 0;
+    iRtnCode = 0;
     
     /* Generate the section hashes for the given sample set. */
-    rc = _hGroup->generate_hash(_hGroup);
-    if (rc != 0) {
+    iRtnCode = _hGroup->generate_hash(_hGroup);
+    if (iRtnCode != 0) {
         goto EXIT;
     }
 
     /* Group the similar hashes using the given threshold. */
-    rc = _hGroup->group_hash(_hGroup);
-    if (rc != 0) {
+    iRtnCode = _hGroup->group_hash(_hGroup);
+    if (iRtnCode != 0) {
         goto EXIT;
     }
 
 EXIT:
-    return rc;
+    return iRtnCode;
 }
 
 
 int cls_generate_pattern(CLUSTER *self) {
-    int rc;
+    int iRtnCode;
 
-    rc = 0;
+    iRtnCode = 0;
 
-    return rc;
+    return iRtnCode;
 }
 
 

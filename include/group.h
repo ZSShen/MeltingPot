@@ -4,7 +4,7 @@
 #include "cluster.h"
 
 typedef struct _GROUP {
-    CONFIG *cfgTask;
+    CONFIG *pCfg;
 
     int (*generate_hash) (struct _GROUP*);
     int (*group_hash)    (struct _GROUP*);
@@ -13,15 +13,15 @@ typedef struct _GROUP {
 /* The wrapper for GROUP constructor. */
 #define INIT_GROUP(p, q)    p = (GROUP*)malloc(sizeof(GROUP));   \
                             if (p != NULL) {                     \
-                                rc = grp_init_task(p, q);        \
-                                if (rc == -1) {                  \
+                                iRtnCode = GrpInitTask(p, q);        \
+                                if (iRtnCode == -1) {                  \
                                     free(p);                     \
                                 }                                \
                             }
 
 /* The wrapper for GROUP destructor. */
 #define DEINIT_GROUP(p)     if (p != NULL) {                     \
-                                grp_deinit_task(p);              \
+                                GrpDeinitTask(p);              \
                                 free(p);                         \
                             }
 
@@ -29,12 +29,12 @@ typedef struct _GROUP {
  * The constructor of GROUP structure.
  * 
  * @param self      The pointer to the GROUP structure.
- * @param cfgTask   The pointer to the task configuration.
+ * @param pCfg   The pointer to the task configuration.
  *
  * @return          0: Task is finished successfully.
  *                 <0: Currently undefined. 
  */
-int grp_init_task(GROUP *self, CONFIG *cfgTask);
+int GrpInitTask(GROUP *self, CONFIG *pCfg);
 
 /**
  * The destructor of GROUP structure.
@@ -44,7 +44,7 @@ int grp_init_task(GROUP *self, CONFIG *cfgTask);
  * @return          0: Task is finished successfully.
  *                 <0: Currently undefined.
  */
-int grp_deinit_task(GROUP *self);
+int GrpDeinitTask(GROUP *self);
 
 /**
  * This function generates section hashes for all the given samples.
@@ -57,7 +57,7 @@ int grp_deinit_task(GROUP *self);
  *                      2. Invalid binary format of certain samples.
  *                      3. IO error.
  */ 
-int grp_generate_hash(GROUP *self);
+int GrpGenerateHash(GROUP *self);
 
 /**
  * This function groups the hashes using the given similarity threshold.
@@ -68,6 +68,6 @@ int grp_generate_hash(GROUP *self);
  *                 <0: Possible cause:
  *                      1. Insufficient memory.
  */ 
-int grp_group_hash(GROUP *self);
+int GrpCorrelateHash(GROUP *self);
 
 #endif

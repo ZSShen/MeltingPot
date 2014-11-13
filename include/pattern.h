@@ -6,7 +6,7 @@
 
 
 typedef struct _PATTERN {
-    CONFIG *cfgTask;
+    CONFIG *pCfg;
 
     int (*init_task)        (struct _PATTERN*, CONFIG*);
     int (*deinit_task)      (struct _PATTERN*);
@@ -14,7 +14,7 @@ typedef struct _PATTERN {
 } PATTERN;
 
 
-int ptn_init_task(PATTERN *self, CONFIG *cfgTask);
+int ptn_init_task(PATTERN *self, CONFIG *pCfg);
 
 
 int ptn_deinit_task(PATTERN *self);

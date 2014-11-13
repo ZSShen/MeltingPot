@@ -8,7 +8,7 @@ typedef struct _CONFIG {
     uint8_t nBlkCount;
     uint8_t nBlkSize;
     uint8_t nSimilarity;
-    char    *pathRoot;
+    char    *szPathRoot;
     char    *pathPattern;
 } CONFIG;
 
@@ -23,8 +23,8 @@ typedef struct _CLUSTER {
 
 #define INIT_CLUSTER(p)     p = (CLUSTER*)malloc(sizeof(CLUSTER));   \
                             if (p != NULL) {                         \
-                                rc = cls_init_task(p);               \
-                                if (rc == -1) {                      \
+                                iRtnCode = cls_init_task(p);               \
+                                if (iRtnCode == -1) {                      \
                                     free(p);                         \
                                 }                                    \
                             }
@@ -42,7 +42,7 @@ int cls_init_task(CLUSTER *self);
 int cls_deinit_task(CLUSTER *self);
 
 
-int cls_init_ctx(CLUSTER *self, CONFIG *cfgTask);
+int cls_init_ctx(CLUSTER *self, CONFIG *pCfg);
 
 
 int cls_deinit_ctx(CLUSTER *self);
