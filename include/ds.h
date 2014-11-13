@@ -11,7 +11,6 @@
 /*======================================================================*
  *             Declaration for Shared and Custmoized Macros             *
  *======================================================================*/
-
 /* Define the buffer size. */
 #define BUF_SIZE_SMALL          64
 #define BUF_SIZE_MEDIUM         BUF_SIZE_SMALL  << 3
@@ -34,7 +33,6 @@
 /*======================================================================*
  *                Declaration for Common Data Structures                *
  *======================================================================*/
-
 /* The ds to record detail information for each section binary. */
 typedef struct _BINARY {
     union {
@@ -94,7 +92,6 @@ typedef struct _GROUP_RESULT {
 /*======================================================================*
  *                  Declaration for Customized Handlers                 *
  *======================================================================*/
-
 /**
  * The utility to guide utarray for BINARY structure copy.
  *
@@ -109,5 +106,6 @@ void UTArrayBinaryCopy(void *vpTge, const void *vpSrc);
  * @param vpCurr     The pointer to the to be released object.
  */
 void UTArrayBinaryDeinit(void *vpCurr);
+
 
 #endif

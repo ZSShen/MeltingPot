@@ -14,8 +14,8 @@ void print_usage();
 
 int main(int argc, char **argv, char *envp) {
     int     iRtnCode, opt, idxOpt;
-    uint8_t nParallelity, nSimilarity, nBlkCount, nBlkSize;
-    char    *szPathRoot, *pathPattern;
+    uint8_t ucParallelity, ucSimilarity, ucBlkCount, ucBlkSize;
+    char    *szPathInput, *szPathOutput;
     CONFIG  *hConfig;
     CLUSTER *hCluster;
     char    bufOrder[BUF_SIZE_SMALL];
@@ -36,35 +36,35 @@ int main(int argc, char **argv, char *envp) {
                                               OPT_PARALLELITY, OPT_BLK_COUNT, OPT_BLK_SIZE, 
                                               OPT_SIMILARITY);    
     iRtnCode = 0;
-    szPathRoot = NULL;
-    nParallelity = nSimilarity = nBlkCount = nBlkSize = -1;
+    szPathInput = szPathOutput = NULL;
+    ucParallelity = ucSimilarity = ucBlkCount = ucBlkSize = -1;
 
     /* Get the command line options. */
     idxOpt = 0;
     while ((opt = getopt_long(argc, argv, bufOrder, options, &idxOpt)) != -1) {
         switch (opt) {
             case OPT_PATH_SAMPLE_SET: {
-                szPathRoot = optarg;
+                szPathInput = optarg;
                 break;
             }
             case OPT_PATH_PATTERN: {
-                pathPattern = optarg;
+                szPathOutput = optarg;
                 break;
             }
             case OPT_PARALLELITY: {
-                nParallelity = atoi(optarg);
+                ucParallelity = atoi(optarg);
                 break;
             }
             case OPT_SIMILARITY: {
-                nSimilarity = atoi(optarg);
+                ucSimilarity = atoi(optarg);
                 break;
             }
             case OPT_BLK_COUNT: {
-                nBlkCount = atoi(optarg);
+                ucBlkCount = atoi(optarg);
                 break;
             }
             case OPT_BLK_SIZE: {
-                nBlkSize = atoi(optarg);
+                ucBlkSize = atoi(optarg);
                 break;
             }
             default: {
@@ -74,11 +74,11 @@ int main(int argc, char **argv, char *envp) {
     }
 
     /* Check the configuration parameters. */
-    if ((szPathRoot == NULL) || (pathPattern == NULL)) {
+    if ((szPathInput == NULL) || (szPathOutput == NULL)) {
         EARLY_RETURN(iRtnCode);
     }
-    if ((nParallelity < 1) || (nSimilarity < 0) ||
-        (nBlkCount < 1) || (nBlkSize <= 1)) {
+    if ((ucParallelity < 1) || (ucSimilarity < 0) ||
+        (ucBlkCount < 1) || (ucBlkSize <= 1)) {
         EARLY_RETURN(iRtnCode);
     }
 
@@ -94,20 +94,20 @@ int main(int argc, char **argv, char *envp) {
         iRtnCode = -1;
         goto DEINIT;
     }
-    hConfig->nParallelity = nParallelity;
-    hConfig->nSimilarity = nSimilarity;
-    hConfig->nBlkCount = nBlkCount;
-    hConfig->nBlkSize = nBlkSize;
-    hConfig->szPathRoot = szPathRoot;
-    hConfig->pathPattern = pathPattern;
-    iRtnCode = hCluster->init_ctx(hCluster, hConfig);
+    hConfig->ucParallelity = ucParallelity;
+    hConfig->ucSimilarity = ucSimilarity;
+    hConfig->ucBlkCount = ucBlkCount;
+    hConfig->ucBlkSize = ucBlkSize;
+    hConfig->szPathInput = szPathInput;
+    hConfig->szPathOutput = szPathOutput;
+    iRtnCode = hCluster->initCtx(hCluster, hConfig);
     if (iRtnCode != 0) {
         iRtnCode = -1;
         goto DEINIT;   
     }
 
     /* Group the binaries of the given sample set. */
-    iRtnCode = hCluster->generate_group(hCluster);
+    iRtnCode = hCluster->generateGroup(hCluster);
     if (iRtnCode != 0) {
         iRtnCode = -1;
         goto FREECTX;
@@ -115,7 +115,7 @@ int main(int argc, char **argv, char *envp) {
 
 FREECTX:
     /* Free the context. */
-    hCluster->deinit_ctx(hCluster);
+    hCluster->deinitCtx(hCluster);
 
 DEINIT:
     if (hConfig != NULL) {

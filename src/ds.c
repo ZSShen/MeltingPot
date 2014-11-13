@@ -8,7 +8,6 @@
 /*======================================================================*
  *               Implementation for Customized Functions                *
  *======================================================================*/
- 
 /**
  * !EXTERNAL
  * _UTArrayBinaryCopy(): Guide utarray for BINARY structure copy.

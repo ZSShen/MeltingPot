@@ -11,6 +11,9 @@
 #include "group.h"
 
 
+/*======================================================================*
+ *                Declaration for PE related information                *
+ *======================================================================*/
 /* DOS(MZ) header related information. */
 #define MZ_HEADER_SIZE                      (0x40) /* The size of DOS(MZ) header. */
 #define MZ_HEADER_OFF_PE_HEADER_OFFSET      (0x3c) /* The starting offset of PE header. */
@@ -46,7 +49,6 @@ static FAMILY *_pMapFamily;
 /*======================================================================*
  *                  Declaration for Internal Functions                  *
  *======================================================================*/
-
 /**
  * This function extracts the physical offset and size of each PE section.
  *
@@ -103,7 +105,6 @@ static void* _GrpComputeHashPairSimilarity(void *vpThreadParam);
 /*======================================================================*
  *                Implementation for External Functions                 *
  *======================================================================*/
- 
  /**
   * !EXTERNAL
   * GrpInitTask(): The constructor of GROUP structure.
@@ -113,8 +114,8 @@ int GrpInitTask(GROUP *self, CONFIG *pCfg) {
     
     iRtnCode = 0;
     self->pCfg = pCfg;
-    self->generate_hash = GrpGenerateHash;
-    self->group_hash = GrpCorrelateHash;
+    self->generateHash = GrpGenerateHash;
+    self->groupHash = GrpCorrelateHash;
     self->pGrpRes = (GROUP_RESULT*)malloc(sizeof(GROUP_RESULT));
     if (self->pGrpRes == NULL) {
         Spew0("Error: Cannot allocate GROUP_RESULT structure for result reference.");
@@ -138,18 +139,24 @@ int GrpDeinitTask(GROUP *self) {
     FAMILY_MEMBER *pFamMbrCurr, *pFamMbrHelp;
 
     /* Free the array of SAMPLE structure. */
-    ARRAY_FREE(_aBin);
+    if (_aBin != NULL) {
+        ARRAY_FREE(_aBin);
+    }
     
     /* Free the FAMILY hash map. */
-    HASH_ITER(hh, _pMapFamily, pFamCurr, pFamHelp) {
-        DL_FOREACH_SAFE(pFamCurr->pFamMbrHead, pFamMbrCurr, pFamMbrHelp) {
-            DL_FREE(pFamCurr->pFamMbrHead, pFamMbrCurr);
-        }
-        HASH_FREE(hh, _pMapFamily, pFamCurr);
-    }    
+    if (_pMapFamily != NULL) {
+        HASH_ITER(hh, _pMapFamily, pFamCurr, pFamHelp) {
+            DL_FOREACH_SAFE(pFamCurr->pFamMbrHead, pFamMbrCurr, pFamMbrHelp) {
+                DL_FREE(pFamCurr->pFamMbrHead, pFamMbrCurr);
+            }
+            HASH_FREE(hh, _pMapFamily, pFamCurr);
+        }    
+    }
     
     /* Free the GROUP_RESULT structure. */
-    free(self->pGrpRes);    
+    if (self->pGrpRes != NULL) {
+        free(self->pGrpRes);
+    }
     
     return 0;
 }
@@ -161,7 +168,7 @@ int GrpDeinitTask(GROUP *self) {
 int GrpGenerateHash(GROUP *self) {
     int iRtnCode;
     uint32_t uiIdBinBgn, uiIdBinEnd;
-    char *szPathRoot;
+    char *szPathInput;
     DIR *dirRoot;
     FILE *fpSample;
     struct dirent *entFile;
@@ -169,8 +176,8 @@ int GrpGenerateHash(GROUP *self) {
 
     iRtnCode = 0;
     /* Open the root path of designated sample set. */
-    szPathRoot = self->pCfg->szPathRoot;
-    dirRoot = opendir(szPathRoot);
+    szPathInput = self->pCfg->szPathInput;
+    dirRoot = opendir(szPathInput);
     if (dirRoot == NULL) {
         Spew1("Error: %s", strerror(errno));
         iRtnCode = -1;
@@ -189,7 +196,7 @@ int GrpGenerateHash(GROUP *self) {
             continue;
         }
         memset(szPathSample, 0, sizeof(char) * BUF_SIZE_MEDIUM);
-        snprintf(szPathSample, BUF_SIZE_MEDIUM, "%s\%s", szPathRoot, entFile->d_name);
+        snprintf(szPathSample, BUF_SIZE_MEDIUM, "%s\%s", szPathInput, entFile->d_name);
         fpSample = fopen(szPathSample, "rb");
         if (fpSample == NULL) {
             Spew1("Error: %s", strerror(errno));
@@ -235,8 +242,8 @@ int GrpCorrelateHash(GROUP *self) {
     iRtnCode = 0;
     /* Prepare the thread parameters. */
     uiBinCount = ARRAY_LEN(_aBin);
-    ucThreadCount = self->pCfg->nParallelity;
-    ucSimThrld = self->pCfg->nSimilarity;
+    ucThreadCount = self->pCfg->ucParallelity;
+    ucSimThrld = self->pCfg->ucSimilarity;
     aThread = (pthread_t*)malloc(sizeof(pthread_t) * ucThreadCount);    
     if (aThread == NULL) {
         Spew0("Error: Cannot allocate the array for thread id.");
@@ -290,7 +297,6 @@ EXIT:
 /*======================================================================*
  *                Implementation for Internal Functions                 *
  *======================================================================*/
-
 /**
  * !INTERNAL
  * _GrpExtractSectionInfo(): Extract the physical offset and size of each PE section.

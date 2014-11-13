@@ -7,15 +7,15 @@
 /*======================================================================*
  *                  Declaration for Shared Interfaces                   *
  *======================================================================*/
-
 /* This module handles the clustering work of PE per section binary. */
 typedef struct _GROUP {
     CONFIG *pCfg;
     GROUP_RESULT *pGrpRes;
 
-    int (*generate_hash) (struct _GROUP*);
-    int (*group_hash)    (struct _GROUP*);
+    int (*generateHash) (struct _GROUP*);
+    int (*groupHash)    (struct _GROUP*);
 } GROUP;
+
 
 /* The wrapper for GROUP constructor. */
 #define INIT_GROUP(p, q)    p = (GROUP*)malloc(sizeof(GROUP));         \
@@ -36,7 +36,6 @@ typedef struct _GROUP {
 /*======================================================================*
  *                  Declaration for External Functions                  *
  *======================================================================*/
-
 /**
  * The constructor of GROUP structure.
  * 

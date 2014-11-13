@@ -9,46 +9,47 @@
 #include "pattern.h"
 
 
-/*-----------------------------------------------------------*
- *            Declaration for Private Objects                *
- *-----------------------------------------------------------*/
-static GROUP    *_hGroup;
-static PATTERN  *_hPattern;
+/*======================================================================*
+ *                    Declaration for Private Object                    *
+ *======================================================================*/
+static GROUP *_pGroup;
+static PATTERN *_pPattern;
+static GROUP_RESULT *_pGrpRes;
 
 
-/*-----------------------------------------------------------*
- *           Declaration for Internal Functions              *
- *-----------------------------------------------------------*/
+/*======================================================================*
+ *                  Declaration for Internal Functions                  *
+ *======================================================================*/
 
 
 
-/*-----------------------------------------------------------*
- *          Implementation for External Functions            *
- *-----------------------------------------------------------*/
-int cls_init_task(CLUSTER *self) {
+/*======================================================================*
+ *                Implementation for External Functions                 *
+ *======================================================================*/
+int ClsInitTask(CLUSTER *self) {
 
-    self->init_ctx = cls_init_ctx;
-    self->deinit_ctx = cls_deinit_ctx;
-    self->generate_group = cls_generate_group;
-    self->generate_pattern = cls_generate_pattern;
+    self->initCtx = ClsInitCtx;
+    self->deinitCtx = ClsDeinitCtx;
+    self->generateGroup = ClsGenerateGroup;
+    self->generatePattern = ClsGeneratePattern;
     return 0;
 }
 
 
-int cls_deinit_task(CLUSTER *self) {
+int ClsDeinitTask(CLUSTER *self) {
 
     return 0;
 }
 
 
-int cls_init_ctx(CLUSTER *self, CONFIG *pCfg) {
+int ClsInitCtx(CLUSTER *self, CONFIG *pCfg) {
     int iRtnCode;
 
     iRtnCode = 0;
     
     /* Initialize the handle of binary grouping. */
-    INIT_GROUP(_hGroup, pCfg);
-    if (_hGroup == NULL) {
+    INIT_GROUP(_pGroup, pCfg);
+    if (_pGroup == NULL) {
         iRtnCode = -1;
         goto EXIT;
     }
@@ -58,41 +59,44 @@ EXIT:
 }
 
 
-int cls_deinit_ctx(CLUSTER *self) {
+int ClsDeinitCtx(CLUSTER *self) {
     int iRtnCode;
 
     iRtnCode = 0;
 
     /* Deinitialize the handle of binary grouping.  */
-    DEINIT_GROUP(_hGroup);
+    DEINIT_GROUP(_pGroup);
 
     return iRtnCode;
 }
 
 
-int cls_generate_group(CLUSTER *self) {
+int ClsGenerateGroup(CLUSTER *self) {
     int iRtnCode;
 
     iRtnCode = 0;
     
     /* Generate the section hashes for the given sample set. */
-    iRtnCode = _hGroup->generate_hash(_hGroup);
+    iRtnCode = _pGroup->generateHash(_pGroup);
     if (iRtnCode != 0) {
         goto EXIT;
     }
 
     /* Group the similar hashes using the given threshold. */
-    iRtnCode = _hGroup->group_hash(_hGroup);
+    iRtnCode = _pGroup->groupHash(_pGroup);
     if (iRtnCode != 0) {
         goto EXIT;
     }
 
+    /* Cache the clustering result. */
+    _pGrpRes = _pGroup->pGrpRes;
+    
 EXIT:
     return iRtnCode;
 }
 
 
-int cls_generate_pattern(CLUSTER *self) {
+int ClsGeneratePattern(CLUSTER *self) {
     int iRtnCode;
 
     iRtnCode = 0;
@@ -101,6 +105,6 @@ int cls_generate_pattern(CLUSTER *self) {
 }
 
 
-/*-----------------------------------------------------------*
- *          Implementation for Internal Functions            *
- *-----------------------------------------------------------*/
+/*======================================================================*
+ *                Implementation for Internal Functions                 *
+ *======================================================================*/
