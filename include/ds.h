@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "utarray.h"
 #include "utlist.h"
+#include "uthash.h"
 
 
 /* Define the buffer size. */
@@ -19,6 +20,12 @@
 #define ARRAY_FREE(p)           utarray_free(p)
 #define ARRAY_LEN(p)            utarray_len(p)
 #define ARRAY_NEXT(p, q)        utarray_next(p, q)
+
+#define DL_FREE(p, q)           DL_DELETE(p, q);                       \
+                                free(q);
+
+#define HASH_FREE(p, q, r)      HASH_DELETE(p, q, r);                   \
+                                free(r);
 
 
 /* The ds to record detail information for each section binary. */
@@ -39,13 +46,13 @@ typedef struct _BINARY {
 typedef struct _RELATION {
     uint32_t uiIdBinSrc;
     uint32_t uiIdBinTge;
-    struct _RELATION *prev;         /* Fit the utlist standard. */
-    struct _RELATION *next;         /* Fit the utlist standard. */
+    struct _RELATION *prev;             /* Fit the utlist standard. */
+    struct _RELATION *next;             /* Fit the utlist standard. */
 } RELATION;
 
 
 /* The ds to pass information for thread processing. */
-typedef struct _THREAD_PARAM {
+typedef struct THREAD_PARAM {
     uint32_t uiBinCount;
     uint8_t ucThreadId;
     uint8_t ucThreadCount;
@@ -53,14 +60,20 @@ typedef struct _THREAD_PARAM {
     RELATION *pRelHead;
 } THREAD_PARAM;
 
+
+/* The ds to record member binary id of a family. */
 typedef struct _FAMILY_MEMBER {
     uint32_t uiIdBin;
-    struct _FAMILY_MEMBER *prev;    /* Fit the utlist standard. */
-    struct _FAMILY_MEMBER *next;    /* Fit the utlist standard. */
+    struct _FAMILY_MEMBER *prev;        /* Fit the utlist standard. */
+    struct _FAMILY_MEMBER *next;        /* Fit the utlist standard. */
 } FAMILY_MEMBER;
 
+
+/* The ds to record the members of a family. */
 typedef struct _FAMILY {
     uint32_t uiIdRep;
+    FAMILY_MEMBER *pMemberHead;
+    UT_hash_handle hh;                  /* Fit the uthash standard. */
 } FAMILY;
 
 

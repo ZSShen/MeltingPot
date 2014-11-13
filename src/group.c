@@ -40,6 +40,7 @@
  *                    Declaration for Private Object                    *
  *======================================================================*/
 UT_array *_aBin;
+FAMILY *_pMapFamily;
 
 
 /*======================================================================*
@@ -135,9 +136,20 @@ int GrpInitTask(GROUP *self, CONFIG *pCfg) {
  * GrpDeinitTask(): The destructor of GROUP structure.
  */
 int GrpDeinitTask(GROUP *self) {
+    FAMILY *pFamCurr, *pFamHelp;
+    FAMILY_MEMBER *pFamMbrCurr, *pFamMbrHelp;
 
     /* Free the array of SAMPLE structure. */
     ARRAY_FREE(_aBin);
+    
+    /* Free the FAMILY hash map. */
+    HASH_ITER(hh, _pMapFamily, pFamCurr, pFamHelp) {
+        DL_FOREACH_SAFE(pFamCurr->pMemberHead, pFamMbrCurr, pFamMbrHelp) {
+            DL_FREE(pFamCurr->pMemberHead, pFamMbrCurr);
+        }
+        HASH_FREE(hh, _pMapFamily, pFamCurr);
+    }    
+    
     return 0;
 }
 
@@ -259,7 +271,7 @@ int GrpCorrelateHash(GROUP *self) {
 FREE_PARAM:
     for (ucIter = 0 ; ucIter < ucThreadCount ; ucIter++) {
         DL_FOREACH_SAFE(aThreadParam[ucIter].pRelHead, pRelCurr, pRelHelp) {
-            DL_DELETE(aThreadParam[ucIter].pRelHead, pRelCurr);
+            DL_FREE(aThreadParam[ucIter].pRelHead, pRelCurr);
         }
     }
     free(aThreadParam);
@@ -509,48 +521,65 @@ EXIT:
  */
 int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
     int iRtnCode;
-    uint32_t uiIter, uiIdBinSrc, uiIdBinTge, idGrpSource, idGrpTarget, idGrpMerge;
+    uint32_t uiIter, uiIdBinSrc, uiIdBinTge, uiIdGrpSrc, uiIdGrpTge, uiIdGrpMge;
     THREAD_PARAM pThreadParam;
-    RELATION *pRelCurr;
+    RELATION *pRelCurr, *pRelHelp;
     BINARY *pBinSrc, *pBinTge;
+    FAMILY *pFamNew;
+    FAMILY_MEMBER *pFamMbrNew;
 
     iRtnCode = 0;
     /* Link the hashes with the recorded relation pairs. */
     for (uiIter = 0 ; uiIter < ucLenArray ; uiIter++) {
         pThreadParam = aThreadParam[uiIter];
-        printf("Thread #%d\n", uiIter);        
-        DL_FOREACH(pThreadParam.pRelHead, pRelCurr) {
+        DL_FOREACH_SAFE(pThreadParam.pRelHead, pRelCurr, pRelHelp) {
             uiIdBinSrc = pRelCurr->uiIdBinSrc;
             uiIdBinTge = pRelCurr->uiIdBinTge;
             pBinSrc = (BINARY*)ARRAY_ELTPTR(_aBin, uiIdBinSrc);
             pBinTge = (BINARY*)ARRAY_ELTPTR(_aBin, uiIdBinTge);
-            idGrpSource = pBinSrc->uiIdGrp;
-            idGrpTarget = pBinTge->uiIdGrp;
-            idGrpMerge = MIN(idGrpSource, idGrpTarget);
-            pBinSrc->uiIdGrp = idGrpMerge;
-            pBinTge->uiIdGrp = idGrpMerge;
+            uiIdGrpSrc = pBinSrc->uiIdGrp;
+            uiIdGrpTge = pBinTge->uiIdGrp;
+            uiIdGrpMge = MIN(uiIdGrpSrc, uiIdGrpTge);
+            pBinSrc->uiIdGrp = uiIdGrpMge;
+            pBinTge->uiIdGrp = uiIdGrpMge;
             pRelCurr = pRelCurr->next;
-            printf("\t%d %d\n", uiIdBinSrc, uiIdBinTge);
         }
     }
 
     /* Rearrange the group id of each binary. */
     pBinSrc = NULL;
     while ((pBinSrc = (BINARY*)ARRAY_NEXT(_aBin, pBinSrc)) != NULL) {
-        idGrpTarget = pBinSrc->uiIdGrp;
+        uiIdGrpTge = pBinSrc->uiIdGrp;
         do {
-            idGrpSource = idGrpTarget;
-            pBinTge = (BINARY*)ARRAY_ELTPTR(_aBin, idGrpSource);
-            idGrpTarget = pBinTge->uiIdGrp;
-        } while (idGrpTarget < idGrpSource);
-        pBinSrc->uiIdGrp = idGrpTarget;
+            uiIdGrpSrc = uiIdGrpTge;
+            pBinTge = (BINARY*)ARRAY_ELTPTR(_aBin, uiIdGrpSrc);
+            uiIdGrpTge = pBinTge->uiIdGrp;
+        } while (uiIdGrpTge < uiIdGrpSrc);
+        pBinSrc->uiIdGrp = uiIdGrpTge;
     }
     
     pBinSrc = NULL;
-    idGrpSource = 0;
+    
+    uiIdBinSrc = 0;
     while ((pBinSrc = (BINARY*)ARRAY_NEXT(_aBin, pBinSrc)) != NULL) {
-        printf("%d %d\n", idGrpSource, pBinSrc->uiIdGrp);
-        idGrpSource++;
+        uiIdGrpSrc = pBinSrc->uiIdGrp;
+        /* Check if the binary group already exists. */
+        HASH_FIND(hh, _pMapFamily, &uiIdGrpSrc, sizeof(uint32_t), pFamNew);
+        if (pFamNew == NULL) {
+            pFamNew = (FAMILY*)malloc(sizeof(FAMILY));
+            if (pFamNew == NULL) {
+                Spew0("Error: Cannot allocate FAMILY structure for grouping result.");
+                iRtnCode = -1;
+                break;
+            }
+            pFamNew->uiIdRep = uiIdGrpSrc;
+            pFamNew->pMemberHead = NULL;
+            HASH_ADD(hh, _pMapFamily, uiIdRep, sizeof(uint32_t), pFamNew);
+        }
+        pFamMbrNew = (FAMILY_MEMBER*)malloc(sizeof(FAMILY_MEMBER));
+        pFamMbrNew->uiIdBin = uiIdBinSrc;
+        DL_APPEND(pFamNew->pMemberHead, pFamMbrNew);
+        uiIdBinSrc++;
     }
 
     return iRtnCode;
@@ -598,6 +627,7 @@ void* _GrpComputeHashPairSimilarity(void *vpThreadParam) {
         cSimScore = fuzzy_compare(pBinSrc->szHash, pBinTge->szHash);
         if (cSimScore >= ucSimThrld) {
             pRelNew = (RELATION*)malloc(sizeof(RELATION));
+            assert(pRelNew != NULL);
             pRelNew->uiIdBinSrc = uiIdBinSrc;
             pRelNew->uiIdBinTge = uiIdBinTge;
             DL_APPEND(pThreadParam->pRelHead, pRelNew);
