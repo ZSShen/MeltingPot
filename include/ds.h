@@ -7,6 +7,7 @@
 #include "utlist.h"
 #include "uthash.h"
 
+
 /*======================================================================*
  *             Declaration for Shared and Custmoized Macros             *
  *======================================================================*/
@@ -81,6 +82,13 @@ typedef struct _FAMILY {
     FAMILY_MEMBER *pFamMbrHead;
     UT_hash_handle hh;                  /* Fit the uthash standard. */
 } FAMILY;
+
+
+/* The bridge interface for other modules to get the clustering result. */
+typedef struct _GROUP_RESULT {
+    UT_array *pAResBin;
+    FAMILY *pMapResFamily;
+} GROUP_RESULT;
 
 
 /*======================================================================*

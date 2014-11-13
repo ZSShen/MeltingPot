@@ -109,11 +109,24 @@ static void* _GrpComputeHashPairSimilarity(void *vpThreadParam);
   * GrpInitTask(): The constructor of GROUP structure.
   */
 int GrpInitTask(GROUP *self, CONFIG *pCfg) {
-
+    int iRtnCode;
+    
+    iRtnCode = 0;
     self->pCfg = pCfg;
     self->generate_hash = GrpGenerateHash;
     self->group_hash = GrpCorrelateHash;
-    return 0;
+    self->pGrpRes = (GROUP_RESULT*)malloc(sizeof(GROUP_RESULT));
+    if (self->pGrpRes == NULL) {
+        Spew0("Error: Cannot allocate GROUP_RESULT structure for result reference.");
+        iRtnCode = -1;
+        goto EXIT;
+    }
+    _aBin = NULL;
+    _pMapFamily = NULL;
+    self->pGrpRes->pAResBin = NULL;
+    self->pGrpRes->pMapResFamily = NULL;
+EXIT:
+    return iRtnCode;
 }
 
 /**
@@ -134,6 +147,9 @@ int GrpDeinitTask(GROUP *self) {
         }
         HASH_FREE(hh, _pMapFamily, pFamCurr);
     }    
+    
+    /* Free the GROUP_RESULT structure. */
+    free(self->pGrpRes);    
     
     return 0;
 }
@@ -252,6 +268,10 @@ int GrpCorrelateHash(GROUP *self) {
     
     /* Construct the szHash groups with similarity correlation. */
     iRtnCode = _GrpCorrelateSimilarHash(aThreadParam, ucThreadCount);
+    if (iRtnCode == 0) {
+        self->pGrpRes->pAResBin = _aBin;
+        self->pGrpRes->pMapResFamily = _pMapFamily;
+    }
 
 FREE_PARAM:
     for (ucIter = 0 ; ucIter < ucThreadCount ; ucIter++) {
@@ -490,7 +510,6 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
     }
     
     pBinSrc = NULL;
-    
     uiIdBinSrc = 0;
     while ((pBinSrc = (BINARY*)ARRAY_NEXT(_aBin, pBinSrc)) != NULL) {
         uiIdGrpSrc = pBinSrc->uiIdGrp;
