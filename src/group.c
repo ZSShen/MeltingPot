@@ -39,28 +39,13 @@
 /*======================================================================*
  *                    Declaration for Private Object                    *
  *======================================================================*/
-UT_array *_aBin;
-FAMILY *_pMapFamily;
+static UT_array *_aBin;
+static FAMILY *_pMapFamily;
 
 
 /*======================================================================*
  *                  Declaration for Internal Functions                  *
  *======================================================================*/
-
-/**
- * The utility to guide utarray for BINARY structure copy.
- *
- * @param vpTge     The pointer to the target.
- * @param vpSrc     The pointer to the source object.
- */
-void _UTArrayBinaryCopy(void *vpTge, const void *vpSrc);
-
-/**
- * The utility to guide utarray for BINARY structure release.
- *
- * @param vpCurr     The pointer to the to be released object.
- */
-void _UTArrayBinaryDeinit(void *vpCurr);
 
 /**
  * This function extracts the physical offset and size of each PE section.
@@ -74,7 +59,7 @@ void _UTArrayBinaryDeinit(void *vpCurr);
  *                         1. Insufficient memory.
  *                         2. Invalid binary format of certain samples.
  */
-int _GrpExtractSectionInfo(FILE *fpSample, char *szNameSample, uint32_t *pUiIdBin);
+static int _GrpExtractSectionInfo(FILE *fpSample, char *szNameSample, uint32_t *pUiIdBin);
 
 /**
  * This function generate the szHash of each PE section.
@@ -88,7 +73,7 @@ int _GrpExtractSectionInfo(FILE *fpSample, char *szNameSample, uint32_t *pUiIdBi
  *                         1. Insufficient memory.
  *                         2. Invalid binary format of certain samples.
  */
-int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t uiIdBinEnd);
+static int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t uiIdBinEnd);
 
 /**
  * This function correlates the similar hashes into groups.
@@ -101,7 +86,7 @@ int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t uiIdBi
  *                     <0: Possible causes:
  *                         1. Insufficient memory.
  */
-int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray);
+static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray);
 
 /**
  * This function calcuates the pairwise similarity scores for the specified
@@ -112,7 +97,7 @@ int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray);
  * 
  * @return                  Should be the thread status but currently ignored.
  */
-void* _GrpComputeHashPairSimilarity(void *vpThreadParam);
+static void* _GrpComputeHashPairSimilarity(void *vpThreadParam);
   
 
 /*======================================================================*
@@ -144,8 +129,8 @@ int GrpDeinitTask(GROUP *self) {
     
     /* Free the FAMILY hash map. */
     HASH_ITER(hh, _pMapFamily, pFamCurr, pFamHelp) {
-        DL_FOREACH_SAFE(pFamCurr->pMemberHead, pFamMbrCurr, pFamMbrHelp) {
-            DL_FREE(pFamCurr->pMemberHead, pFamMbrCurr);
+        DL_FOREACH_SAFE(pFamCurr->pFamMbrHead, pFamMbrCurr, pFamMbrHelp) {
+            DL_FREE(pFamCurr->pFamMbrHead, pFamMbrCurr);
         }
         HASH_FREE(hh, _pMapFamily, pFamCurr);
     }    
@@ -177,7 +162,7 @@ int GrpGenerateHash(GROUP *self) {
     }
 
     /* Initialize the array to record per sample information. */
-    UT_icd icdBin = {sizeof(BINARY), NULL, _UTArrayBinaryCopy, _UTArrayBinaryDeinit};
+    UT_icd icdBin = {sizeof(BINARY), NULL, UTArrayBinaryCopy, UTArrayBinaryDeinit};
     ARRAY_NEW(_aBin, &icdBin);
 
     /* Traverse each sample for section szHash generation. */
@@ -288,63 +273,9 @@ EXIT:
 
 /**
  * !INTERNAL
- * _UTArrayBinaryCopy(): Guide utarray for BINARY structure copy.
- */
-void _UTArrayBinaryCopy(void *vpTge, const void *vpSrc) {
-    BINARY *pBinSrc, *pBinTge;
-    
-    pBinSrc = (BINARY*)vpSrc;
-    pBinTge = (BINARY*)vpTge;
-    
-    pBinTge->uiIdBin = pBinSrc->uiIdBin;
-    pBinTge->uiIdGrp = pBinSrc->uiIdGrp;
-    pBinTge->usSectIdx = pBinSrc->usSectIdx;
-    pBinTge->uiSectOfst = pBinSrc->uiSectOfst;
-    pBinTge->uiSectSize = pBinSrc->uiSectSize;
-    
-    /* Duplicate the sample name. */
-    if (pBinSrc->szNameSample != NULL) {
-        pBinTge->szNameSample = strdup(pBinSrc->szNameSample);
-        assert(pBinTge->szNameSample != NULL);
-        free(pBinSrc->szNameSample);
-    } else {
-        pBinTge->szNameSample = NULL;
-    }
-    /* Duplicate the section szHash. */
-    if (pBinSrc->szHash != NULL) {
-        pBinTge->szHash = strdup(pBinSrc->szHash);
-        assert(pBinTge->szHash != NULL);
-        free(pBinSrc->szHash);
-    } else {
-        pBinTge->szHash = NULL;
-    }
-
-    return;
-}
-
-/**
- * !INTERNAL
- * _UTArrayBinaryDeinit(): Guide utarray for BINARY structure release.
- */
-void _UTArrayBinaryDeinit(void *vpCurr) {
-    BINARY *pBin;
-    
-    pBin = (BINARY*)vpCurr;
-    if (pBin->szNameSample != NULL) {
-        free(pBin->szNameSample);
-    }
-    if (pBin->szHash != NULL) {
-        free(pBin->szHash);
-    }
-
-    return;
-}
-
-/**
- * !INTERNAL
  * _GrpExtractSectionInfo(): Extract the physical offset and size of each PE section.
  */
-int _GrpExtractSectionInfo(FILE *fpSample, char *szNameSample, uint32_t *pUiIdBin) {
+static int _GrpExtractSectionInfo(FILE *fpSample, char *szNameSample, uint32_t *pUiIdBin) {
     int iRtnCode, status;
     size_t nExptRead, nRealRead;
     uint32_t uiReg, uiOfstPEHeader;
@@ -460,7 +391,7 @@ EXIT:
  * !INTERNAL
  * _GrpGenerateSectionHash(): Generate the szHash of each PE section.
  */
-int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t uiIdBinEnd) {
+static int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t uiIdBinEnd) {
     int iRtnCode, status;
     uint32_t uiIter, rawOffset, rawSize;
     size_t nExptRead, nRealRead;
@@ -519,7 +450,7 @@ EXIT:
  * !INTERNAL
  * _GrpCorrelateSimilarHash(): Correlate the similar hashes into groups.
  */
-int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
+static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
     int iRtnCode;
     uint32_t uiIter, uiIdBinSrc, uiIdBinTge, uiIdGrpSrc, uiIdGrpTge, uiIdGrpMge;
     THREAD_PARAM pThreadParam;
@@ -573,12 +504,12 @@ int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
                 break;
             }
             pFamNew->uiIdRep = uiIdGrpSrc;
-            pFamNew->pMemberHead = NULL;
+            pFamNew->pFamMbrHead = NULL;
             HASH_ADD(hh, _pMapFamily, uiIdRep, sizeof(uint32_t), pFamNew);
         }
         pFamMbrNew = (FAMILY_MEMBER*)malloc(sizeof(FAMILY_MEMBER));
         pFamMbrNew->uiIdBin = uiIdBinSrc;
-        DL_APPEND(pFamNew->pMemberHead, pFamMbrNew);
+        DL_APPEND(pFamNew->pFamMbrHead, pFamMbrNew);
         uiIdBinSrc++;
     }
 
@@ -590,7 +521,7 @@ int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
  * _GrpComputeHashPairSimilarity(): Calcuate the pairwise similarity scores 
  * for the specified pairs of hashes.
  */
-void* _GrpComputeHashPairSimilarity(void *vpThreadParam) {
+static void* _GrpComputeHashPairSimilarity(void *vpThreadParam) {
     uint32_t uiBinCount, uiIdBinSrc, uiIdBinTge;
     uint8_t ucThreadCount, ucThreadId, ucSimThrld;
     int8_t cSimScore;

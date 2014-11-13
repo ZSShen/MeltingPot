@@ -7,11 +7,14 @@
 #include "utlist.h"
 #include "uthash.h"
 
+/*======================================================================*
+ *             Declaration for Shared and Custmoized Macros             *
+ *======================================================================*/
 
 /* Define the buffer size. */
-#define BUF_SIZE_SMALL      64
-#define BUF_SIZE_MEDIUM     BUF_SIZE_SMALL  << 3
-#define BUF_SIZE_LARGE      BUF_SIZE_MEDIUM << 3
+#define BUF_SIZE_SMALL          64
+#define BUF_SIZE_MEDIUM         BUF_SIZE_SMALL  << 3
+#define BUF_SIZE_LARGE          BUF_SIZE_MEDIUM << 3
 
 
 /* Redefine the nameing of ut-sereis macros to synchronize coding convention. */
@@ -24,9 +27,12 @@
 #define DL_FREE(p, q)           DL_DELETE(p, q);                       \
                                 free(q);
 
-#define HASH_FREE(p, q, r)      HASH_DELETE(p, q, r);                   \
+#define HASH_FREE(p, q, r)      HASH_DELETE(p, q, r);                  \
                                 free(r);
 
+/*======================================================================*
+ *                Declaration for Common Data Structures                *
+ *======================================================================*/
 
 /* The ds to record detail information for each section binary. */
 typedef struct _BINARY {
@@ -72,9 +78,28 @@ typedef struct _FAMILY_MEMBER {
 /* The ds to record the members of a family. */
 typedef struct _FAMILY {
     uint32_t uiIdRep;
-    FAMILY_MEMBER *pMemberHead;
+    FAMILY_MEMBER *pFamMbrHead;
     UT_hash_handle hh;                  /* Fit the uthash standard. */
 } FAMILY;
 
+
+/*======================================================================*
+ *                  Declaration for Customized Handlers                 *
+ *======================================================================*/
+
+/**
+ * The utility to guide utarray for BINARY structure copy.
+ *
+ * @param vpTge     The pointer to the target.
+ * @param vpSrc     The pointer to the source object.
+ */
+void UTArrayBinaryCopy(void *vpTge, const void *vpSrc);
+
+/**
+ * The utility to guide utarray for BINARY structure release.
+ *
+ * @param vpCurr     The pointer to the to be released object.
+ */
+void UTArrayBinaryDeinit(void *vpCurr);
 
 #endif
