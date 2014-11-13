@@ -217,7 +217,7 @@ int GrpCorrelateHash(GROUP *self) {
     uint8_t ucIter, ucThreadCount, ucSimThrld;
     pthread_t *aThread;
     THREAD_PARAM *aThreadParam;
-    RELATION *pRelCurr, *pRelPrev;
+    RELATION *pRelCurr, *pRelPrev, *pRelHelp;
    
     iRtnCode = 0;
     /* Prepare the thread parameters. */
@@ -243,8 +243,7 @@ int GrpCorrelateHash(GROUP *self) {
         aThreadParam[ucIter].ucThreadCount = ucThreadCount;
         aThreadParam[ucIter].ucThreadId = ucIter + 1;
         aThreadParam[ucIter].ucSimThrld = ucSimThrld;
-        aThreadParam[ucIter].listRelationHead = NULL;
-        aThreadParam[ucIter].listRelationTail = NULL;
+        aThreadParam[ucIter].pRelHead = NULL;
         pthread_create(&aThread[ucIter], NULL, _GrpComputeHashPairSimilarity, 
                        (void*)&(aThreadParam[ucIter]));
     }
@@ -259,13 +258,8 @@ int GrpCorrelateHash(GROUP *self) {
 
 FREE_PARAM:
     for (ucIter = 0 ; ucIter < ucThreadCount ; ucIter++) {
-        if (aThreadParam[ucIter].listRelationHead != NULL) {
-            pRelCurr = aThreadParam[ucIter].listRelationHead;
-            while (pRelCurr != NULL) {
-                pRelPrev = pRelCurr;
-                pRelCurr = pRelCurr->next;
-                free(pRelPrev);
-            }
+        DL_FOREACH_SAFE(aThreadParam[ucIter].pRelHead, pRelCurr, pRelHelp) {
+            DL_DELETE(aThreadParam[ucIter].pRelHead, pRelCurr);
         }
     }
     free(aThreadParam);
@@ -524,9 +518,8 @@ int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
     /* Link the hashes with the recorded relation pairs. */
     for (uiIter = 0 ; uiIter < ucLenArray ; uiIter++) {
         pThreadParam = aThreadParam[uiIter];
-        pRelCurr = pThreadParam.listRelationHead;
-        printf("Thread #%d\n", uiIter);
-        while (pRelCurr != NULL) {
+        printf("Thread #%d\n", uiIter);        
+        DL_FOREACH(pThreadParam.pRelHead, pRelCurr) {
             uiIdBinSrc = pRelCurr->uiIdBinSrc;
             uiIdBinTge = pRelCurr->uiIdBinTge;
             pBinSrc = (BINARY*)ARRAY_ELTPTR(_aBin, uiIdBinSrc);
@@ -607,14 +600,7 @@ void* _GrpComputeHashPairSimilarity(void *vpThreadParam) {
             pRelNew = (RELATION*)malloc(sizeof(RELATION));
             pRelNew->uiIdBinSrc = uiIdBinSrc;
             pRelNew->uiIdBinTge = uiIdBinTge;
-            pRelNew->next = NULL;
-            if (pThreadParam->listRelationHead == NULL) {
-                pThreadParam->listRelationHead = pRelNew;
-                pThreadParam->listRelationTail = pRelNew;
-            } else {
-                pThreadParam->listRelationTail->next = pRelNew;
-                pThreadParam->listRelationTail = pRelNew;
-            }
+            DL_APPEND(pThreadParam->pRelHead, pRelNew);
         }
     }
 

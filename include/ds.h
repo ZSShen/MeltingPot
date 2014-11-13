@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "utarray.h"
+#include "utlist.h"
 
 
 /* Define the buffer size. */
@@ -38,6 +39,7 @@ typedef struct _BINARY {
 typedef struct _RELATION {
     uint32_t uiIdBinSrc;
     uint32_t uiIdBinTge;
+    struct _RELATION *prev;         /* Fit the utlist standard. */
     struct _RELATION *next;         /* Fit the utlist standard. */
 } RELATION;
 
@@ -48,8 +50,7 @@ typedef struct _THREAD_PARAM {
     uint8_t ucThreadId;
     uint8_t ucThreadCount;
     uint8_t ucSimThrld;
-    RELATION *listRelationHead;
-    RELATION *listRelationTail;
+    RELATION *pRelHead;
 } THREAD_PARAM;
 
 typedef struct _FAMILY_MEMBER {
