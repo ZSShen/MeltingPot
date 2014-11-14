@@ -40,10 +40,23 @@
 
 
 /*======================================================================*
+ *                   Declaration for Private Datatype                   *
+ *======================================================================*/
+/* The ds to pass information for thread processing. */
+typedef struct THREAD_PARAM {
+    uint32_t uiBinCount;
+    uint8_t ucThreadId;
+    uint8_t ucThreadCount;
+    uint8_t ucSimThrld;
+    RELATION *pRelHead;
+} THREAD_PARAM;
+
+
+/*======================================================================*
  *                    Declaration for Private Object                    *
  *======================================================================*/
 static UT_array *_aBin;
-static FAMILY *_pMapFamily;
+static FAMILY *_pMapFam;
 
 
 /*======================================================================*
@@ -123,9 +136,9 @@ int GrpInitTask(GROUP *self, CONFIG *pCfg) {
         goto EXIT;
     }
     _aBin = NULL;
-    _pMapFamily = NULL;
-    self->pGrpRes->pAResBin = NULL;
-    self->pGrpRes->pMapResFamily = NULL;
+    _pMapFam = NULL;
+    self->pGrpRes->pABin = NULL;
+    self->pGrpRes->pMapFam = NULL;
 EXIT:
     return iRtnCode;
 }
@@ -144,12 +157,12 @@ int GrpDeinitTask(GROUP *self) {
     }
     
     /* Free the FAMILY hash map. */
-    if (_pMapFamily != NULL) {
-        HASH_ITER(hh, _pMapFamily, pFamCurr, pFamHelp) {
+    if (_pMapFam != NULL) {
+        HASH_ITER(hh, _pMapFam, pFamCurr, pFamHelp) {
             DL_FOREACH_SAFE(pFamCurr->pFamMbrHead, pFamMbrCurr, pFamMbrHelp) {
                 DL_FREE(pFamCurr->pFamMbrHead, pFamMbrCurr);
             }
-            HASH_FREE(hh, _pMapFamily, pFamCurr);
+            HASH_FREE(hh, _pMapFam, pFamCurr);
         }    
     }
     
@@ -276,8 +289,8 @@ int GrpCorrelateHash(GROUP *self) {
     /* Construct the szHash groups with similarity correlation. */
     iRtnCode = _GrpCorrelateSimilarHash(aThreadParam, ucThreadCount);
     if (iRtnCode == 0) {
-        self->pGrpRes->pAResBin = _aBin;
-        self->pGrpRes->pMapResFamily = _pMapFamily;
+        self->pGrpRes->pABin = _aBin;
+        self->pGrpRes->pMapFam = _pMapFam;
     }
 
 FREE_PARAM:
@@ -520,7 +533,7 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
     while ((pBinSrc = (BINARY*)ARRAY_NEXT(_aBin, pBinSrc)) != NULL) {
         uiIdGrpSrc = pBinSrc->uiIdGrp;
         /* Check if the binary group already exists. */
-        HASH_FIND(hh, _pMapFamily, &uiIdGrpSrc, sizeof(uint32_t), pFamNew);
+        HASH_FIND(hh, _pMapFam, &uiIdGrpSrc, sizeof(uint32_t), pFamNew);
         if (pFamNew == NULL) {
             pFamNew = (FAMILY*)malloc(sizeof(FAMILY));
             if (pFamNew == NULL) {
@@ -530,7 +543,7 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
             }
             pFamNew->uiIdRep = uiIdGrpSrc;
             pFamNew->pFamMbrHead = NULL;
-            HASH_ADD(hh, _pMapFamily, uiIdRep, sizeof(uint32_t), pFamNew);
+            HASH_ADD(hh, _pMapFam, uiIdRep, sizeof(uint32_t), pFamNew);
         }
         pFamMbrNew = (FAMILY_MEMBER*)malloc(sizeof(FAMILY_MEMBER));
         pFamMbrNew->uiIdBin = uiIdBinSrc;

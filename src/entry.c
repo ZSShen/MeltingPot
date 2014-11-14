@@ -8,17 +8,13 @@
 #include "entry.h"
 
 
-/* Print the program usage message. */
-void print_usage();
-
-
 int main(int argc, char **argv, char *envp) {
-    int     iRtnCode, opt, idxOpt;
+    int iRtnCode, iOpt, iIdxOpt;
     uint8_t ucParallelity, ucSimilarity, ucBlkCount, ucBlkSize;
-    char    *szPathInput, *szPathOutput;
-    CONFIG  *hConfig;
-    CLUSTER *hCluster;
-    char    bufOrder[BUF_SIZE_SMALL];
+    char *szPathInput, *szPathOutput;
+    CONFIG *pCfg;
+    CLUSTER *pCluster;
+    char bufOrder[BUF_SIZE_SMALL];
     
     /* Craft the structure to store command line options. */    
     static struct option options[] = {
@@ -37,12 +33,14 @@ int main(int argc, char **argv, char *envp) {
                                               OPT_SIMILARITY);    
     iRtnCode = 0;
     szPathInput = szPathOutput = NULL;
-    ucParallelity = ucSimilarity = ucBlkCount = ucBlkSize = -1;
+    ucParallelity = ucSimilarity = ucBlkCount = ucBlkSize = 0;
+    pCfg = NULL;
+    pCluster = NULL;
 
     /* Get the command line options. */
-    idxOpt = 0;
-    while ((opt = getopt_long(argc, argv, bufOrder, options, &idxOpt)) != -1) {
-        switch (opt) {
+    iIdxOpt = 0;
+    while ((iOpt = getopt_long(argc, argv, bufOrder, options, &iIdxOpt)) != -1) {
+        switch (iOpt) {
             case OPT_PATH_SAMPLE_SET: {
                 szPathInput = optarg;
                 break;
@@ -67,78 +65,53 @@ int main(int argc, char **argv, char *envp) {
                 ucBlkSize = atoi(optarg);
                 break;
             }
-            default: {
-                EARLY_RETURN(iRtnCode);
-            }
         }
     }
 
-    /* Check the configuration parameters. */
-    if ((szPathInput == NULL) || (szPathOutput == NULL)) {
-        EARLY_RETURN(iRtnCode);
-    }
-    if ((ucParallelity < 1) || (ucSimilarity < 0) ||
-        (ucBlkCount < 1) || (ucBlkSize <= 1)) {
-        EARLY_RETURN(iRtnCode);
-    }
-
     /* Initialize the clustering library. */
-    INIT_CLUSTER(hCluster);
-    if (hCluster == NULL) {
-        EARLY_RETURN(iRtnCode);
+    INIT_CLUSTER(pCluster);
+    if (pCluster == NULL) {
+        iRtnCode = -1;
+        goto EXIT;
     }
 
     /* Set up the context. */
-    hConfig = (CONFIG*)malloc(sizeof(CONFIG));
-    if (hConfig == NULL) {
+    pCfg = (CONFIG*)malloc(sizeof(CONFIG));
+    if (pCfg == NULL) {
         iRtnCode = -1;
-        goto DEINIT;
+        goto EXIT;
     }
-    hConfig->ucParallelity = ucParallelity;
-    hConfig->ucSimilarity = ucSimilarity;
-    hConfig->ucBlkCount = ucBlkCount;
-    hConfig->ucBlkSize = ucBlkSize;
-    hConfig->szPathInput = szPathInput;
-    hConfig->szPathOutput = szPathOutput;
-    iRtnCode = hCluster->initCtx(hCluster, hConfig);
+    pCfg->ucParallelity = ucParallelity;
+    pCfg->ucSimilarity = ucSimilarity;
+    pCfg->ucBlkCount = ucBlkCount;
+    pCfg->ucBlkSize = ucBlkSize;
+    pCfg->szPathInput = szPathInput;
+    pCfg->szPathOutput = szPathOutput;
+    iRtnCode = pCluster->initCtx(pCluster, pCfg);
     if (iRtnCode != 0) {
         iRtnCode = -1;
-        goto DEINIT;   
+        pCluster->showUsage(pCluster);
+        goto EXIT;;   
     }
 
     /* Group the binaries of the given sample set. */
-    iRtnCode = hCluster->generateGroup(hCluster);
+    iRtnCode = pCluster->generateGroup(pCluster);
     if (iRtnCode != 0) {
         iRtnCode = -1;
-        goto FREECTX;
+        goto EXIT;
     }
-
-FREECTX:
-    /* Free the context. */
-    hCluster->deinitCtx(hCluster);
-
-DEINIT:
-    if (hConfig != NULL) {
-        free(hConfig);
-    }
-    /* Deinitialize the clustering library. */
-    DEINIT_CLUSTER(hCluster);
 
 EXIT:
+    /* Free the task configuration. */
+    if (pCfg != NULL) {
+        free(pCfg);
+    }
+    /* Free the clustering library. */
+    if (pCluster != NULL) {
+        pCluster->deinitCtx(pCluster);
+        DEINIT_CLUSTER(pCluster);
+    }
+
     return iRtnCode;
 }
 
-
-void print_usage() {
-
-    const char *strMsg = "Usage: entry --input path_in --output path_out --parallelity num_p --similarity num_t"
-                         " --blkcount num_c --blksize num_s\n"
-                         "       entry -i      path_in -o       path_out -p            num_p -t           num_t"
-                         " -c         num_c -s        num_s\n\n"
-                         "Example: entry --input /path/set --output /path/pattern --parallelity 2 --similarity 80"
-                         " --blkcount 4 --blksize 16\n"
-                         "         entry -i      /path/set -o       /path/pattern -p            2 -t           80"
-                         " -c         4 -s        16\n\n";
-    printf("%s", strMsg);
-    return;
-}

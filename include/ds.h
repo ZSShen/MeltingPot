@@ -55,17 +55,6 @@ typedef struct _RELATION {
     struct _RELATION *next;             /* Fit the utlist standard. */
 } RELATION;
 
-
-/* The ds to pass information for thread processing. */
-typedef struct THREAD_PARAM {
-    uint32_t uiBinCount;
-    uint8_t ucThreadId;
-    uint8_t ucThreadCount;
-    uint8_t ucSimThrld;
-    RELATION *pRelHead;
-} THREAD_PARAM;
-
-
 /* The ds to record member binary id of a family. */
 typedef struct _FAMILY_MEMBER {
     uint32_t uiIdBin;
@@ -84,8 +73,8 @@ typedef struct _FAMILY {
 
 /* The bridge interface for other modules to get the clustering result. */
 typedef struct _GROUP_RESULT {
-    UT_array *pAResBin;
-    FAMILY *pMapResFamily;
+    UT_array *pABin;
+    FAMILY *pMapFam;
 } GROUP_RESULT;
 
 
