@@ -21,6 +21,10 @@
  */
 int PtnInitTask(PATTERN *self, CONFIG *pCfg) {
     
+    self->pCfg = pCfg;
+    self->locateBinarySequence = PtnLocateBinarySequence;
+    self->generatePattern = PtnGeneratePattern;    
+
     return 0;
 }
 
@@ -35,20 +39,29 @@ int PtnDeinitTask(PATTERN *self) {
 
 /**
  * !EXTERNAL
- * ptnLocateBinarySequence(): This function selects a set of candidates which 
- * represent the similar binary sequence of the clustered PE sections.
+ * PtnLocateBinarySequence(): Select a set of candidates which represent the 
+ * similar binary sequence of the clustered PE sections.
  */
-int ptnLocateBinarySequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
+int PtnLocateBinarySequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
+    int iRtnCode;
+    uint8_t ucParallelity, ucBlkCount, ucBlkSize;
+    uint32_t uiBinCount, uiGrpCount, uiSlotCount;
+    UT_array *pABin;
+    FAMILY *pMapFam;
+    
+    iRtnCode = 0;
+    uiGrpCount = HASH_CNT(hh, pGrpRes->pMapFam);
+    printf("%d\n", uiGrpCount);
 
-    return 0;
+    return iRtnCode;
 }
 
 /**
  * !EXTERNAL
- * ptnGeneratePattern(): This function outputs the set of candidates each of 
- * which is outputted as a Yara-formatted pattern.
+ * PtnGeneratePattern(): Output the set of candidates each of which is outputted 
+ * as a Yara-formatted pattern.
  */
-int ptnGeneratePattern(PATTERN *self) {
+int PtnGeneratePattern(PATTERN *self) {
 
     return 0;
 }

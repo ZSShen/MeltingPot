@@ -70,7 +70,7 @@ int PtnDeinitTask(PATTERN *self);
  *                      1. Insufficient memory.
  *                      2. IO error.
  */
-int ptnLocateBinarySequence(PATTERN *self, GROUP_RESULT *pGrpRes);
+int PtnLocateBinarySequence(PATTERN *self, GROUP_RESULT *pGrpRes);
 
 /**
  * This function outputs the set of candidates each of which is outputted
@@ -83,7 +83,7 @@ int ptnLocateBinarySequence(PATTERN *self, GROUP_RESULT *pGrpRes);
  *                      1. Insufficient memory.
  *                      2. IO error.
  */
-int ptnGeneratePattern(PATTERN *self);
+int PtnGeneratePattern(PATTERN *self);
 
 
 #endif

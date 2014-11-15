@@ -40,6 +40,7 @@ int ClsInitTask(CLUSTER *self) {
     self->generateGroup = ClsGenerateGroup;
     self->generatePattern = ClsGeneratePattern;
     self->showUsage = ClsPrintUsage;
+    
     return 0;
 }
 
@@ -85,9 +86,14 @@ int ClsInitCtx(CLUSTER *self, CONFIG *pCfg) {
         TERMINATE;
     }
     
-    /* Initialize the handle of binary grouping. */
+    /* Initialize the GROUP module. */
     INIT_GROUP(_pGroup, pCfg);
     if (_pGroup == NULL) {
+        TERMINATE;
+    }
+    /* Initialize the PATTERN module.*/
+    INIT_PATTERN(_pPattern, pCfg);
+    if (_pPattern == NULL) {
         TERMINATE;
     }
 
@@ -103,11 +109,15 @@ int ClsDeinitCtx(CLUSTER *self) {
     int iRtnCode;
 
     iRtnCode = 0;
-    /* Deinitialize the handle of binary grouping. */
+    /* Deinitialize the GROUP module. */
     if (_pGroup != NULL) {
         DEINIT_GROUP(_pGroup);
     }
-
+    /* Deinitialize the PATTERN module. */
+    if (_pPattern != NULL) {
+        DEINIT_PATTERN(_pPattern);
+    }
+    
     return iRtnCode;
 }
 
@@ -146,7 +156,13 @@ int ClsGeneratePattern(CLUSTER *self) {
     int iRtnCode;
 
     iRtnCode = 0;
+    
+    iRtnCode = _pPattern->locateBinarySequence(_pPattern, _pGrpRes);
+    if (iRtnCode != 0) {
+        goto EXIT;
+    }
 
+EXIT:
     return iRtnCode;
 }
 

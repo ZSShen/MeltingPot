@@ -75,7 +75,7 @@ int main(int argc, char **argv, char *envp) {
         goto EXIT;
     }
 
-    /* Set up the context. */
+    /* Set up the task configuration. */
     pCfg = (CONFIG*)malloc(sizeof(CONFIG));
     if (pCfg == NULL) {
         iRtnCode = -1;
@@ -89,7 +89,6 @@ int main(int argc, char **argv, char *envp) {
     pCfg->szPathOutput = szPathOutput;
     iRtnCode = pCluster->initCtx(pCluster, pCfg);
     if (iRtnCode != 0) {
-        iRtnCode = -1;
         pCluster->showUsage(pCluster);
         goto EXIT;;   
     }
@@ -97,7 +96,12 @@ int main(int argc, char **argv, char *envp) {
     /* Group the binaries of the given sample set. */
     iRtnCode = pCluster->generateGroup(pCluster);
     if (iRtnCode != 0) {
-        iRtnCode = -1;
+        goto EXIT;
+    }
+
+    /* Generate the patterns for the clustered PE sections. */
+    iRtnCode = pCluster->generatePattern(pCluster);
+    if (iRtnCode != 0) {
         goto EXIT;
     }
 

@@ -139,6 +139,7 @@ int GrpInitTask(GROUP *self, CONFIG *pCfg) {
     _pMapFam = NULL;
     self->pGrpRes->pABin = NULL;
     self->pGrpRes->pMapFam = NULL;
+    
 EXIT:
     return iRtnCode;
 }
