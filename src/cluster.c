@@ -9,6 +9,9 @@
 #include "pattern.h"
 
 
+#define HARDCODE_IO_BANDWIDTH       100
+
+
 /*======================================================================*
  *                    Declaration for Private Object                    *
  *======================================================================*/
@@ -63,7 +66,7 @@ int ClsInitCtx(CLUSTER *self, CONFIG *pCfg) {
 
     #define TERMINATE       iRtnCode = -1;                             \
                             goto EXIT;
-
+    
     iRtnCode = 0;
     /* Inspect the task configuration. If it does not fit the standard, 
        terminate the entire workflow. */
@@ -84,6 +87,9 @@ int ClsInitCtx(CLUSTER *self, CONFIG *pCfg) {
     }
     if (pCfg->szPathOutput == NULL) {
         TERMINATE;
+    }
+    if (pCfg->ucIoBandwidth < 1) {
+        pCfg->ucIoBandwidth = HARDCODE_IO_BANDWIDTH;
     }
     
     /* Initialize the GROUP module. */
@@ -157,7 +163,7 @@ int ClsGeneratePattern(CLUSTER *self) {
 
     iRtnCode = 0;
     
-    iRtnCode = _pPattern->locateBinarySequence(_pPattern, _pGrpRes);
+    iRtnCode = _pPattern->locateByteSequence(_pPattern, _pGrpRes);
     if (iRtnCode != 0) {
         goto EXIT;
     }

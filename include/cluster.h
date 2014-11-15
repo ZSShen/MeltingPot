@@ -15,6 +15,7 @@ typedef struct _CONFIG {
     uint8_t ucBlkCount;
     uint8_t ucBlkSize;
     uint8_t ucSimilarity;
+    uint8_t ucIoBandwidth;
     char *szPathInput;
     char *szPathOutput;
 } CONFIG;

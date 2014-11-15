@@ -27,7 +27,7 @@ FOLDER_OUT_REL      := $(shell mkdir -p $(PATH_OUT_REL))
 # Specify the compilation options.
 CC                  := gcc
 FLAG                := -fPIC
-LIB 				:= -lfuzzy -pthread
+LIB 				:= -lm -lfuzzy -pthread
 ARCH                := ar
 ARCH_OPT            := rcs
 ifeq ($(DEBUG), yes)

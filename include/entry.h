@@ -21,5 +21,6 @@
 #define BUF_SIZE_LARGE              1024
 #define BUF_SIZE_SMALL              64
 
+#define HARDCODE_IO_BANDWIDTH       100
 
 #endif

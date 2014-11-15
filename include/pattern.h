@@ -12,7 +12,7 @@
 typedef struct _PATTERN {
     CONFIG *pCfg;
 
-    int (*locateBinarySequence) (struct _PATTERN*, GROUP_RESULT*);
+    int (*locateByteSequence) (struct _PATTERN*, GROUP_RESULT*);
     int (*generatePattern)      (struct _PATTERN*);
 } PATTERN;
 
@@ -70,7 +70,7 @@ int PtnDeinitTask(PATTERN *self);
  *                      1. Insufficient memory.
  *                      2. IO error.
  */
-int PtnLocateBinarySequence(PATTERN *self, GROUP_RESULT *pGrpRes);
+int PtnLocateByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes);
 
 /**
  * This function outputs the set of candidates each of which is outputted

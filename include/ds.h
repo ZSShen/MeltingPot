@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include <limits.h>
 #include "utarray.h"
 #include "utlist.h"
 #include "uthash.h"
@@ -23,12 +24,18 @@
 #define ARRAY_FREE(p)           utarray_free(p)
 #define ARRAY_LEN(p)            utarray_len(p)
 #define ARRAY_NEXT(p, q)        utarray_next(p, q)
+#define ARRAY_PUSH_BACK(p, q)	utarray_push_back(p, q)
 
 #define DL_FREE(p, q)           DL_DELETE(p, q);                       \
                                 free(q);
 
 #define HASH_FREE(p, q, r)      HASH_DELETE(p, q, r);                  \
                                 free(r);
+
+/* The macro to retrieve the minimum and maximum value from the value pair. */
+#define MIN(a, b)              (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)              (((a) > (b)) ? (a) : (b))
+
 
 /*======================================================================*
  *                Declaration for Common Data Structures                *
@@ -55,18 +62,11 @@ typedef struct _RELATION {
     struct _RELATION *next;             /* Fit the utlist standard. */
 } RELATION;
 
-/* The ds to record member binary id of a family. */
-typedef struct _FAMILY_MEMBER {
-    uint32_t uiIdBin;
-    struct _FAMILY_MEMBER *prev;        /* Fit the utlist standard. */
-    struct _FAMILY_MEMBER *next;        /* Fit the utlist standard. */
-} FAMILY_MEMBER;
-
 
 /* The ds to record the members of a family. */
 typedef struct _FAMILY {
     uint32_t uiIdRep;
-    FAMILY_MEMBER *pFamMbrHead;
+    UT_array *aFamMbr;
     UT_hash_handle hh;                  /* Fit the uthash standard. */
 } FAMILY;
 
@@ -76,6 +76,15 @@ typedef struct _GROUP_RESULT {
     UT_array *pABin;
     FAMILY *pMapFam;
 } GROUP_RESULT;
+
+
+/* The ds to record a chunk of byte sequence for the given cluster. */
+typedef struct _SEQUENCE {
+    uint32_t uiOffset;
+    uint8_t ucPayloadSize;
+    uint8_t ucWCCount;
+    uint16_t *aPayload;
+} SEQUENCE;
 
 
 /*======================================================================*
@@ -96,5 +105,19 @@ void UTArrayBinaryCopy(void *vpTge, const void *vpSrc);
  */
 void UTArrayBinaryDeinit(void *vpCurr);
 
+/**
+ * The utility to guide utarray for SEQUENCE structure copy.
+ *
+ * @param vpTge     The pointer to the target.
+ * @param vpSrc     The pointer to the source object.
+ */
+void UTArraySequenceCopy(void *vpTge, const void *vpSrc);
+
+/**
+ * The utility to guide utarray for SEQUENCE structure release.
+ *
+ * @param vpCurr     The pointer to the to be released object.
+ */
+void UTArraySequenceDeinit(void *vpCurr);
 
 #endif

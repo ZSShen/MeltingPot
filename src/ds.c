@@ -61,3 +61,44 @@ void UTArrayBinaryDeinit(void *vpCurr) {
 
     return;
 }
+
+/**
+ * !EXTERNAL
+ * _UTArraySequenceCopy(): Guide utarray for SEQUENCE structure copy.
+ */
+void UTArraySequenceCopy(void *vpTge, const void *vpSrc) {
+    SEQUENCE *pSeqSrc, *pSeqTge;    
+
+    pSeqSrc = (SEQUENCE*)vpSrc;
+    pSeqTge = (SEQUENCE*)vpTge;
+
+    pSeqTge->uiOffset = pSeqSrc->uiOffset;
+    pSeqTge->ucPayloadSize = pSeqSrc->ucPayloadSize;
+    pSeqTge->ucWCCount = pSeqSrc->ucWCCount;
+    
+    /* Duplicate the payload. */
+    if (pSeqSrc->aPayload != NULL) {
+        pSeqTge->aPayload = (uint16_t*)malloc(sizeof(uint16_t) * pSeqTge->ucPayloadSize);
+        assert(pSeqTge->aPayload != NULL);
+        memcpy(pSeqTge->aPayload, pSeqSrc->aPayload, sizeof(uint16_t) * pSeqTge->ucPayloadSize);
+        free(pSeqSrc->aPayload);
+    }
+
+    return;
+}
+
+/**
+ * !EXTERNAL
+ * _UTArraySequenceDeinit(): Guide utarray for SEQUENCE structure release.
+ */
+void UTArraySequenceDeinit(void *vpCurr) {
+    SEQUENCE *pSeq;
+    
+    pSeq = (SEQUENCE*)vpCurr;
+    if (pSeq->aPayload != NULL) {
+        free(pSeq->aPayload);
+    }
+
+    return;
+}
+

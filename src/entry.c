@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv, char *envp) {
     int iRtnCode, iOpt, iIdxOpt;
-    uint8_t ucParallelity, ucSimilarity, ucBlkCount, ucBlkSize;
+    uint8_t ucParallelity, ucSimilarity, ucBlkCount, ucBlkSize, ucIoBandwidth;
     char *szPathInput, *szPathOutput;
     CONFIG *pCfg;
     CLUSTER *pCluster;
@@ -33,7 +33,7 @@ int main(int argc, char **argv, char *envp) {
                                               OPT_SIMILARITY);    
     iRtnCode = 0;
     szPathInput = szPathOutput = NULL;
-    ucParallelity = ucSimilarity = ucBlkCount = ucBlkSize = 0;
+    ucParallelity = ucSimilarity = ucBlkCount = ucBlkSize = ucIoBandwidth = 0;
     pCfg = NULL;
     pCluster = NULL;
 
@@ -85,6 +85,7 @@ int main(int argc, char **argv, char *envp) {
     pCfg->ucSimilarity = ucSimilarity;
     pCfg->ucBlkCount = ucBlkCount;
     pCfg->ucBlkSize = ucBlkSize;
+    pCfg->ucIoBandwidth = HARDCODE_IO_BANDWIDTH;
     pCfg->szPathInput = szPathInput;
     pCfg->szPathOutput = szPathOutput;
     iRtnCode = pCluster->initCtx(pCluster, pCfg);

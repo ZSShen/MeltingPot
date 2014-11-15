@@ -35,9 +35,6 @@
 #define DATATYPE_SIZE_WORD                  (2)
 #define SHIFT_RANGE_8BIT                    (8)
 
-/* The macro to retrieve the minimum value from the value pair. */
-#define MIN(a, b)                           (((a) < (b)) ? (a) : (b))
-
 
 /*======================================================================*
  *                   Declaration for Private Datatype                   *
@@ -150,7 +147,6 @@ EXIT:
  */
 int GrpDeinitTask(GROUP *self) {
     FAMILY *pFamCurr, *pFamHelp;
-    FAMILY_MEMBER *pFamMbrCurr, *pFamMbrHelp;
 
     /* Free the array of SAMPLE structure. */
     if (_aBin != NULL) {
@@ -160,9 +156,7 @@ int GrpDeinitTask(GROUP *self) {
     /* Free the FAMILY hash map. */
     if (_pMapFam != NULL) {
         HASH_ITER(hh, _pMapFam, pFamCurr, pFamHelp) {
-            DL_FOREACH_SAFE(pFamCurr->pFamMbrHead, pFamMbrCurr, pFamMbrHelp) {
-                DL_FREE(pFamCurr->pFamMbrHead, pFamMbrCurr);
-            }
+			ARRAY_FREE(pFamCurr->aFamMbr);
             HASH_FREE(hh, _pMapFam, pFamCurr);
         }    
     }
@@ -419,7 +413,7 @@ static int _GrpExtractSectionInfo(FILE *fpSample, char *szNameSample, uint32_t *
         }
 
         /* Insert the BINARY structure into array. */
-        utarray_push_back(_aBin, &binInst);
+        ARRAY_PUSH_BACK(_aBin, &binInst);
         *pUiIdBin = *pUiIdBin + 1;        
     }
     
@@ -497,7 +491,6 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
     RELATION *pRelCurr, *pRelHelp;
     BINARY *pBinSrc, *pBinTge;
     FAMILY *pFamNew;
-    FAMILY_MEMBER *pFamMbrNew;
 
     iRtnCode = 0;
     /* Link the hashes with the recorded relation pairs. */
@@ -531,6 +524,7 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
     
     pBinSrc = NULL;
     uiIdBinSrc = 0;
+    UT_icd icdUi = {sizeof(uint32_t), NULL, NULL, NULL};
     while ((pBinSrc = (BINARY*)ARRAY_NEXT(_aBin, pBinSrc)) != NULL) {
         uiIdGrpSrc = pBinSrc->uiIdGrp;
         /* Check if the binary group already exists. */
@@ -543,12 +537,10 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
                 break;
             }
             pFamNew->uiIdRep = uiIdGrpSrc;
-            pFamNew->pFamMbrHead = NULL;
+            ARRAY_NEW(pFamNew->aFamMbr, &icdUi);
             HASH_ADD(hh, _pMapFam, uiIdRep, sizeof(uint32_t), pFamNew);
         }
-        pFamMbrNew = (FAMILY_MEMBER*)malloc(sizeof(FAMILY_MEMBER));
-        pFamMbrNew->uiIdBin = uiIdBinSrc;
-        DL_APPEND(pFamNew->pFamMbrHead, pFamMbrNew);
+        ARRAY_PUSH_BACK(pFamNew->aFamMbr, &uiIdBinSrc);
         uiIdBinSrc++;
     }
 
