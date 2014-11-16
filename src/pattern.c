@@ -19,6 +19,7 @@
 typedef struct THREAD_PARAM {
     uint32_t uiThreadId;
     FAMILY *pFam;
+    UT_array *aSeq;
 } THREAD_PARAM;
 
 
@@ -108,6 +109,7 @@ int PtnLocateByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
         sem_wait(&_pSem);
         aThreadParam[uiIter].uiThreadId = uiIter + 1;
         aThreadParam[uiIter].pFam = pFamCurr;
+        aThreadParam[uiIter].aSeq = NULL;
         pthread_create(&aThread[uiIter], NULL, _PtnGrepByteSequenceFromCluster, 
                        (void*)&(aThreadParam[uiIter]));
         uiIter++;
@@ -145,9 +147,12 @@ int PtnGeneratePattern(PATTERN *self) {
  *                Implementation for Internal Functions                 *
  *======================================================================*/
 static void* _PtnGrepByteSequenceFromCluster(void *vpThreadParam) {
-    uint32_t uiIter, uiBinCount, uiSlotCount;
+    uint8_t ucBlkSize, ucIter;
+    uint32_t uiIterSlot, uiIterSeq;
+    uint32_t uiBinCount, uiSlotCount, uiSeqCount, uiMinSeqCount;
     THREAD_PARAM *pThreadParam;
     UT_array *aSeq, *aFamMbr;
+    SEQUENCE *pSeqSrc, *pSeqTge;
     UT_array **aASeq;
     
     pThreadParam = (THREAD_PARAM*)vpThreadParam;
@@ -165,17 +170,38 @@ static void* _PtnGrepByteSequenceFromCluster(void *vpThreadParam) {
        SEQUENCE structures is preared to record the similar byte sequences shared by 
        the sections belonged to that slot. */
     UT_icd icdSeq = { sizeof(SEQUENCE), NULL, UTArraySequenceCopy, UTArraySequenceDeinit};
-    for (uiIter = 0 ; uiIter < uiSlotCount ; uiIter++) {
-        aASeq[uiIter] = NULL;
-        ARRAY_NEW(aASeq[uiIter], &icdSeq);
-        _PtnGrepByteSequencePerSlot(aFamMbr, uiBinCount, uiIter, aASeq[uiIter]);
+    uiMinSeqCount = UINT_MAX;
+    for (uiIterSlot = 0 ; uiIterSlot < uiSlotCount ; uiIterSlot++) {
+        aASeq[uiIterSlot] = NULL;
+        ARRAY_NEW(aASeq[uiIterSlot], &icdSeq);
+        _PtnGrepByteSequencePerSlot(aFamMbr, uiBinCount, uiIterSlot, aASeq[uiIterSlot]);
+        uiSeqCount = ARRAY_LEN(aASeq[uiIterSlot]);
+        if (uiSeqCount < uiMinSeqCount) {
+            uiMinSeqCount = uiSeqCount;
+        }
     }
+
+    /* Merge the byte sequences extracted from each slot. */
+    ucBlkSize = _pCfg->ucBlkSize;
+    for (uiIterSeq = 0 ; uiIterSeq < uiMinSeqCount ; uiIterSeq++) {
+        pSeqSrc = (SEQUENCE*)ARRAY_ELTPTR(aASeq[0], uiIterSeq);
+        for (uiIterSlot = 0 ; uiIterSlot < uiSlotCount ; uiIterSlot++) {
+            pSeqTge = (SEQUENCE*)ARRAY_ELTPTR(aASeq[uiIterSlot], uiIterSeq);
+            for (ucIter = 0 ; ucIter < ucBlkSize ; ucIter++) {
+                if (pSeqSrc->aPayload[ucIter] != pSeqTge->aPayload[ucIter]) {
+                    pSeqSrc->aPayload[ucIter] = DONT_CARE_MARK;
+                    pSeqSrc->ucDontCareCount++;
+                }
+            }
+        }
+    }
+    pThreadParam->aSeq = aASeq[0];
 
 EXIT:
     if (aASeq != NULL) {
-        for (uiIter = 0 ; uiIter < uiSlotCount ; uiIter++) {
-            if (aASeq[uiIter] != NULL) {
-                ARRAY_FREE(aASeq[uiIter]);
+        for (uiIterSlot = 0 ; uiIterSlot < uiSlotCount ; uiIterSlot++) {
+            if (aASeq[uiIterSlot] != NULL) {
+                ARRAY_FREE(aASeq[uiIterSlot]);
             }
         }
         free(aASeq);        
