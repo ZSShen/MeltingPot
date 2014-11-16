@@ -199,8 +199,8 @@ static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiMaxBinCount
     bool bIoExcept;
     FILE *fpSample;
     BINARY *pBin;
-    SEQUENCE *pSeq;
-    SECTION_SET *pSetCurr;
+    SEQUENCE seqInst;
+    SECTION_SET *pSetSectCurr;
     char **aBinContent;
     char szPathSample[BUF_SIZE_MEDIUM];
 
@@ -310,44 +310,38 @@ static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiMaxBinCount
             }
         }
         
-        pSeq = (SEQUENCE*)malloc(sizeof(SEQUENCE));
-        if (pSeq == NULL) {
-            Spew0("Cannot allocate SEQUENCE for byte sequence recording.");
-            iRtnCode = -1;
-            goto EXIT;
-        }
-        pSeq->ucDontCareCount = ucDcCount;
-        pSeq->ucPayloadSize = ucBlkSize;
-        pSeq->uiOfst = uiOfst;
+        seqInst.ucDontCareCount = ucDcCount;
+        seqInst.ucPayloadSize = ucBlkSize;
+        seqInst.uiOfst = uiOfst;
         
         /* Record the indices of sections contributing to the extracted byte sequence.*/
-        pSeq->pSetSectIdx = NULL;
+        seqInst.pSetSectIdx = NULL;
         for (uiIterBin = 0 ; uiIterBin < uiBinCount ; uiIterBin++) {
-            HASH_FIND(hh, pSeq->pSetSectIdx, &aSectIdx[uiIterBin], sizeof(uint16_t), pSetCurr);
-            if (pSetCurr == NULL) {
-                pSetCurr = (SECTION_SET*)malloc(sizeof(SECTION_SET));
-                if (pSetCurr == NULL) {
+            HASH_FIND(hh, seqInst.pSetSectIdx, &aSectIdx[uiIterBin], sizeof(uint16_t), pSetSectCurr);
+            if (pSetSectCurr == NULL) {
+                pSetSectCurr = (SECTION_SET*)malloc(sizeof(SECTION_SET));
+                if (pSetSectCurr == NULL) {
                     Spew0("Cannot allocate SECTION_SET for section index recording.");
                     iRtnCode = -1;
                     goto EXIT;
                 }
-                pSetCurr->usSectIdx = aSectIdx[uiIterBin];
-                HASH_ADD(hh, pSeq->pSetSectIdx, usSectIdx, sizeof(uint16_t), pSetCurr);
+                pSetSectCurr->usSectIdx = aSectIdx[uiIterBin];
+                HASH_ADD(hh, seqInst.pSetSectIdx, usSectIdx, sizeof(uint16_t), pSetSectCurr);
             }       
         }
         
         /* Record the byte sequence. */
-        pSeq->aPayload = (uint16_t*)malloc(sizeof(uint16_t*) * ucBlkSize);
-        if (pSeq->aPayload == NULL) {
+        seqInst.aPayload = (uint16_t*)malloc(sizeof(uint16_t*) * ucBlkSize);
+        if (seqInst.aPayload == NULL) {
             Spew0("Cannot allocate buffer for extracted byte sequence.");
             iRtnCode = -1;
             goto EXIT;
         }
         for (ucIterCmp = 0 ; ucIterCmp < ucBlkSize ; ucIterCmp++) {
-            pSeq->aPayload[ucIterCmp] = bufCmp[ucIterCmp];
+            seqInst.aPayload[ucIterCmp] = bufCmp[ucIterCmp];
         }
         
-        ARRAY_PUSH_BACK(aSeq, pSeq);
+        ARRAY_PUSH_BACK(aSeq, &seqInst);
     }
 
 EXIT:
