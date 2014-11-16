@@ -532,7 +532,7 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
         if (pFamNew == NULL) {
             pFamNew = (FAMILY*)malloc(sizeof(FAMILY));
             if (pFamNew == NULL) {
-                Spew0("Error: Cannot allocate FAMILY structure for grouping result.");
+                Spew0("Error: Cannot allocate FAMILY for grouping result.");
                 iRtnCode = -1;
                 break;
             }

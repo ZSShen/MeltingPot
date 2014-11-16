@@ -79,11 +79,17 @@ typedef struct _GROUP_RESULT {
 
 
 /* The ds to record a chunk of byte sequence for the given cluster. */
+typedef struct _SECTION_SET {
+    uint32_t usSectIdx;
+    UT_hash_handle hh;
+} SECTION_SET;
+
 typedef struct _SEQUENCE {
-    uint32_t uiOffset;
+    uint8_t ucDontCareCount;
     uint8_t ucPayloadSize;
-    uint8_t ucWCCount;
+    uint32_t uiOfst;
     uint16_t *aPayload;
+    SECTION_SET *pSetSectIdx;
 } SEQUENCE;
 
 

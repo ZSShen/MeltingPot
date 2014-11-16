@@ -10,8 +10,6 @@
  *======================================================================*/
 /* This module handles the pattern generation for clustered PE sections. */
 typedef struct _PATTERN {
-    CONFIG *pCfg;
-
     int (*locateByteSequence) (struct _PATTERN*, GROUP_RESULT*);
     int (*generatePattern)      (struct _PATTERN*);
 } PATTERN;
