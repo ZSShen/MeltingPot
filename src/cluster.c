@@ -76,7 +76,7 @@ int ClsInitCtx(CLUSTER *self, CONFIG *pCfg) {
     if (pCfg->ucSimilarity < 0) {
         TERMINATE;
     }
-    if (pCfg->ucBlkCount < 1) {
+    if (pCfg->ucBlkCnt < 1) {
         TERMINATE;
     }
     if (pCfg->ucBlkSize < 1) {
@@ -163,7 +163,12 @@ int ClsGeneratePattern(CLUSTER *self) {
 
     iRtnCode = 0;
     
-    iRtnCode = _pPattern->locateByteSequence(_pPattern, _pGrpRes);
+    iRtnCode = _pPattern->extractByteSequence(_pPattern, _pGrpRes);
+    if (iRtnCode != 0) {
+        goto EXIT;
+    }
+    
+    iRtnCode = _pPattern->generatePattern(_pPattern);
     if (iRtnCode != 0) {
         goto EXIT;
     }

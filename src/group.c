@@ -12,7 +12,7 @@
 
 
 /*======================================================================*
- *                Declaration for PE related information                *
+ *                Declaration for PE Related Information                *
  *======================================================================*/
 /* DOS(MZ) header related information. */
 #define MZ_HEADER_SIZE                      (0x40) /* The size of DOS(MZ) header. */

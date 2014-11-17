@@ -71,17 +71,17 @@ void UTArraySequenceCopy(void *vpTge, const void *vpSrc) {
     pSeqSrc = (SEQUENCE*)vpSrc;
     pSeqTge = (SEQUENCE*)vpTge;
     pSeqTge->uiOfst = pSeqSrc->uiOfst;
-    pSeqTge->ucDontCareCount = pSeqSrc->ucDontCareCount;
-    pSeqTge->ucPayloadSize = pSeqSrc->ucPayloadSize;
-    pSeqTge->aPayload = NULL;
+    pSeqTge->ucDontCareCnt = pSeqSrc->ucDontCareCnt;
+    pSeqTge->ucByteCnt = pSeqSrc->ucByteCnt;
+    pSeqTge->aByte = NULL;
     pSeqTge->pSetSectIdx = NULL;
     
-    /* Duplicate the payload. */
-    if (pSeqSrc->aPayload != NULL) {
-        pSeqTge->aPayload = (uint16_t*)malloc(sizeof(uint16_t) * pSeqTge->ucPayloadSize);
-        assert(pSeqTge->aPayload != NULL);
-        memcpy(pSeqTge->aPayload, pSeqSrc->aPayload, sizeof(uint16_t) * pSeqTge->ucPayloadSize);
-        free(pSeqSrc->aPayload);
+    /* Duplicate the byte sequence. */
+    if (pSeqSrc->aByte != NULL) {
+        pSeqTge->aByte = (uint16_t*)malloc(sizeof(uint16_t) * pSeqTge->ucByteCnt);
+        assert(pSeqTge->aByte != NULL);
+        memcpy(pSeqTge->aByte, pSeqSrc->aByte, sizeof(uint16_t) * pSeqTge->ucByteCnt);
+        free(pSeqSrc->aByte);
     }
 	
 	/* Duplicate the hash set of section index. */
@@ -107,8 +107,8 @@ void UTArraySequenceDeinit(void *vpCurr) {
     SECTION_SET *pSetCurr, *pSetHelp;
     
     pSeq = (SEQUENCE*)vpCurr;
-    if (pSeq->aPayload != NULL) {
-        free(pSeq->aPayload);
+    if (pSeq->aByte != NULL) {
+        free(pSeq->aByte);
     }
 	
 	if (pSeq->pSetSectIdx != NULL) {
@@ -120,3 +120,15 @@ void UTArraySequenceDeinit(void *vpCurr) {
     return;
 }
 
+/**
+ * !EXTERNAL
+ * UTArraySequenceSort(): Guide utarray for SEQUENCE structure sorting.
+ */
+int UTArraySequenceSort(const void *vpSrc, const void *vpTge) {
+    SEQUENCE *pSeqSrc, *pSeqTge;
+
+    pSeqSrc = (SEQUENCE*)vpSrc;
+    pSeqTge = (SEQUENCE*)vpTge;
+
+    return pSeqSrc->ucDontCareCnt - pSeqTge->ucDontCareCnt;
+}

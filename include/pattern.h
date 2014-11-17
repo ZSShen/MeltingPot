@@ -10,7 +10,7 @@
  *======================================================================*/
 /* This module handles the pattern generation for clustered PE sections. */
 typedef struct _PATTERN {
-    int (*locateByteSequence) (struct _PATTERN*, GROUP_RESULT*);
+    int (*extractByteSequence) (struct _PATTERN*, GROUP_RESULT*);
     int (*generatePattern)      (struct _PATTERN*);
 } PATTERN;
 
@@ -68,7 +68,7 @@ int PtnDeinitTask(PATTERN *self);
  *                      1. Insufficient memory.
  *                      2. IO error.
  */
-int PtnLocateByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes);
+int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes);
 
 /**
  * This function outputs the set of candidates each of which is outputted

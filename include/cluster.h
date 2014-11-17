@@ -12,7 +12,7 @@
    the task environment. */
 typedef struct _CONFIG {
     uint8_t ucParallelity;
-    uint8_t ucBlkCount;
+    uint8_t ucBlkCnt;
     uint8_t ucBlkSize;
     uint8_t ucSimilarity;
     uint8_t ucIoBandwidth;

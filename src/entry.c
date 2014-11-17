@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv, char *envp) {
     int iRtnCode, iOpt, iIdxOpt;
-    uint8_t ucParallelity, ucSimilarity, ucBlkCount, ucBlkSize, ucIoBandwidth;
+    uint8_t ucParallelity, ucSimilarity, ucBlkCnt, ucBlkSize, ucIoBandwidth;
     char *szPathInput, *szPathOutput;
     CONFIG *pCfg;
     CLUSTER *pCluster;
@@ -33,7 +33,7 @@ int main(int argc, char **argv, char *envp) {
                                               OPT_SIMILARITY);    
     iRtnCode = 0;
     szPathInput = szPathOutput = NULL;
-    ucParallelity = ucSimilarity = ucBlkCount = ucBlkSize = ucIoBandwidth = 0;
+    ucParallelity = ucSimilarity = ucBlkCnt = ucBlkSize = ucIoBandwidth = 0;
     pCfg = NULL;
     pCluster = NULL;
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv, char *envp) {
                 break;
             }
             case OPT_BLK_COUNT: {
-                ucBlkCount = atoi(optarg);
+                ucBlkCnt = atoi(optarg);
                 break;
             }
             case OPT_BLK_SIZE: {
@@ -83,7 +83,7 @@ int main(int argc, char **argv, char *envp) {
     }
     pCfg->ucParallelity = ucParallelity;
     pCfg->ucSimilarity = ucSimilarity;
-    pCfg->ucBlkCount = ucBlkCount;
+    pCfg->ucBlkCnt = ucBlkCnt;
     pCfg->ucBlkSize = ucBlkSize;
     pCfg->ucIoBandwidth = HARDCODE_IO_BANDWIDTH;
     pCfg->szPathInput = szPathInput;

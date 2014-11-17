@@ -19,12 +19,14 @@
 
 
 /* Redefine the nameing of ut-sereis macros to synchronize coding convention. */
+#define ARRAY_CONCAT(p, q)      utarray_concat(p, q)
 #define ARRAY_ELTPTR(p, q)      utarray_eltptr(p, q)      
-#define ARRAY_NEW(p, q)         utarray_new(p, q)
 #define ARRAY_FREE(p)           utarray_free(p)
 #define ARRAY_LEN(p)            utarray_len(p)
+#define ARRAY_NEW(p, q)         utarray_new(p, q)
 #define ARRAY_NEXT(p, q)        utarray_next(p, q)
 #define ARRAY_PUSH_BACK(p, q)	utarray_push_back(p, q)
+#define ARRAY_SORT(p, q)        utarray_sort(p, q)
 
 #define DL_FREE(p, q)           DL_DELETE(p, q);                       \
                                 free(q);
@@ -85,10 +87,10 @@ typedef struct _SECTION_SET {
 } SECTION_SET;
 
 typedef struct _SEQUENCE {
-    uint8_t ucDontCareCount;
-    uint8_t ucPayloadSize;
+    uint8_t ucDontCareCnt;
+    uint8_t ucByteCnt;
     uint32_t uiOfst;
-    uint16_t *aPayload;
+    uint16_t *aByte;
     SECTION_SET *pSetSectIdx;
 } SEQUENCE;
 
@@ -125,5 +127,15 @@ void UTArraySequenceCopy(void *vpTge, const void *vpSrc);
  * @param vpCurr     The pointer to the to be released object.
  */
 void UTArraySequenceDeinit(void *vpCurr);
+
+/**
+ * The utility to guide utarray for SEQUENCE structure sorting.
+ * 
+ * @param vpSrc     The pointer to the source comparator.
+ * @param vpTge     The pointer to the target comparator.
+ * 
+ */
+int UTArraySequenceSort(const void *vpSrc, const void *vpTge);
+
 
 #endif
