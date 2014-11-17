@@ -21,12 +21,6 @@ static GROUP_RESULT *_pGrpRes;
 
 
 /*======================================================================*
- *                  Declaration for Internal Functions                  *
- *======================================================================*/
-
-
-
-/*======================================================================*
  *                Implementation for External Functions                 *
  *======================================================================*/
 /**
@@ -162,12 +156,14 @@ int ClsGeneratePattern(CLUSTER *self) {
     int iRtnCode;
 
     iRtnCode = 0;
-    
+    /* Extract the similar byte sequences shared by the sections correlated
+       into one group. */
     iRtnCode = _pPattern->extractByteSequence(_pPattern, _pGrpRes);
     if (iRtnCode != 0) {
         goto EXIT;
     }
     
+    /* Output the YARA-formatted pattern. */
     iRtnCode = _pPattern->generatePattern(_pPattern);
     if (iRtnCode != 0) {
         goto EXIT;
@@ -194,7 +190,3 @@ void ClsPrintUsage(CLUSTER *self) {
     printf("%s", strMsg);
     return;
 }
-
-/*======================================================================*
- *                Implementation for Internal Functions                 *
- *======================================================================*/

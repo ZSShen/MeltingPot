@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <math.h>
 #include <semaphore.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "ds.h"
 #include "spew.h"
 #include "pattern.h"
@@ -64,18 +67,46 @@ static void* PtnGrepByteSequenceFromGroup(void *vpThrdParam);
  * 
  * @param aFamMbr           The array storing the member ids.
  *                          (The id is used to access BINARY array.)
- * @param uiGrpSize     The size of the given group.
+ * @param uiGrpSize         The size of the given group.
  * @param uiIdxSlot         The index of the given slot.
  * @param aSeq              The array storing byte sequences.
  */
 static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiGrpSize,
                                        uint32_t uiIdxSlot, UT_array *aSeq);
 
+/**
+ * This function formats the hex byte sequences to be showed in the "string"
+ * section of YARA pattern.
+ * 
+ * @param bufBgn            The front-end pivot to the buffer storing formatted data.
+ * @param pUiWrtCnt         The pointer to the value which will be stored with the
+ *                          number of bytes formatted in the current round.
+ * @param ucIdxBlk          The index to the set of to be outputted byte sequences.
+ * @param aByte             The to be outputted byte sequence.  
+ * @param ucByteCnt         The size of the sequence.
+ */
 static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
                                     uint8_t ucIdxBlk, uint16_t *aByte, 
                                     uint8_t ucByteCnt);
 
-static void _PtnFormatSectionCondition(char *bufBgn, int *pWrtCnt);
+/**
+ * This function formats the matching offset offsets to be showed in the
+ * "conditions" section of YARA pattern.
+ * 
+ * @param bufBgn            The front-end pivot to the buffer storing formatted data.
+ * @param pUiWrtCnt         The pointer to the value which will be stored with the
+ *                          number of bytes formatted in the current round.
+ * @param ucIdxBlk          The index to the set of to be outputted byte sequences.
+ * @param ucBlkCnt          The size of the set.
+ * @param uiOfst            The offset to a certain section which will be used
+ *                          as the matching condition.
+ * @param pSetSectIdx       The set of section ids which are also used as matching
+ *                          condition.
+ */
+static void _PtnFormatSectionCondition(char *bufBgn, uint32_t *pUiWrtCnt,
+                                       uint8_t ucIdxBlk, uint8_t ucBlkCnt,
+                                       uint32_t uiOfst, SECTION_SET *pSetSectIdx);
+
 
 /*======================================================================*
  *                Implementation for External Functions                 *
@@ -120,7 +151,7 @@ int PtnDeinitTask(PATTERN *self) {
  * similar byte sequence of the clustered PE sections.
  */
 int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
-    int iRtnCode;
+    int iRtnCode, iStatus;
     uint8_t ucParallelity, ucBlkCnt, ucBlkSize;
     uint32_t uiIter, uiSlotCnt;
     UT_array *pABin;
@@ -130,9 +161,20 @@ int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
     THREAD_PARAM *aThrdParam;
     
     iRtnCode = 0;
+    /* Create the output folder if it does not exist. */
+    struct stat stDir = {0};
+    if (stat(_pCfg->szPathOutput, &stDir) == -1) {
+        iStatus = mkdir(_pCfg->szPathOutput, 0700);
+        if (iStatus != 0) {
+            Spew1("Error: %s.", strerror(errno));
+            iRtnCode = -1;
+            goto EXIT;
+        }
+    }
+    
+    /* Prepare the storge for extracted byte sequences of each group. */
     _aBin = pGrpRes->pABin;
     _uiGrpCnt = HASH_CNT(hh, pGrpRes->pMapFam);
-    /* Prepare the storge for extracted byte sequences of each group. */
     _aRawPtn = (UT_array**)malloc(sizeof(UT_array*) * _uiGrpCnt);
     if (_aRawPtn == NULL) {
         Spew0("Error: Cannot allocate the array for raw patterns.");
@@ -201,17 +243,21 @@ int PtnGeneratePattern(PATTERN *self) {
     int iRtnCode;
     uint8_t ucIterBlk, ucBlkCnt;
     uint32_t uiIterGrp, uiPtnBufSize, uiPtnLen, uiWrtCntStr, uiWrtCntCond;
-    uint32_t uiOfstStr, uiOfstCond;
-    bool bExceptMem;
+    uint32_t uiOfstStr, uiOfstCond, uiOfstPtn;
+    size_t nExptWrt, nRealWrt;
+    bool bExceptMem, bExceptIo;
     char *bufPtn, *bufSectStr, *bufSectCond;
+    FILE *fpPtn;
     SEQUENCE *pSeq;
+    char szPathPtn[BUF_SIZE_MEDIUM];
 
     iRtnCode = 0;
     for (uiIterGrp = 0 ; uiIterGrp < _uiGrpCnt ; uiIterGrp++) {
         ucBlkCnt = MIN(_pCfg->ucBlkCnt, ARRAY_LEN(_aRawPtn[uiIterGrp]));
+        bExceptMem = bExceptIo = false;
+        fpPtn = NULL;
         
         /* Prepare the buffer to generate pattern. */
-        bExceptMem = false;
         bufPtn = bufSectStr = bufSectCond = NULL;
         bufSectStr = (char*)malloc(sizeof(char) * BUF_SIZE_LARGE);
         if (bufSectStr == NULL) {
@@ -230,21 +276,62 @@ int PtnGeneratePattern(PATTERN *self) {
             goto FREE;
         }
         
-        /* Extract the byte sequences with the best quality. */
+        /* Extract the byte sequences with the best quality:
+           1. The hex byte strings to be showed in "strings" section. 
+           2. The matching offsets to be showed in "conditions" section. */
         ucIterBlk = 0;
         uiOfstStr = uiOfstCond = 0;
         pSeq = NULL;
         while ((pSeq = (SEQUENCE*)ARRAY_NEXT(_aRawPtn[uiIterGrp], pSeq)) != NULL) {
             _PtnFormatSectionString(bufSectStr + uiOfstStr, &uiWrtCntStr, ucIterBlk,
                                     pSeq->aByte, pSeq->ucByteCnt);
+            _PtnFormatSectionCondition(bufSectCond + uiOfstCond, &uiWrtCntCond, ucIterBlk,
+                                       ucBlkCnt, pSeq->uiOfst, pSeq->pSetSectIdx);
             uiOfstStr += uiWrtCntStr;
+            uiOfstCond += uiWrtCntCond;
             ucIterBlk++;
             if (ucIterBlk == ucBlkCnt) {
                 break;
             }
         }
-        printf("%s\n", bufSectStr);
+        bufSectStr[uiOfstStr] = 0;
+        bufSectCond[uiOfstCond] = 0;
+
+        /* Build the import section. */
+        uiOfstPtn = sprintf(bufPtn, "import \"%s\"\n\n", MODULE_PE);
         
+        /* Build the pattern title. */
+        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "rule %s_%d\n", PREFIX_PATTERN,
+                             uiIterGrp);
+        bufPtn[uiOfstPtn++] = '{';
+        bufPtn[uiOfstPtn++] = '\n';
+        
+        /* Build the "strings" section. */
+        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s%sstrings:\n", SPACE_SUBS_TAB,
+                             SPACE_SUBS_TAB);
+        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s\n", bufSectStr);
+        
+        /* Build the "conditions" section. */
+        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s%sconditions:\n", SPACE_SUBS_TAB,
+                             SPACE_SUBS_TAB);
+        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s}\n", bufSectCond);
+        
+        /* Output the pattern. */
+        sprintf(szPathPtn, "%s\%s_%d.yara", _pCfg->szPathOutput, PREFIX_PATTERN,
+                uiIterGrp);
+               
+        fpPtn = fopen(szPathPtn, "w");
+        if (fpPtn == NULL) {
+            bExceptIo = true;
+            goto FREE;
+        }
+        nExptWrt = uiOfstPtn;
+        nRealWrt = fwrite(bufPtn, sizeof(char), nExptWrt, fpPtn);
+        if (nExptWrt != nRealWrt) {
+            bExceptIo = true;
+            goto FREE;
+        }
+        fclose(fpPtn);
     FREE:
         if (bufSectStr != NULL) {
             free(bufSectStr);
@@ -258,6 +345,14 @@ int PtnGeneratePattern(PATTERN *self) {
         if (bExceptMem == true) {
             Spew0("Error: Cannot allocate buffer for pattern generation.");
             iRtnCode = -1;
+            break;
+        }
+        if (bExceptIo == true) {
+            Spew1("Error: %s.", strerror(errno));
+            iRtnCode = -1;
+            if (fpPtn != NULL) {
+                fclose(fpPtn);
+            }
             break;
         }
     }
@@ -534,6 +629,11 @@ EXIT:
     return iRtnCode;
 }
 
+/**
+ * !INTERNAL
+ * _PtnFormatSectionString(): Format the hex byte sequences to be showed in the 
+ * "string" section of YARA pattern.
+ */
 static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
                                     uint8_t ucIdxBlk, uint16_t *aByte, 
                                     uint8_t ucByteCnt) {    
@@ -541,8 +641,8 @@ static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
     uint32_t uiWrtCnt;
     char bufIndent[BUF_SIZE_SMALL];
     
-    uiWrtCnt = snprintf(bufBgn, BUF_SIZE_LARGE, "%s%s$%s_%d = { ", SPACE_SUBS_TAB,
-                        SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxBlk);
+    uiWrtCnt = sprintf(bufBgn, "%s%s$%s_%d = { ", SPACE_SUBS_TAB, SPACE_SUBS_TAB, 
+                       PREFIX_HEX_STRING, ucIdxBlk);
     
     /* Prepare the indent space. */
     ucIndentLen = uiWrtCnt;
@@ -555,7 +655,10 @@ static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
         if (aByte[ucIdxByte] != DONT_CARE_MARK) {
             uiWrtCnt += sprintf(bufBgn + uiWrtCnt, "%02x ", aByte[ucIdxByte]);
         } else {
-            uiWrtCnt += sprintf(bufBgn + uiWrtCnt, "?? ");
+            bufBgn[uiWrtCnt] = '?';
+            bufBgn[uiWrtCnt + 1] = '?';
+            bufBgn[uiWrtCnt + 2] = ' ';
+            uiWrtCnt += 3;
         }
         /* Newline if the number of written bytes exceeding the threshold. */
         if ((ucIdxByte % HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) &&
@@ -572,8 +675,41 @@ static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
     return;
 }
 
-static void _PtnFormatSectionCondition(char *bufBgn, int *pWrtCnt) {
-
+/**
+ * !INTERNAL
+ * _PtnFormatSectionCondition(): Format the matching offset offsets to be showed 
+ * in the "conditions" section of YARA pattern.
+ */
+static void _PtnFormatSectionCondition(char *bufBgn, uint32_t *pUiWrtCnt,
+                                       uint8_t ucIdxBlk, uint8_t ucBlkCnt, 
+                                       uint32_t uiOfst, SECTION_SET *pSetSectIdx) {
+    uint16_t usIterSect, usSectCnt;    
+    uint32_t uiWrtCnt;
+    SECTION_SET *pSetCurr, *pSetHelp;    
+    
+    uiWrtCnt = 0;
+    usSectCnt = HASH_COUNT(pSetSectIdx);
+    usIterSect = 1;
+    HASH_ITER(hh, pSetSectIdx, pSetCurr, pSetHelp) {
+        uiWrtCnt += sprintf(bufBgn + uiWrtCnt, 
+                            "%s%s$%s_%d at pe.sections[%d].raw_data_offset + 0x%x",
+                            SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING, 
+                            ucIdxBlk, pSetCurr->usSectIdx, uiOfst);
+        if (usIterSect < usSectCnt) {
+            bufBgn[uiWrtCnt] = ' ';
+            bufBgn[uiWrtCnt + 1] = 'o';
+            bufBgn[uiWrtCnt + 2] = 'r';
+            uiWrtCnt += 3;
+        }
+        bufBgn[uiWrtCnt++] = '\n';
+        usIterSect++;
+    }
+    if ((ucIdxBlk + 1) < ucBlkCnt) {
+        uiWrtCnt += sprintf(bufBgn + uiWrtCnt, "%s%sor\n", SPACE_SUBS_TAB, SPACE_SUBS_TAB);
+    } else {
+        bufBgn[uiWrtCnt++] = '\n';
+    }
+    *pUiWrtCnt = uiWrtCnt;
 
     return;
 }

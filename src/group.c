@@ -90,7 +90,7 @@ static int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t
 /**
  * This function correlates the similar hashes into groups.
  *
- * @param aThreadParam  The array of thread parameters which stores the
+ * @param aThrdParam  The array of thread parameters which stores the
  *                      szHash relation pairs.
  * @param ucLenArray    The length of parameter array.
  *
@@ -98,7 +98,7 @@ static int _GrpGenerateSectionHash(FILE *fpSample, uint32_t uiIdBinBgn, uint32_t
  *                     <0: Possible causes:
  *                         1. Insufficient memory.
  */
-static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray);
+static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThrdParam, uint8_t ucLenArray);
 
 /**
  * This function calcuates the pairwise similarity scores for the specified
@@ -183,7 +183,7 @@ int GrpGenerateHash(GROUP *self) {
     char szPathSample[BUF_SIZE_MEDIUM];
 
     iRtnCode = 0;
-    /* Open the root path of designated sample set. */
+    /* Open the root path of the designated sample set. */
     szPathInput = self->pCfg->szPathInput;
     dirRoot = opendir(szPathInput);
     if (dirRoot == NULL) {
@@ -243,8 +243,8 @@ int GrpCorrelateHash(GROUP *self) {
     int iRtnCode;
     uint32_t uiBinCount;
     uint8_t ucIter, ucThreadCount, ucSimThrld;
-    pthread_t *aThread;
-    THREAD_PARAM *aThreadParam;
+    pthread_t *aThrd;
+    THREAD_PARAM *aThrdParam;
     RELATION *pRelCurr, *pRelPrev, *pRelHelp;
    
     iRtnCode = 0;
@@ -252,14 +252,14 @@ int GrpCorrelateHash(GROUP *self) {
     uiBinCount = ARRAY_LEN(_aBin);
     ucThreadCount = self->pCfg->ucParallelity;
     ucSimThrld = self->pCfg->ucSimilarity;
-    aThread = (pthread_t*)malloc(sizeof(pthread_t) * ucThreadCount);    
-    if (aThread == NULL) {
+    aThrd = (pthread_t*)malloc(sizeof(pthread_t) * ucThreadCount);    
+    if (aThrd == NULL) {
         Spew0("Error: Cannot allocate the array for thread id.");
         iRtnCode = -1;
         goto EXIT;
     }    
-    aThreadParam = (THREAD_PARAM*)malloc(sizeof(THREAD_PARAM) * ucThreadCount);
-    if (aThreadParam == NULL) {
+    aThrdParam = (THREAD_PARAM*)malloc(sizeof(THREAD_PARAM) * ucThreadCount);
+    if (aThrdParam == NULL) {
         Spew0("Error: Cannot allocate the array for thread parameters.");
         iRtnCode = -1;
         goto FREE_THREAD;
@@ -267,22 +267,22 @@ int GrpCorrelateHash(GROUP *self) {
 
     /* Fork the specified number of threads for parallel similarity computation. */        
     for (ucIter = 0 ; ucIter < ucThreadCount ; ucIter++) {
-        aThreadParam[ucIter].uiBinCount = uiBinCount;
-        aThreadParam[ucIter].ucThreadCount = ucThreadCount;
-        aThreadParam[ucIter].ucThreadId = ucIter + 1;
-        aThreadParam[ucIter].ucSimThrld = ucSimThrld;
-        aThreadParam[ucIter].pRelHead = NULL;
-        pthread_create(&aThread[ucIter], NULL, _GrpComputeHashPairSimilarity, 
-                       (void*)&(aThreadParam[ucIter]));
+        aThrdParam[ucIter].uiBinCount = uiBinCount;
+        aThrdParam[ucIter].ucThreadCount = ucThreadCount;
+        aThrdParam[ucIter].ucThreadId = ucIter + 1;
+        aThrdParam[ucIter].ucSimThrld = ucSimThrld;
+        aThrdParam[ucIter].pRelHead = NULL;
+        pthread_create(&aThrd[ucIter], NULL, _GrpComputeHashPairSimilarity, 
+                       (void*)&(aThrdParam[ucIter]));
     }
     
     /* Wait for the thread termination. */
     for (ucIter = 0 ; ucIter < ucThreadCount ; ucIter++) {
-        pthread_join(aThread[ucIter], NULL);
+        pthread_join(aThrd[ucIter], NULL);
     }
     
     /* Construct the szHash groups with similarity correlation. */
-    iRtnCode = _GrpCorrelateSimilarHash(aThreadParam, ucThreadCount);
+    iRtnCode = _GrpCorrelateSimilarHash(aThrdParam, ucThreadCount);
     if (iRtnCode == 0) {
         self->pGrpRes->pABin = _aBin;
         self->pGrpRes->pMapFam = _pMapFam;
@@ -290,13 +290,13 @@ int GrpCorrelateHash(GROUP *self) {
 
 FREE_PARAM:
     for (ucIter = 0 ; ucIter < ucThreadCount ; ucIter++) {
-        DL_FOREACH_SAFE(aThreadParam[ucIter].pRelHead, pRelCurr, pRelHelp) {
-            DL_FREE(aThreadParam[ucIter].pRelHead, pRelCurr);
+        DL_FOREACH_SAFE(aThrdParam[ucIter].pRelHead, pRelCurr, pRelHelp) {
+            DL_FREE(aThrdParam[ucIter].pRelHead, pRelCurr);
         }
     }
-    free(aThreadParam);
+    free(aThrdParam);
 FREE_THREAD:    
-    free(aThread);            
+    free(aThrd);            
 EXIT:        
     return iRtnCode;
 }
@@ -484,10 +484,10 @@ EXIT:
  * !INTERNAL
  * _GrpCorrelateSimilarHash(): Correlate the similar hashes into groups.
  */
-static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArray) {
+static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThrdParam, uint8_t ucLenArray) {
     int iRtnCode;
     uint32_t uiIter, uiIdBinSrc, uiIdBinTge, uiIdGrpSrc, uiIdGrpTge, uiIdGrpMge;
-    THREAD_PARAM pThreadParam;
+    THREAD_PARAM pThrdParam;
     RELATION *pRelCurr, *pRelHelp;
     BINARY *pBinSrc, *pBinTge;
     FAMILY *pFamNew;
@@ -495,8 +495,8 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThreadParam, uint8_t ucLenArr
     iRtnCode = 0;
     /* Link the hashes with the recorded relation pairs. */
     for (uiIter = 0 ; uiIter < ucLenArray ; uiIter++) {
-        pThreadParam = aThreadParam[uiIter];
-        DL_FOREACH_SAFE(pThreadParam.pRelHead, pRelCurr, pRelHelp) {
+        pThrdParam = aThrdParam[uiIter];
+        DL_FOREACH_SAFE(pThrdParam.pRelHead, pRelCurr, pRelHelp) {
             uiIdBinSrc = pRelCurr->uiIdBinSrc;
             uiIdBinTge = pRelCurr->uiIdBinTge;
             pBinSrc = (BINARY*)ARRAY_ELTPTR(_aBin, uiIdBinSrc);
@@ -556,15 +556,15 @@ static void* _GrpComputeHashPairSimilarity(void *vpThreadParam) {
     uint32_t uiBinCount, uiIdBinSrc, uiIdBinTge;
     uint8_t ucThreadCount, ucThreadId, ucSimThrld;
     int8_t cSimScore;
-    THREAD_PARAM *pThreadParam;
+    THREAD_PARAM *pThrdParam;
     BINARY *pBinSrc, *pBinTge;
     RELATION *pRelNew;
 
-    pThreadParam = (THREAD_PARAM*)vpThreadParam;
-    uiBinCount = pThreadParam->uiBinCount;
-    ucThreadCount = pThreadParam->ucThreadCount;
-    ucThreadId = pThreadParam->ucThreadId;
-    ucSimThrld = pThreadParam->ucSimThrld;
+    pThrdParam = (THREAD_PARAM*)vpThreadParam;
+    uiBinCount = pThrdParam->uiBinCount;
+    ucThreadCount = pThrdParam->ucThreadCount;
+    ucThreadId = pThrdParam->ucThreadId;
+    ucSimThrld = pThrdParam->ucSimThrld;
     
     uiIdBinSrc = 0;
     uiIdBinTge = uiIdBinSrc + ucThreadId - ucThreadCount;
@@ -592,7 +592,7 @@ static void* _GrpComputeHashPairSimilarity(void *vpThreadParam) {
             assert(pRelNew != NULL);
             pRelNew->uiIdBinSrc = uiIdBinSrc;
             pRelNew->uiIdBinTge = uiIdBinTge;
-            DL_APPEND(pThreadParam->pRelHead, pRelNew);
+            DL_APPEND(pThrdParam->pRelHead, pRelNew);
         }
     }
 
