@@ -21,6 +21,7 @@
 #define PREFIX_PATTERN          "AUTO"      /* The prefix for pattern name. */
 #define PREFIX_HEX_STRING       "SEQ"       /* The prefix for hex string name. */
 #define MODULE_PE               "pe"        /* The external module named "pe". */
+#define SPACE_SUBS_TAB          "    "      /* The spaces substituting a tab. */
 
 
 /*======================================================================*
@@ -48,28 +49,33 @@ static UT_array **_aRawPtn;
  *======================================================================*/
  /**
   * This function extracts the similar byte sequences shared by the given 
-  * cluster of sections.
+  * group of sections.
   * 
   * @param vpThrdParam      The pointer to the thread parameter.
   * 
   * @return                 Should be the thread status but currently ignored.
   */
-static void* _PtnGrepByteSequenceFromCluster(void *vpThrdParam);
+static void* PtnGrepByteSequenceFromGroup(void *vpThrdParam);
 
 /**
- * To avoid memory exhaustion, we split the cluster into several slots. This
+ * To avoid memory exhaustion, we split the group into several slots. This
  * function extracts the byte sequences for the given slot and deliver the
- * result to _PtnGrepByteSequenceFromCluster() for merging.
+ * result to PtnGrepByteSequenceFromGroup() for merging.
  * 
  * @param aFamMbr           The array storing the member ids.
  *                          (The id is used to access BINARY array.)
- * @param uiClusterSize     The size of the given cluster.
+ * @param uiGrpSize     The size of the given group.
  * @param uiIdxSlot         The index of the given slot.
  * @param aSeq              The array storing byte sequences.
  */
-static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiClusterSize,
+static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiGrpSize,
                                        uint32_t uiIdxSlot, UT_array *aSeq);
 
+static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
+                                    uint8_t ucIdxBlk, uint16_t *aByte, 
+                                    uint8_t ucByteCnt);
+
+static void _PtnFormatSectionCondition(char *bufBgn, int *pWrtCnt);
 
 /*======================================================================*
  *                Implementation for External Functions                 *
@@ -126,7 +132,7 @@ int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
     iRtnCode = 0;
     _aBin = pGrpRes->pABin;
     _uiGrpCnt = HASH_CNT(hh, pGrpRes->pMapFam);
-    /* Prepare the storge for extracted byte sequences of each cluster. */
+    /* Prepare the storge for extracted byte sequences of each group. */
     _aRawPtn = (UT_array**)malloc(sizeof(UT_array*) * _uiGrpCnt);
     if (_aRawPtn == NULL) {
         Spew0("Error: Cannot allocate the array for raw patterns.");
@@ -164,7 +170,7 @@ int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
         sem_wait(&_pSem);
         aThrdParam[uiIter].uiThrdId = uiIter + 1;
         aThrdParam[uiIter].pFam = pFamCurr;
-        pthread_create(&aThrd[uiIter], NULL, _PtnGrepByteSequenceFromCluster, 
+        pthread_create(&aThrd[uiIter], NULL, PtnGrepByteSequenceFromGroup, 
                        (void*)&(aThrdParam[uiIter]));
         uiIter++;
     }
@@ -193,8 +199,68 @@ EXIT:
  */
 int PtnGeneratePattern(PATTERN *self) {
     int iRtnCode;
+    uint8_t ucIterBlk, ucBlkCnt;
+    uint32_t uiIterGrp, uiPtnBufSize, uiPtnLen, uiWrtCntStr, uiWrtCntCond;
+    uint32_t uiOfstStr, uiOfstCond;
+    bool bExceptMem;
+    char *bufPtn, *bufSectStr, *bufSectCond;
+    SEQUENCE *pSeq;
 
     iRtnCode = 0;
+    for (uiIterGrp = 0 ; uiIterGrp < _uiGrpCnt ; uiIterGrp++) {
+        ucBlkCnt = MIN(_pCfg->ucBlkCnt, ARRAY_LEN(_aRawPtn[uiIterGrp]));
+        
+        /* Prepare the buffer to generate pattern. */
+        bExceptMem = false;
+        bufPtn = bufSectStr = bufSectCond = NULL;
+        bufSectStr = (char*)malloc(sizeof(char) * BUF_SIZE_LARGE);
+        if (bufSectStr == NULL) {
+            bExceptMem = true;
+            goto FREE;
+        }
+        bufSectCond = (char*)malloc(sizeof(char) * BUF_SIZE_LARGE);
+        if (bufSectCond == NULL) {
+            bExceptMem = true;
+            goto FREE;
+        }
+        uiPtnBufSize = (BUF_SIZE_LARGE) + (BUF_SIZE_LARGE) + (BUF_SIZE_MEDIUM);
+        bufPtn = (char*)malloc(sizeof(char) * uiPtnBufSize);
+        if (bufPtn == NULL) {
+            bExceptMem = true;
+            goto FREE;
+        }
+        
+        /* Extract the byte sequences with the best quality. */
+        ucIterBlk = 0;
+        uiOfstStr = uiOfstCond = 0;
+        pSeq = NULL;
+        while ((pSeq = (SEQUENCE*)ARRAY_NEXT(_aRawPtn[uiIterGrp], pSeq)) != NULL) {
+            _PtnFormatSectionString(bufSectStr + uiOfstStr, &uiWrtCntStr, ucIterBlk,
+                                    pSeq->aByte, pSeq->ucByteCnt);
+            uiOfstStr += uiWrtCntStr;
+            ucIterBlk++;
+            if (ucIterBlk == ucBlkCnt) {
+                break;
+            }
+        }
+        printf("%s\n", bufSectStr);
+        
+    FREE:
+        if (bufSectStr != NULL) {
+            free(bufSectStr);
+        }
+        if (bufSectCond != NULL) {
+            free(bufSectCond);
+        }
+        if (bufPtn != NULL) {
+            free(bufPtn);
+        }
+        if (bExceptMem == true) {
+            Spew0("Error: Cannot allocate buffer for pattern generation.");
+            iRtnCode = -1;
+            break;
+        }
+    }
 
     return iRtnCode;
 }
@@ -205,13 +271,13 @@ int PtnGeneratePattern(PATTERN *self) {
  *======================================================================*/
 /**
  * !INTERNAL
- * _PtnGrepByteSequenceFromCluster(): Extract the similar byte sequences shared 
- * by the given cluster of sections.
+ * PtnGrepByteSequenceFromGroup(): Extract the similar byte sequences shared 
+ * by the given group of sections.
  */
-static void* _PtnGrepByteSequenceFromCluster(void *vpThrdParam) {
+static void* PtnGrepByteSequenceFromGroup(void *vpThrdParam) {
     uint8_t ucBlkSize, ucIterCmp;
     uint32_t uiThrdId, uiIterSlot, uiIterSeq;
-    uint32_t uiClusterSize, uiSlotCnt, uiSeqCnt, uiMinSeqCnt;
+    uint32_t uiGrpSize, uiSlotCnt, uiSeqCnt, uiMinSeqCnt;
     SEQUENCE seqInst;
     THREAD_PARAM *pThrdParam;
     UT_array *aSeq, *aFamMbr;
@@ -221,8 +287,8 @@ static void* _PtnGrepByteSequenceFromCluster(void *vpThrdParam) {
     pThrdParam = (THREAD_PARAM*)vpThrdParam;
     uiThrdId = pThrdParam->uiThrdId;
     aFamMbr = pThrdParam->pFam->aFamMbr;
-    uiClusterSize = ARRAY_LEN(aFamMbr);    
-    uiSlotCnt = (uint32_t)ceil((double)uiClusterSize / _pCfg->ucIoBandwidth);
+    uiGrpSize = ARRAY_LEN(aFamMbr);    
+    uiSlotCnt = (uint32_t)ceil((double)uiGrpSize / _pCfg->ucIoBandwidth);
     aASeq = NULL;
     aASeq = (UT_array**)malloc(sizeof(UT_array*) * uiSlotCnt);
     if (aASeq == NULL) {
@@ -238,7 +304,7 @@ static void* _PtnGrepByteSequenceFromCluster(void *vpThrdParam) {
     for (uiIterSlot = 0 ; uiIterSlot < uiSlotCnt ; uiIterSlot++) {
         aASeq[uiIterSlot] = NULL;
         ARRAY_NEW(aASeq[uiIterSlot], &icdSeq);
-        _PtnGrepByteSequencePerSlot(aFamMbr, uiClusterSize, uiIterSlot, aASeq[uiIterSlot]);
+        _PtnGrepByteSequencePerSlot(aFamMbr, uiGrpSize, uiIterSlot, aASeq[uiIterSlot]);
         uiSeqCnt = ARRAY_LEN(aASeq[uiIterSlot]);
         if (uiSeqCnt < uiMinSeqCnt) {
             uiMinSeqCnt = uiSeqCnt;
@@ -287,9 +353,9 @@ EXIT:
 /**
  * !INTERNAL
  * _PtnGrepByteSequencePerSlot(): Extract the byte sequences for the given slot 
- * and deliver the result to _PtnGrepByteSequenceFromCluster() for merging.
+ * and deliver the result to PtnGrepByteSequenceFromGroup() for merging.
  */
-static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiClusterSize,
+static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiGrpSize,
                                        uint32_t uiIdxSlot, UT_array *aSeq) {
     int iRtnCode, iStatus;
     uint8_t ucIterCmp, ucBlkSize, ucDcCnt;
@@ -298,7 +364,7 @@ static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiClusterSize
     uint16_t *bufCmp, *aSectIdx;
     uint32_t *pUiIdxBin;
     size_t nExptRead, nRealRead;
-    bool bIoExcept;
+    bool bExceptIo;
     FILE *fpSample;
     BINARY *pBin;
     SEQUENCE seqInst;
@@ -308,7 +374,7 @@ static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiClusterSize
 
     iRtnCode = 0;
     uiIdxBgn = uiIdxSlot * _pCfg->ucIoBandwidth;
-    uiIdxEnd = MIN(uiIdxBgn + _pCfg->ucIoBandwidth, uiClusterSize);
+    uiIdxEnd = MIN(uiIdxBgn + _pCfg->ucIoBandwidth, uiGrpSize);
     uiBinCnt = uiIdxEnd - uiIdxBgn;
     ucBlkSize = _pCfg->ucBlkSize;
     bufCmp = NULL;
@@ -365,23 +431,23 @@ static int _PtnGrepByteSequencePerSlot(UT_array *aFamMbr, uint32_t uiClusterSize
             goto EXIT;
         }
         aSectIdx[uiIdxBin] = pBin->usSectIdx;
-        bIoExcept= false;
+        bExceptIo= false;
         iStatus = fseek(fpSample, pBin->uiSectOfst, SEEK_SET);
         if (iStatus != 0) {
             Spew1("Error: %s.", strerror(errno));
-            bIoExcept = true;
+            bExceptIo = true;
             goto CLOSE;
         }
         nRealRead = fread(aBinContent[uiIdxBin], sizeof(char), nExptRead, fpSample);
         if (nRealRead != nExptRead) {
             Spew1("Error: %s.", strerror(errno));
-            bIoExcept = true;
+            bExceptIo = true;
             goto CLOSE;
         }
         
     CLOSE:
         fclose(fpSample);
-        if (bIoExcept == true) {
+        if (bExceptIo == true) {
             iRtnCode = -1;
             goto EXIT;
         }
@@ -466,4 +532,48 @@ EXIT:
     }
 
     return iRtnCode;
+}
+
+static void _PtnFormatSectionString(char *bufBgn, uint32_t *pUiWrtCnt,
+                                    uint8_t ucIdxBlk, uint16_t *aByte, 
+                                    uint8_t ucByteCnt) {    
+    uint8_t ucIdxByte, ucIndentLen, ucIdxIndent;
+    uint32_t uiWrtCnt;
+    char bufIndent[BUF_SIZE_SMALL];
+    
+    uiWrtCnt = snprintf(bufBgn, BUF_SIZE_LARGE, "%s%s$%s_%d = { ", SPACE_SUBS_TAB,
+                        SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxBlk);
+    
+    /* Prepare the indent space. */
+    ucIndentLen = uiWrtCnt;
+    memset(bufIndent, 0, sizeof(char) * BUF_SIZE_SMALL);
+    for (ucIdxIndent = 0 ; ucIdxIndent < ucIndentLen ; ucIdxIndent++) {
+        bufIndent[ucIdxIndent] = ' ';
+    }
+                        
+    for (ucIdxByte = 0 ; ucIdxByte < ucByteCnt ; ucIdxByte++) {
+        if (aByte[ucIdxByte] != DONT_CARE_MARK) {
+            uiWrtCnt += sprintf(bufBgn + uiWrtCnt, "%02x ", aByte[ucIdxByte]);
+        } else {
+            uiWrtCnt += sprintf(bufBgn + uiWrtCnt, "?? ");
+        }
+        /* Newline if the number of written bytes exceeding the threshold. */
+        if ((ucIdxByte % HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) &&
+            (ucIdxByte != ucByteCnt - 1)) {
+            uiWrtCnt += sprintf(bufBgn + uiWrtCnt, "\n%s", bufIndent);
+        }
+    }
+    bufBgn += uiWrtCnt;
+    bufBgn[0] = '}';
+    bufBgn[1] = '\n';
+    bufBgn[2] = '\n';
+    *pUiWrtCnt = uiWrtCnt + 3;
+
+    return;
+}
+
+static void _PtnFormatSectionCondition(char *bufBgn, int *pWrtCnt) {
+
+
+    return;
 }
