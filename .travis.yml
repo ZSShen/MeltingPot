@@ -1,0 +1,23 @@
+language: c
+
+compiler:
+    - gcc
+    
+git:
+  depth: 1
+
+install:
+    - sudo pip install cpp-coveralls --use-mirrors
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq cmake python3-minimal
+    - sudo apt-get install -qq valgrind
+    - sudo apt-get install -qq libfuzzy-dev
+
+script:
+    - make build_executable DEBUG=yes COVERAGE=yes
+    #- make coverage DEBUG=yes
+
+after_success:
+    #- coveralls
+
+

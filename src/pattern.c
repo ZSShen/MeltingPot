@@ -312,7 +312,7 @@ int PtnGeneratePattern(PATTERN *self) {
         uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s\n", bufSectStr);
         
         /* Build the "conditions" section. */
-        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s%sconditions:\n", SPACE_SUBS_TAB,
+        uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s%scondition:\n", SPACE_SUBS_TAB,
                              SPACE_SUBS_TAB);
         uiOfstPtn += sprintf(bufPtn + uiOfstPtn, "%s}\n", bufSectCond);
         
