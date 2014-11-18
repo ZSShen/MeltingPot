@@ -132,3 +132,16 @@ int UTArraySequenceSort(const void *vpSrc, const void *vpTge) {
 
     return pSeqSrc->ucDontCareCnt - pSeqTge->ucDontCareCnt;
 }
+
+
+int UTHashFamilySort(const void *vpSrc, const void *vpTge) {
+    int iSizeSrc, iSizeTge;
+    FAMILY *pFamSrc, *pFamTge;
+
+    pFamSrc = (FAMILY*)vpSrc;
+    pFamTge = (FAMILY*)vpTge;
+    iSizeSrc = ARRAY_LEN(pFamSrc->aFamMbr);
+    iSizeTge = ARRAY_LEN(pFamTge->aFamMbr);
+
+    return iSizeSrc - iSizeTge;
+}

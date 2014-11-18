@@ -161,6 +161,8 @@ int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
     THREAD_PARAM *aThrdParam;
     
     iRtnCode = 0;
+    aThrd = NULL;
+    aThrdParam = NULL;
     /* Create the output folder if it does not exist. */
     struct stat stDir = {0};
     if (stat(_pCfg->szPathOutput, &stDir) == -1) {
@@ -186,8 +188,6 @@ int PtnExtractByteSequence(PATTERN *self, GROUP_RESULT *pGrpRes) {
     }
     
     /* Prepare the thread parameters. */
-    aThrd = NULL;
-    aThrdParam = NULL;
     aThrd = (pthread_t*)malloc(sizeof(pthread_t) * _uiGrpCnt);
     if (aThrd == NULL) {
         Spew0("Error: Cannot allocate the array for thread id.");

@@ -544,6 +544,9 @@ static int _GrpCorrelateSimilarHash(THREAD_PARAM *aThrdParam, uint8_t ucLenArray
         uiIdBinSrc++;
     }
 
+    /* Sort the groups based on their sizes. */
+    HASH_SORT(_pMapFam, UTHashFamilySort);
+
     return iRtnCode;
 }
 

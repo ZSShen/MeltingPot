@@ -138,4 +138,6 @@ void UTArraySequenceDeinit(void *vpCurr);
 int UTArraySequenceSort(const void *vpSrc, const void *vpTge);
 
 
+int UTHashFamilySort(const void *vpSrc, const void *vpTge);
+
 #endif
