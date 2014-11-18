@@ -15,9 +15,9 @@ install:
 
 script:
     - make build_executable DEBUG=yes COVERAGE=yes
-    #- make coverage DEBUG=yes
+    - make coverage DEBUG=yes
 
 after_success:
-    #- coveralls
+    - coveralls
 
 

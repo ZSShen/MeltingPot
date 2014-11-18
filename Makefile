@@ -8,6 +8,8 @@ PATH_OUT_DBG            := $(PATH_CUR)/debug/
 PATH_OUT_REL            := $(PATH_CUR)/release/
 PATH_LIB_3PARTY         := $(PATH_CUR)/3-party-lib/
 PATH_LIB_UTHASH         := $(PATH_LIB_3PARTY)uthash/
+PATH_DEMO_IN            := $(PATH_CUR)/demo/
+PATH_DEMO_OUT           := $(PATH_CUR)/pattern/
 NAME_OBJ                := cluster
 NAME_ENTRY              := entry
 NAME_LIB                := lib$(NAME_OBJ)
@@ -61,5 +63,9 @@ $(DEPENDENCY):
 # List the project cleaning rule.
 .PHONY: clean
 clean:
-	rm -rf $(PATH_OBJ) $(PATH_OUT_DBG) $(PATH_OUT_REL)
+	rm -rf $(PATH_OBJ) $(PATH_OUT_DBG) $(PATH_OUT_REL) $(PATH_DEMO_OUT)
 
+# List the coverage testing rule.
+coverage:
+	valgrind --leak-check=yes --track-origins=yes $(PATH_OUT)$(NAME_ENTRY) -i $(PATH_DEMO_IN) \
+-o $(PATH_DEMO_OUT) --parallelity 4 --similarity 80 --blkcount 4 --blksize 48
