@@ -18,19 +18,18 @@ def main():
     rebuild = args.rebuild;
 
     # Recursivly clean all the binary directories.
-    list_build = list();
-    list_lib = list();
+    list_clean = list();
     path_cur = os.getcwd();
     for path_dir, list_dir, list_file in os.walk(path_cur):
         if path_dir.endswith("build"):
-            list_build.append(path_dir);
+            list_clean.append(path_dir);
         elif path_dir.endswith("lib"):
-            list_lib.append(path_dir);
-
-    for path_build in list_build:
-        shutil.rmtree(path_build);
-    for path_lib in list_lib:
-        shutil.rmtree(path_lib);
+            list_clean.append(path_dir);
+        elif path_dir.endswith("export"):
+            list_clean.append(path_dir);
+    for path_clean in list_clean:
+        if os.path.isdir(path_clean) == True:
+            shutil.rmtree(path_clean);
 
     # Create the build folder if necessary.
     if rebuild == False:

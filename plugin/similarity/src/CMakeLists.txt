@@ -18,8 +18,15 @@ set(OPT_LIB_DYNAMIC "Dynamic")
 
 
 # Define the constants for path generation.
-set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../include")
-set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../lib")
+set(NAME_INC "include")
+set(NAME_LIB "lib")
+set(NAME_LIB_STATIC "lib/static")
+set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
+set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
+set(HEADER "${PATH_INC}/similarity.h")
+set(SRC_SSDEEP "similarity_ssdeep.c")
+set(TGE_SSDEEP "SSDEEP")
+set(OUT_SSDEEP "sim_ssdeep")
 
 
 # Parse the command options.
@@ -43,17 +50,22 @@ endif()
 
 
 # List the building rules.
-set(SRC_SSDEEP "similarity_ssdeep.c")
-set(TGE_SSDEEP "SSDEEP")
-set(OUT_SSDEEP "sim_ssdeep")
-
 include_directories(${PATH_INC})
 
 add_library(${TGE_SSDEEP} ${LIB_TYPE} ${SRC_SSDEEP})
 
 set_target_properties( ${TGE_SSDEEP} PROPERTIES
+    PUBLIC_HEADER ${HEADER}
     ARCHIVE_OUTPUT_DIRECTORY ${PATH_OUT}
     LIBRARY_OUTPUT_DIRECTORY ${PATH_OUT}
     OUTPUT_NAME ${OUT_SSDEEP}
+)
+
+
+# List the installation rules
+install(TARGETS ${TGE_NORMAL} ${TGE_PE}
+    LIBRARY DESTINATION ${NAME_LIB}
+    ARCHIVE DESTINATION ${NAME_LIB_STATIC}
+    PUBLIC_HEADER DESTINATION ${NAME_INC}
 )
 
