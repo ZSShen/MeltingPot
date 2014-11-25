@@ -49,6 +49,10 @@ def main():
             path_build = os.path.join(path_dir, "build");
             if os.path.isdir(path_build) == False:
                 os.makedirs(path_build);
+        elif path_dir.endswith("YaraGenerator"):
+            path_build = os.path.join(path_dir, "build");
+            if os.path.isdir(path_build) == False:
+                os.makedirs(path_build);
 
     return;
 

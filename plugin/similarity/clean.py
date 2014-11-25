@@ -25,6 +25,8 @@ def main():
             list_clean.append(path_dir);
         elif path_dir.endswith("lib"):
             list_clean.append(path_dir);
+        elif path_dir.endswith("bin"):
+            list_clean.append(path_dir);
         elif path_dir.endswith("export"):
             list_clean.append(path_dir);
     for path_clean in list_clean:
@@ -37,13 +39,20 @@ def main():
     for path_dir, list_dir, list_file in os.walk(path_cur):
         if path_dir.endswith("src"):
             path_build = path_dir.replace("src", "build");
-            os.makedirs(path_build);
+            if os.path.isdir(path_build) == False:
+                os.makedirs(path_build);
         elif path_dir.endswith("plugin"):
             path_build = os.path.join(path_dir, "build");
-            os.makedirs(path_build);
+            if os.path.isdir(path_build) == False:
+                os.makedirs(path_build);
         elif path_dir.endswith("engine"):
             path_build = os.path.join(path_dir, "build");
-            os.makedirs(path_build);
+            if os.path.isdir(path_build) == False:
+                os.makedirs(path_build);
+        elif path_dir.endswith("YaraGenerator"):
+            path_build = os.path.join(path_dir, "build");
+            if os.path.isdir(path_build) == False:
+                os.makedirs(path_build);
 
     return;
 
