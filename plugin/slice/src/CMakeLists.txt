@@ -52,11 +52,21 @@ else()
 endif()
 
 
+# Check for glib-2.0
+find_package(PkgConfig)
+pkg_check_modules(GLIB2 glib-2.0)
+if (GLIB2_NOTFOUND)
+    message("${RED}-- Error: Cannot find the glib-2.0 library.${RESET}")
+endif()
+
+
 # List the source building rules.
-include_directories(${PATH_INC})
+include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS})
 
 add_library(${TGE_NORMAL} ${LIB_TYPE} ${SRC_NORMAL})
+target_link_libraries(${TGE_NORMAL} ${GLIB2_LIBRARIES})
 add_library(${TGE_PE} ${LIB_TYPE} ${SRC_PE})
+target_link_libraries(${TGE_PE} ${GLIB2_LIBRARIES})
 
 set_target_properties( ${TGE_NORMAL} PROPERTIES
     PUBLIC_HEADER ${HEADER}
