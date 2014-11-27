@@ -64,9 +64,9 @@ endif()
 # List the source building rules.
 include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS})
 
-add_library(${TGE_NORMAL} ${LIB_TYPE} ${SRC_NORMAL})
+add_library(${TGE_NORMAL} ${LIB_TYPE} ${SRC_NORMAL} ${SRC_SPEW})
 target_link_libraries(${TGE_NORMAL} ${GLIB2_LIBRARIES})
-add_library(${TGE_PE} ${LIB_TYPE} ${SRC_PE})
+add_library(${TGE_PE} ${LIB_TYPE} ${SRC_PE} ${SRC_SPEW})
 target_link_libraries(${TGE_PE} ${GLIB2_LIBRARIES})
 
 set_target_properties( ${TGE_NORMAL} PROPERTIES

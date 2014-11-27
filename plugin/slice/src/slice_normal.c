@@ -36,19 +36,19 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     }
 
     fseek(fp, 0, SEEK_END);
-    uint32_t uiSizeFile = ftell(fp);
-    uint32_t uiOfst = 0;
-    while (uiOfst < uiSizeFile) {
+    uint64_t ulSizeFile = ftell(fp);
+    uint64_t ulOfst = 0;
+    while (ulOfst < ulSizeFile) {
         SLICE *p_Slc = (SLICE*)malloc(sizeof(SLICE));
         if (!p_Slc) {
             EXIT1(RC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE);
         }
         p_Slc->iSecId = -1;
-        p_Slc->uiOfstAbs = uiOfst;
-        p_Slc->uiOfstRel = uiOfst;
+        p_Slc->ulOfstAbs = ulOfst;
+        p_Slc->ulOfstRel = ulOfst;
         p_Slc->szPathFile = szPathFile;
         g_ptr_array_add(*p_aSlc, (gpointer)p_Slc);
-        uiOfst += usSizeSlc;
+        ulOfst += usSizeSlc;
     }
 
 CLOSE:

@@ -21,11 +21,11 @@ enum {
 /* This ds records information to locate a slice. */
 typedef struct _SLICE_T {
     int32_t iSecId;         /* The section id of the host file. (For certain file type) */
-    uint32_t uiOfstAbs;     /* The absolate offset of the host file. */
-    uint32_t uiOfstRel;     /* The relative offset to the section starting address.*/
+    uint64_t ulOfstAbs;     /* The absolate offset of the host file. */
+    uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
     union {
-        uint32_t uiIdSlc;   /* The logic id for memorization. */
-        uint32_t uiIdGrp;   /* The group id (after correlation) this slice belonging to.*/
+        uint64_t uiIdSlc;   /* The logic id for memorization. */
+        uint64_t uiIdGrp;   /* The group id (after correlation) this slice belonging to.*/
     };
     char *szPathFile;       /* The aboslute path of the host file. */
 } SLICE;
