@@ -4,6 +4,7 @@
 #include <errno.h>
 #include "spew.h"
 #include "slice.h"
+#include "slice_normal.h"
 
 
 int8_t
@@ -30,6 +31,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
         EXIT1(RC_FAIL_FILE_IO, RTN, "Error: %s.", strerror(errno));
     }
 
+    *p_aSlc = NULL;
     *p_aSlc = g_ptr_array_new_with_free_func(SlcFreeSliceArray);
     if (!*p_aSlc) {
         EXIT1(RC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE_ARRAY);
