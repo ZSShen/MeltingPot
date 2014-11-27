@@ -1,6 +1,7 @@
 
 cmake_minimum_required(VERSION 2.8)
-project(PLUGIN)
+set(CMAKE_INSTALL_PREFIX "")
+project(CLUSTER)
 
 
 # Define the paths of engine and plugin source trees.

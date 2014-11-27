@@ -6,6 +6,10 @@
 #include <glib.h>
 
 
+#define FAIL_MEM_ALLOC_SLICE_ARRAY      "Fail to allocate array for SLICEs"
+#define FAIL_MEM_ALLOC_SLICE            "Fail to allocate SLICE structure"
+
+
 enum {
     RC_SUCCESS = 0,
     RC_FAIL_FILE_IO = -1,
@@ -16,7 +20,7 @@ enum {
 /* Slice is a file block containing designated number of bytes. */
 /* This ds records information to locate a slice. */
 typedef struct _SLICE_T {
-    int32_t iSectId;        /* The section id of the host file. (For certain file type) */
+    int32_t iSecId;         /* The section id of the host file. (For certain file type) */
     uint32_t uiOfstAbs;     /* The absolate offset of the host file. */
     uint32_t uiOfstRel;     /* The relative offset to the section starting address.*/
     union {
@@ -32,7 +36,8 @@ typedef struct _SLICE_T {
  *
  * @return status code
  */
-int8_t SlcInit(); 
+int8_t
+SlcInit();
 
 
 /**
@@ -40,7 +45,8 @@ int8_t SlcInit();
  *
  * @return status code
  */
-int8_t SlcDeinit();
+int8_t
+SlcDeinit();
 
 
 /**
@@ -54,7 +60,8 @@ int8_t SlcDeinit();
  *
  * @return status code
  */
-int8_t SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc);
+int8_t
+SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc);
 
 
 /**
@@ -62,7 +69,8 @@ int8_t SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
  *
  * @param gp_Slc       The pointer to the to be deallocated element.
  */
-void SlcFreeSliceArray(gpointer gp_Slc);
+void
+SlcFreeSliceArray(gpointer gp_Slc);
 
 
 #endif

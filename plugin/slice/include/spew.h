@@ -15,11 +15,21 @@
 
 
 /* Wrapper for log function. */
-#define Spew                         SpewMessage(__FILE__, __LINE__, __FUNCTION__,
-#define Spew0(p0)                    Spew p0)
-#define Spew1(p0, p1)                Spew p0, p1)
-#define Spew2(p0, p1, p2)            Spew p0, p1, p2)
-#define Spew3(p0, p1, p2, p3)        Spew p0, p1, p2, p3)
+#define SPEW                         SpewMessage(__FILE__, __LINE__, __FUNCTION__,
+#define SPEW0(p0)                    SPEW p0)
+#define SPEW1(p0, p1)                SPEW p0, p1)
+#define SPEW2(p0, p1, p2)            SPEW p0, p1, p2)
+
+
+/* Wrapper for early return mechanism. */
+#define SETNGO(rc, label)            cRtnCode = rc;                             \
+                                     goto label
+#define EXIT0(rc, label, p0)         SPEW0(p0);                                 \
+                                     SETNGO(rc, label)
+#define EXIT1(rc, label, p0, p1)     SPEW1(p0, p1);                             \
+                                     SETNGO(rc, label)
+#define EXIT2(rc, label, p0, p1, p2) SPEW2(p0, p1, p2);                         \
+                                     SETNGO(rc, label)
 
 
 /**
