@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "slice_pe.h"
 #include "spew.h"
 #include "slice.h"
+#include "slice_pe.h"
 
 
 int8_t
@@ -90,7 +90,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
         EXIT1(RC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
     }
 
-    /* Traverse each section header to retrieve the raw section offset and size. */
+    /* Traverse each section header to get the physical section offset and size. */
     for (usIterFst = 0 ; usIterFst < usCountSec ; usIterFst++) {
         nReadExpt = SECTION_HEADER_PER_ENTRY_SIZE;
         nReadReal = fread(buf, sizeof(char), nReadExpt, fp);
@@ -98,7 +98,6 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
             EXIT1(RC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
         }
 
-        /* Record the raw section size and raw section offset. */
         uiReg = 0;
         uint16_t usIterSnd;
         for (usIterSnd = 1 ; usIterSnd <= DATATYPE_SIZE_DWORD ; usIterSnd++) {
@@ -108,19 +107,29 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
         if (uiReg == 0) {
             continue;
         }
-        uint32_t uiSizeSec = uiReg;
+        int32_t iSizeSec = uiReg;
         uiReg = 0;
         for (usIterSnd = 1 ; usIterSnd <= DATATYPE_SIZE_DWORD ; usIterSnd++) {
             uiReg <<= SHIFT_RANGE_8BIT;
             uiReg += buf[SECTION_HEADER_OFF_RAW_OFFSET + DATATYPE_SIZE_DWORD - usIterSnd] & 0xff;
         }
         uint32_t uiOfstSec = uiReg;
-        /*
-        SLICE *p_Slc = (SLICE*)malloc(sizeof(SLICE));
-        if (!p_Slc) {
-            EXIT1(RC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE);
+        uint32_t uiOfstRel = 0;
+        while (iSizeSec > 0) {
+            SLICE *p_Slc = (SLICE*)malloc(sizeof(SLICE));
+            if (!p_Slc) {
+                EXIT1(RC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE);
+            }
+            p_Slc->iSecId = usIterFst;
+            p_Slc->ulOfstAbs = uiOfstSec;
+            p_Slc->ulOfstRel = uiOfstRel;
+            p_Slc->usSize = (usSizeSlc < iSizeSec)? usSizeSlc : iSizeSec;
+            p_Slc->szPathFile = szPathFile;
+            g_ptr_array_add(*p_aSlc, (gpointer)p_Slc);
+            iSizeSec -= usSizeSlc;
+            uiOfstSec += usSizeSlc;
+            uiOfstRel += usSizeSlc;
         }
-        */
     }    
 
 CLOSE:

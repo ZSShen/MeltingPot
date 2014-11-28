@@ -24,6 +24,7 @@ typedef struct _SLICE_T {
     int32_t iSecId;         /* The section id of the host file. (For certain file type) */
     uint64_t ulOfstAbs;     /* The absolate offset of the host file. */
     uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
+    uint16_t usSize;        /* The slice size. */
     union {
         uint64_t uiIdSlc;   /* The logic id for memorization. */
         uint64_t uiIdGrp;   /* The group id (after correlation) this slice belonging to.*/
