@@ -21,7 +21,7 @@ enum {
 /* Slice is a file block containing designated number of bytes. */
 /* This ds records information to locate a slice. */
 typedef struct _SLICE_T {
-    int32_t iSecId;         /* The section id of the host file. (For certain file type) */
+    int32_t iIdSec;         /* The section id of the host file. (For certain file type) */
     uint64_t ulOfstAbs;     /* The absolate offset of the host file. */
     uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
     uint16_t usSize;        /* The slice size. */

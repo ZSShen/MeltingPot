@@ -120,7 +120,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
             if (!p_Slc) {
                 EXIT1(RC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE);
             }
-            p_Slc->iSecId = usIterFst;
+            p_Slc->iIdSec = usIterFst;
             p_Slc->ulOfstAbs = uiOfstSec;
             p_Slc->ulOfstRel = uiOfstRel;
             p_Slc->usSize = (usSizeSlc < iSizeSec)? usSizeSlc : iSizeSec;

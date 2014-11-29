@@ -45,7 +45,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
         if (!p_Slc) {
             EXIT1(RC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE);
         }
-        p_Slc->iSecId = -1;
+        p_Slc->iIdSec = -1;
         p_Slc->ulOfstAbs = ulOfst;
         p_Slc->ulOfstRel = ulOfst;
         p_Slc->szPathFile = szPathFile;
