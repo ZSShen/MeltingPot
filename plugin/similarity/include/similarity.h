@@ -5,6 +5,18 @@
 #include <stdint.h>
 
 
+#define FAIL_MEM_ALLOC_HASH_STRING      "Fail to allocate buffer for hash string"
+#define FAIL_EXTERNAL_LIBRARY_CALL      "Fail to call the library for similarity computation"
+
+
+enum {
+    RC_SUCCESS = 0,
+    RC_FAIL_FILE_IO = -1,
+    RC_FAIL_MEM_ALLOC = -2,
+    RC_FAIL_LIBRARY_CALL = -3
+};
+
+
 /**
  * This function initializes the similarity comparison plugin.
  *
@@ -36,7 +48,7 @@ SimDeinit();
  * @return status code
  */
 int8_t
-SimGetHash(char *szBin, uint32_t uiLenBuf, char *szHash, uint32_t *p_uiLenHash);
+SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHash);
 
 
 /**
@@ -46,12 +58,14 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char *szHash, uint32_t *p_uiLenHash);
  * @param uiLenSrc      The length of the source hash string.
  * @param szHashTge     The pointer to the target hash string.
  * @param uiLenTge      The length of the target hash string.
- *
+ * @param p_ucSim       The pointer to the variable which should be updated
+ *                      with the similarity score.
+ * 
  * @return status code
  */
 int8_t
 SimCompareHashPair(char *szHashSrc, uint32_t uiLenSrc, 
-                   char *szHashTge, uint32_t uiLenTge);
+                   char *szHashTge, uint32_t uiLenTge, uint8_t *p_ucSim);
 
 
 #endif
