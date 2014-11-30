@@ -27,6 +27,7 @@ set(HEADER "${PATH_INC}/similarity.h")
 set(SRC_SSDEEP "similarity_ssdeep.c")
 set(TGE_SSDEEP "SSDEEP")
 set(OUT_SSDEEP "sim_ssdeep")
+set(IMPORT_FUZZY "-lfuzzy")
 
 
 # Parse the command options.
@@ -53,6 +54,7 @@ endif()
 include_directories(${PATH_INC})
 
 add_library(${TGE_SSDEEP} ${LIB_TYPE} ${SRC_SSDEEP})
+target_link_libraries(${TGE_SSDEEP} ${IMPORT_FUZZY})
 
 set_target_properties( ${TGE_SSDEEP} PROPERTIES
     PUBLIC_HEADER ${HEADER}
