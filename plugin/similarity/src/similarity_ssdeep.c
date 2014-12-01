@@ -11,25 +11,25 @@
 int8_t
 SimInit()
 {
-    return RC_SUCCESS;
+    return SIM_RC_SUCCESS;
 }
 
 
 int8_t
 SimDeinit()
 {
-    return RC_SUCCESS;
+    return SIM_RC_SUCCESS;
 }
 
 
 int8_t
 SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHash)
 {
-    int8_t cRtnCode = RC_SUCCESS;
+    int8_t cRtnCode = SIM_RC_SUCCESS;
 
     *p_szHash = (char*)malloc(sizeof(char) * FUZZY_MAX_RESULT);
     if (*p_szHash == NULL) {
-        EXIT1(RC_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HASH_STRING);
+        EXIT1(SIM_RC_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HASH_STRING);
     }
 
     /* Apply ssdeep libaray to covert the binary sequence into fuzzy hash string. */
@@ -37,7 +37,7 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHas
     if (iStat != 0) {
         free(p_szHash);
         p_szHash = NULL;
-        EXIT1(RC_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
+        EXIT1(SIM_RC_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
     }
     *p_uiLenHash = strlen(*p_szHash);
 
@@ -50,13 +50,13 @@ int8_t
 SimCompareHashPair(char *szHashSrc, uint32_t uiLenSrc, 
                    char *szHashTge, uint32_t uiLenTge, uint8_t *p_ucSim)
 {
-    int8_t cRtnCode = RC_SUCCESS;
+    int8_t cRtnCode = SIM_RC_SUCCESS;
 
     /* Apply ssdeep libaray to compute the similarity between a pair of ssdeep
        hash strings. */
     int32_t iStat = fuzzy_compare(szHashSrc, szHashTge);
     if (iStat == -1) {
-        EXIT1(RC_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
+        EXIT1(SIM_RC_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
     }
     *p_ucSim = iStat;    
 

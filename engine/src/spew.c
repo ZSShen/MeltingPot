@@ -17,11 +17,11 @@ SpewMessage(const char* szPathFile, const int32_t iLineFile, const char* szNameF
     va_end(varArgument);
 
     if((iLenMsg == -1) || (iLenMsg >= (int)sizeof(bufMsg))) {
-	    iLenMsg = sizeof(bufMsg) - 1;
-	    bufMsg[iLenMsg] = 0;
+    iLenMsg = sizeof(bufMsg) - 1;
+        bufMsg[iLenMsg] = 0;
     } else if(iLenMsg == 0) {
-	    iLenMsg = 0;
-	    bufMsg[0] = 0;
+        iLenMsg = 0;
+        bufMsg[0] = 0;
     }
 
     time(&tTime);

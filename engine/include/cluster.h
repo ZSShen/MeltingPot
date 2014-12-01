@@ -43,23 +43,12 @@ ClsDeinit();
 /**
  * This function sets the task configuration specified by user.
  *
- * @param p_Config      The pointer to the user specified configuration
+ * @param szPathCfg      The pathname of the task configuration.
  *
  * @return status code
  */
 int8_t
-ClsSetConfig(CONFIG *p_Config);
-
-
-/**
- * This function loads two major plugins: 
- *      1. The plugin for file slicing. 
- *      2. The plugin for similarity comparison
- *
- * @return status code
- */
-int8_t
-ClsLoadPlugin();
+ClsSetConfig(char *szPathCfg);
 
 
 /**

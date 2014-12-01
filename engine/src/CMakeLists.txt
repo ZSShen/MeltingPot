@@ -25,11 +25,13 @@ set(NAME_BIN "bin")
 set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
 set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
 set(PATH_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_BIN}")
+set(PATH_INC_SLICE "${PROJECT_SOURCE_DIR}/../plugin/slice/${NAME_INC}")
+set(PATH_INC_SIMILARITY "${PROJECT_SOURCE_DIR}/../plugin/similarity/${NAME_INC}")
 set(HEADER "${PATH_INC}/cluster.h")
 set(SRC_CLUSTER "cluster.c")
 set(SRC_CORRELATE "correlate.c")
 set(SRC_PATTERN "pattern.c")
-set(SRC_UTIL "util.c")
+set(SRC_SPEW "spew.c")
 set(SRC_DATA "data.c")
 set(TGE_CLUSTER "CLUSTER")
 set(OUT_CLUSTER "cluster")
@@ -55,10 +57,10 @@ endif()
 
 
 # List the source building rules.
-include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS})
+include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS} ${PATH_INC_SLICE} ${PATH_INC_SIMILARITY})
 
-add_executable( ${TGE_CLUSTER} 
-    ${SRC_CLUSTER} ${SRC_CORRELATE} ${SRC_PATTERN} ${SRC_UTIL} ${SRC_DATA}
+add_executable( ${TGE_CLUSTER}
+    ${SRC_CLUSTER} ${SRC_CORRELATE} ${SRC_PATTERN} ${SRC_SPEW} ${SRC_DATA}
 )
 target_link_libraries(${TGE_CLUSTER} ${GLIB2_LIBRARIES})
 
@@ -68,6 +70,7 @@ set_target_properties( ${TGE_CLUSTER} PROPERTIES
     OUTPUT_NAME ${OUT_CLUSTER}
 )
 
+message("${PROJECT_SOURCE_DIR}")
 
 # List the installation rules
 install(TARGETS ${TGE_CLUSTER}
