@@ -5,6 +5,26 @@
 #include <stdint.h>
 
 
+/* The error messages for debugging. */
+#define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
+
+
+/* The constants for command option parsing. */
+#define BUF_SIZE_OPT          64      /* The size of option order buffer. */
+#define OPT_LONG_HELP         "help"  /* The option for help message. */
+#define OPT_LONG_PATH_CONF    "conf"  /* The abbreviated character. */
+#define OPT_HELP              'h'     /* The option for the path of configuration file. */
+#define OPT_PATH_CONF         'c'     /* The abbreviated character. */
+
+
+enum {
+    CLS_SUCCESS = 0,
+    CLS_FAIL_FILE_IO = -1,
+    CLS_FAIL_MEM_ALLOC = -2,
+    CLS_FAIL_OPT_PARSE = -3,
+};
+
+
 /* This ds records the paramters to control the clustering process. */
 typedef struct _CONFIG_T {
     uint8_t ucCntThrd;      /* The number of threads used for parallel processing. */
@@ -23,12 +43,15 @@ typedef struct _CONFIG_T {
 
 
 /**
- * This function initializes the clustering engine.
+ * This function initializes the clustering engine with the configuration
+ * specified by user.
+ *
+ * @param szPathCfg     The pathname of the task configuration.
  *
  * @return status code
  */
 int8_t
-ClsInit();
+ClsInit(char *szPathCfg);
 
 
 /**
@@ -38,17 +61,6 @@ ClsInit();
  */
 int8_t
 ClsDeinit();
-
-
-/**
- * This function sets the task configuration specified by user.
- *
- * @param szPathCfg      The pathname of the task configuration.
- *
- * @return status code
- */
-int8_t
-ClsSetConfig(char *szPathCfg);
 
 
 /**

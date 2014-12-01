@@ -35,6 +35,7 @@ set(SRC_SPEW "spew.c")
 set(SRC_DATA "data.c")
 set(TGE_CLUSTER "CLUSTER")
 set(OUT_CLUSTER "cluster")
+set(IMPORT_CONFIG "-lconfig")
 
 
 # Parse the command options.
@@ -62,7 +63,7 @@ include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS} ${PATH_INC_SLICE} ${PATH_I
 add_executable( ${TGE_CLUSTER}
     ${SRC_CLUSTER} ${SRC_CORRELATE} ${SRC_PATTERN} ${SRC_SPEW} ${SRC_DATA}
 )
-target_link_libraries(${TGE_CLUSTER} ${GLIB2_LIBRARIES})
+target_link_libraries(${TGE_CLUSTER} ${GLIB2_LIBRARIES} ${IMPORT_CONFIG})
 
 set_target_properties( ${TGE_CLUSTER} PROPERTIES
     PUBLIC_HEADER ${HEADER}
