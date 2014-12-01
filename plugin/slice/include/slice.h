@@ -11,10 +11,10 @@
 
 
 enum {
-    RC_SUCCESS = 0,
-    RC_FAIL_FILE_IO = -1,
-    RC_FAIL_MEM_ALLOC = -2,
-    RC_INVALID_FILE_FORMAT = -3
+    SLC_SUCCESS = 0,
+    SLC_FAIL_FILE_IO = -1,
+    SLC_FAIL_MEM_ALLOC = -2,
+    SLC_INVALID_FILE_FORMAT = -3
 };
 
 

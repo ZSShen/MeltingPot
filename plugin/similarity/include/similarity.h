@@ -10,10 +10,10 @@
 
 
 enum {
-    SIM_RC_SUCCESS = 0,
-    SIM_RC_FAIL_FILE_IO = -1,
-    SIM_RC_FAIL_MEM_ALLOC = -2,
-    SIM_RC_FAIL_LIBRARY_CALL = -3
+    SIM_SUCCESS = 0,
+    SIM_FAIL_FILE_IO = -1,
+    SIM_FAIL_MEM_ALLOC = -2,
+    SIM_FAIL_LIBRARY_CALL = -3
 };
 
 
