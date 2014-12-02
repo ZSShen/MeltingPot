@@ -7,7 +7,7 @@
 
 /* The error messages for debugging. */
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
-
+#define FAIL_MEM_ALLOC_CONF      "Fail to allocate CONFIG structure"
 
 /* The constants for command option parsing. */
 #define BUF_SIZE_OPT          64      /* The size of option order buffer. */
@@ -16,12 +16,24 @@
 #define OPT_HELP              'h'     /* The option for the path of configuration file. */
 #define OPT_PATH_CONF         'c'     /* The abbreviated character. */
 
+/* The tags for each kind of configuration. */
+#define C_COUNT_THREAD              "COUNT_THREAD"
+#define C_THRESHOLD_SIMILARITY      "THRESHOLD_SIMILARITY"
+#define C_COUNT_HEX_BLOCK           "COUNT_HEX_BLOCK"
+#define C_SIZE_HEX_BLOCK            "SIZE_HEX_BLOCK"
+#define C_SIZE_SLICE                "SIZE_SLICE"
+#define C_PATH_ROOT_INPUT           "PATH_ROOT_INPUT"
+#define C_PATH_ROOT_OUTPUT          "PATH_ROOT_OUTPUT"
+#define C_PATH_PLUGIN_SLICE         "PATH_PLUGIN_SLICE"
+#define C_PATH_PLUGIN_SIMILARITY    "PATH_PLUGIN_SIMILARITY"
+
 
 enum {
     CLS_SUCCESS = 0,
     CLS_FAIL_FILE_IO = -1,
     CLS_FAIL_MEM_ALLOC = -2,
     CLS_FAIL_OPT_PARSE = -3,
+    CLS_FAIL_CONF_PARSE = -4
 };
 
 
@@ -35,9 +47,9 @@ typedef struct _CONFIG_T {
                                which is the basic unit of clustering process. */
     char *szPathRootIn;     /* The root pathname of the input sample set. */
     char *szPathRootOut;    /* The root pathname of the output patterns. */
-    char *szPluginSlc;      /* The name of the plugin which is to be used for 
+    char *szPathPluginSlc;  /* The name of the plugin which is to be used for 
                                file slicing. */
-    char *szPluginSim;      /* The name of the plugin which is to be used for 
+    char *szPathPluginSim;  /* The name of the plugin which is to be used for 
                                similarity comparison. */
 } CONFIG;
 
@@ -69,7 +81,7 @@ ClsDeinit();
  * @return status code
  */
 int8_t
-ClsProcessSampleSet();
+ClsRunTask();
 
 
 #endif
