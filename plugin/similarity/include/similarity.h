@@ -17,6 +17,29 @@ enum {
 };
 
 
+/* The exported interface to interact with this plugin. */
+/* The function pointer types. */
+typedef int8_t (*func_SimInit) ();
+typedef int8_t (*func_SimDeinit) ();
+typedef int8_t (*func_SimGetHash) (char*, uint32_t, char**, uint32_t*);
+typedef int8_t (*func_SimCompareHashPair) (char*, uint32_t, char*, uint32_t, uint8_t*);
+
+/* The integrated structure to store exported functions. */
+typedef struct _PLUGIN_SIMILARITY_T {
+    void *hdle_Lib;
+    func_SimInit Init;
+    func_SimDeinit Deinit;
+    func_SimGetHash GetHash;
+    func_SimCompareHashPair CompareHashPair;
+} PLUGIN_SIMILARITY;
+
+/* The function name symbols. */
+#define SYM_SIM_INIT                "SimInit"
+#define SYM_SIM_DEINIT              "SimDeinit"
+#define SYM_SIM_GET_HASH            "SimGetHash"
+#define SYM_SIM_COMPARE_HASH_PAIR   "SimCompareHashPair"
+
+
 /**
  * This function initializes the similarity comparison plugin.
  *
