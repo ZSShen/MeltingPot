@@ -8,6 +8,8 @@
 /* The error messages for debugging. */
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
 #define FAIL_MEM_ALLOC_CONF      "Fail to allocate CONFIG structure"
+#define FAIL_MEM_ALLOC_HDLE_SLC  "Fail to allocate PLUGIN_SLICE structure"
+#define FAIL_MEM_ALLOC_HDLE_SIM  "Fail to allocate PLUGIN_SIMILARITY structure"
 
 /* The constants for command option parsing. */
 #define BUF_SIZE_OPT          64      /* The size of option order buffer. */
@@ -33,7 +35,8 @@ enum {
     CLS_FAIL_FILE_IO = -1,
     CLS_FAIL_MEM_ALLOC = -2,
     CLS_FAIL_OPT_PARSE = -3,
-    CLS_FAIL_CONF_PARSE = -4
+    CLS_FAIL_CONF_PARSE = -4,
+    CLS_FAIL_PLUGIN_RESOLVE = -5
 };
 
 
@@ -47,10 +50,10 @@ typedef struct _CONFIG_T {
                                which is the basic unit of clustering process. */
     char *szPathRootIn;     /* The root pathname of the input sample set. */
     char *szPathRootOut;    /* The root pathname of the output patterns. */
-    char *szPathPluginSlc;  /* The name of the plugin which is to be used for 
+    char *szPathPluginSlc;  /* The pathname of the plugin which is to be used for 
                                file slicing. */
-    char *szPathPluginSim;  /* The name of the plugin which is to be used for 
-                               similarity comparison. */
+    char *szPathPluginSim;  /* The pathname of the plugin which is to be used for 
+                               similarity computation. */
 } CONFIG;
 
 

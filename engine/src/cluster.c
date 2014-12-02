@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <libconfig.h>
+#include <dlfcn.h>
 #include "spew.h"
 #include "cluster.h"
 #include "slice.h"
@@ -11,6 +12,7 @@
 
 
 CONFIG *p_Conf;
+PLUGIN_SLICE *plg_Slc;
 
 
 int8_t
@@ -20,6 +22,8 @@ ClsInit(char *szPathCfg)
     
     config_t cfg;
     config_init(&cfg);
+    p_Conf = NULL;
+    plg_Slc = NULL;
 
     int8_t cStat = config_read_file(&cfg, szPathCfg);
     if (cStat == CONFIG_FALSE) {
@@ -71,6 +75,34 @@ ClsInit(char *szPathCfg)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
     }
 
+    /* Load the file slicing plugin. */
+    plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
+    if (plg_Slc == NULL) {
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HDLE_SLC);
+    }
+    plg_Slc->hdle_Lib = dlopen(p_Conf->szPathPluginSlc, RTLD_LAZY);
+    if (plg_Slc->hdle_Lib == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
+    plg_Slc->Init = dlsym(plg_Slc->hdle_Lib, SYM_SLC_INIT);
+    char *szError = dlerror();
+    if (szError != NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", szError);
+    }
+    plg_Slc->Deinit = dlsym(plg_Slc->hdle_Lib, SYM_SLC_DEINIT);
+    szError = dlerror();
+    if (szError != NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", szError);
+    }
+    plg_Slc->GetFileSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_GET_FILE_SLICE);
+    szError = dlerror();
+    if (szError != NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", szError);
+    }
+
+    /* Load the similarity computation plugin. */
+    
+
 EXIT:
     config_destroy(&cfg);
     return cRtnCode;    
@@ -82,6 +114,12 @@ ClsDeinit()
 {
     if (p_Conf != NULL) {
         free(p_Conf);
+    }
+    if (plg_Slc != NULL) {
+        if (plg_Slc->hdle_Lib != NULL) {
+            dlclose(plg_Slc->hdle_Lib);
+        }
+        free(plg_Slc);
     }
 
     return CLS_SUCCESS;
@@ -130,13 +168,14 @@ main(int argc, char **argv, char **envp)
     /* Initialize the clustering engine with user specified configurations. */
     int8_t cStat = ClsInit(szPathCfg);
     if (cStat != CLS_SUCCESS) {
-        goto EXIT;
+        goto DEINIT;
     }
 
     /* Launch binary slice correlation and pattern generation. */
     cStat = ClsRunTask();
 
     /* Release the resources allocated by engine. */
+DEINIT:
     ClsDeinit();    
 
 EXIT:
