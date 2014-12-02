@@ -13,6 +13,7 @@
 
 CONFIG *p_Conf;
 PLUGIN_SLICE *plg_Slc;
+PLUGIN_SIMILARITY *plg_Sim;
 
 
 int8_t
@@ -24,6 +25,7 @@ ClsInit(char *szPathCfg)
     config_init(&cfg);
     p_Conf = NULL;
     plg_Slc = NULL;
+    plg_Sim = NULL;
 
     int8_t cStat = config_read_file(&cfg, szPathCfg);
     if (cStat == CONFIG_FALSE) {
@@ -34,6 +36,7 @@ ClsInit(char *szPathCfg)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_CONF);
     }
 
+    /* Resolve the user specified configuration. */
     cStat = config_lookup_int(&cfg, C_COUNT_THREAD, (int*)&(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE) {
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);        
@@ -85,23 +88,43 @@ ClsInit(char *szPathCfg)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Slc->Init = dlsym(plg_Slc->hdle_Lib, SYM_SLC_INIT);
-    char *szError = dlerror();
-    if (szError != NULL) {
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", szError);
+    if (plg_Slc->Init == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Slc->Deinit = dlsym(plg_Slc->hdle_Lib, SYM_SLC_DEINIT);
-    szError = dlerror();
-    if (szError != NULL) {
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", szError);
+    if (plg_Slc->Deinit == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Slc->GetFileSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_GET_FILE_SLICE);
-    szError = dlerror();
-    if (szError != NULL) {
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", szError);
+    if (plg_Slc->GetFileSlice == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
 
     /* Load the similarity computation plugin. */
-    
+    plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
+    if (plg_Sim == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HDLE_SIM);
+    }
+    plg_Sim->hdle_Lib = dlopen(p_Conf->szPathPluginSim, RTLD_LAZY);
+    if (plg_Sim->hdle_Lib == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
+    plg_Sim->Init = dlsym(plg_Sim->hdle_Lib, SYM_SIM_INIT);
+    if (plg_Sim->Init == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
+    plg_Sim->Deinit = dlsym(plg_Sim->hdle_Lib, SYM_SIM_DEINIT);
+    if (plg_Sim->Deinit == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
+    plg_Sim->GetHash = dlsym(plg_Sim->hdle_Lib, SYM_SIM_GET_HASH);
+    if (plg_Sim->GetHash == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
+    plg_Sim->CompareHashPair = dlsym(plg_Sim->hdle_Lib, SYM_SIM_COMPARE_HASH_PAIR);
+    if (plg_Sim->CompareHashPair == NULL) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
 
 EXIT:
     config_destroy(&cfg);
@@ -120,6 +143,12 @@ ClsDeinit()
             dlclose(plg_Slc->hdle_Lib);
         }
         free(plg_Slc);
+    }
+    if (plg_Sim != NULL) {
+        if (plg_Sim->hdle_Lib != NULL) {
+            dlclose(plg_Sim->hdle_Lib);
+        }
+        free(plg_Sim);
     }
 
     return CLS_SUCCESS;
