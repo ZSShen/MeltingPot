@@ -23,56 +23,55 @@ ClsInit(char *szPathCfg)
 
     int8_t cStat = config_read_file(&cfg, szPathCfg);
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_FILE_IO, EXIT1, "Error: %s.", config_error_text(&cfg));
+        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", config_error_text(&cfg));
     }
-
     p_Conf = (CONFIG*)malloc(sizeof(CONFIG));
     if (p_Conf == NULL) {
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT1, "Error: %s.", FAIL_MEM_ALLOC_CONF);
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_CONF);
     }
 
     cStat = config_lookup_int(&cfg, C_COUNT_THREAD, (int*)&(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_COUNT_THREAD);        
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);        
     }
     cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, (int*)&(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
     }
     cStat = config_lookup_int(&cfg, C_COUNT_HEX_BLOCK, (int*)&(p_Conf->ucCntBlk));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_COUNT_HEX_BLOCK);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_HEX_BLOCK);
     }
     cStat = config_lookup_int(&cfg, C_SIZE_HEX_BLOCK, (int*)&(p_Conf->ucSizeBlk));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_SIZE_HEX_BLOCK);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_HEX_BLOCK);
     }
     cStat = config_lookup_int(&cfg, C_SIZE_SLICE, (int*)&(p_Conf->ucSizeSlc));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_SIZE_SLICE);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_SLICE);
     }
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_INPUT,
                                 (const char**)&(p_Conf->szPathRootIn));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_PATH_ROOT_INPUT);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_ROOT_INPUT);
     }
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_OUTPUT,
                                 (const char**)&(p_Conf->szPathRootOut));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_PATH_ROOT_OUTPUT);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_ROOT_OUTPUT);
     }
     cStat = config_lookup_string(&cfg, C_PATH_PLUGIN_SLICE,
                                 (const char**)&(p_Conf->szPathPluginSlc));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_PATH_PLUGIN_SLICE);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SLICE);
     }
     cStat = config_lookup_string(&cfg, C_PATH_PLUGIN_SIMILARITY,
                                 (const char**)&(p_Conf->szPathPluginSim));
     if (cStat == CONFIG_FALSE) {
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT1, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
     }
 
-EXIT1:
+EXIT:
     config_destroy(&cfg);
     return cRtnCode;    
 }
@@ -87,6 +86,7 @@ ClsDeinit()
 
     return CLS_SUCCESS;
 }
+
 
 int8_t
 ClsRunTask()
@@ -124,13 +124,13 @@ main(int argc, char **argv, char **envp)
         }
     }
     if (szPathCfg == NULL) {
-        EXIT1(CLS_FAIL_OPT_PARSE, EXIT1, "Error: %s.", FAIL_OPT_PARSE_CONF);
+        EXIT1(CLS_FAIL_OPT_PARSE, EXIT, "Error: %s.", FAIL_OPT_PARSE_CONF);
     }
 
     /* Initialize the clustering engine with user specified configurations. */
     int8_t cStat = ClsInit(szPathCfg);
     if (cStat != CLS_SUCCESS) {
-        goto EXIT1;
+        goto EXIT;
     }
 
     /* Launch binary slice correlation and pattern generation. */
@@ -138,6 +138,7 @@ main(int argc, char **argv, char **envp)
 
     /* Release the resources allocated by engine. */
     ClsDeinit();    
-EXIT1:
+
+EXIT:
     return cRtnCode;
 }
