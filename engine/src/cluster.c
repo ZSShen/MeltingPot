@@ -6,14 +6,19 @@
 #include <libconfig.h>
 #include <dlfcn.h>
 #include "spew.h"
+#include "data.h"
 #include "cluster.h"
+#include "correlate.h"
+#include "pattern.h"
 #include "slice.h"
 #include "similarity.h"
 
 
+config_t cfg;
 CONFIG *p_Conf;
 PLUGIN_SLICE *plg_Slc;
 PLUGIN_SIMILARITY *plg_Sim;
+MELT_POT *p_Pot;
 
 
 int8_t
@@ -21,7 +26,6 @@ ClsInit(char *szPathCfg)
 {
     int8_t cRtnCode = CLS_SUCCESS;
     
-    config_t cfg;
     config_init(&cfg);
     p_Conf = NULL;
     plg_Slc = NULL;
@@ -99,6 +103,10 @@ ClsInit(char *szPathCfg)
     if (plg_Slc->GetFileSlice == NULL) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
+    cStat = plg_Slc->Init();
+    if (cStat != SLC_SUCCESS) {
+        EXIT1(CLS_FAIL_PLUGIN_INTERACT, EXIT, "Error: %s.", FAIL_INIT_HDLE_SLC);
+    }
 
     /* Load the similarity computation plugin. */
     plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
@@ -125,9 +133,18 @@ ClsInit(char *szPathCfg)
     if (plg_Sim->CompareHashPair == NULL) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
+    cStat = plg_Sim->Init();
+    if (cStat != SIM_SUCCESS) {
+        EXIT1(CLS_FAIL_PLUGIN_INTERACT, EXIT, "Error: %s.", FAIL_INIT_HDLE_SIM);
+    }
+
+    /* Allocate the integrated structure to record clustering progress. */
+    p_Pot = (MELT_POT*)malloc(sizeof(MELT_POT));
+    if (p_Pot == NULL) {
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+    }
 
 EXIT:
-    config_destroy(&cfg);
     return cRtnCode;    
 }
 
@@ -135,17 +152,23 @@ EXIT:
 int8_t
 ClsDeinit()
 {
+    config_destroy(&cfg);
     if (p_Conf != NULL) {
         free(p_Conf);
     }
+    if (p_Pot != NULL) {
+        free(p_Pot);
+    }
     if (plg_Slc != NULL) {
         if (plg_Slc->hdle_Lib != NULL) {
+            plg_Slc->Deinit();
             dlclose(plg_Slc->hdle_Lib);
         }
         free(plg_Slc);
     }
     if (plg_Sim != NULL) {
         if (plg_Sim->hdle_Lib != NULL) {
+            plg_Sim->Deinit();
             dlclose(plg_Sim->hdle_Lib);
         }
         free(plg_Sim);
@@ -158,6 +181,10 @@ ClsDeinit()
 int8_t
 ClsRunTask()
 {
+    int8_t cRtnCode = CLS_SUCCESS;
+    
+    cRtnCode = CrlPrepareSlice(p_Pot, p_Conf, plg_Slc);
+    
     return CLS_SUCCESS;
 }
 

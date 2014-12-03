@@ -10,6 +10,8 @@
 #define FAIL_MEM_ALLOC_CONF      "Fail to allocate CONFIG structure"
 #define FAIL_MEM_ALLOC_HDLE_SLC  "Fail to allocate PLUGIN_SLICE structure"
 #define FAIL_MEM_ALLOC_HDLE_SIM  "Fail to allocate PLUGIN_SIMILARITY structure"
+#define FAIL_INIT_HDLE_SLC       "Fail to initialize PLUGIN_SLICE"
+#define FAIL_INIT_HDLE_SIM       "Fail to initialize PLUGIN_SIMILARITY"
 
 /* The constants for command option parsing. */
 #define BUF_SIZE_OPT          64      /* The size of option order buffer. */
@@ -36,7 +38,8 @@ enum {
     CLS_FAIL_MEM_ALLOC = -2,
     CLS_FAIL_OPT_PARSE = -3,
     CLS_FAIL_CONF_PARSE = -4,
-    CLS_FAIL_PLUGIN_RESOLVE = -5
+    CLS_FAIL_PLUGIN_RESOLVE = -5,
+    CLS_FAIL_PLUGIN_INTERACT = -6
 };
 
 
