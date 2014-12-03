@@ -9,6 +9,16 @@
 #include "similarity.h"
 
 
+/* The thread parameter to record the result of file slicing. */
+typedef struct THREAD_SLICE_T {
+    pthread_t tIdThrd;
+    char *szPathFile;
+    GPtrArray *a_Hash;
+    GPtrArray *a_Slc;
+    PLUGIN_SLICE *plg_Slc;
+} THREAD_SLICE;
+
+
 /**
  * This function slices the given set of files via designated plugin.
  *

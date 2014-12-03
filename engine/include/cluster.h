@@ -7,6 +7,7 @@
 
 /* The error messages for debugging. */
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
+#define FAIL_NO_SAMPLE           "No samples in the given folder"
 
 /* The constants for command option parsing. */
 #define BUF_SIZE_OPT          64      /* The size of option order buffer. */
