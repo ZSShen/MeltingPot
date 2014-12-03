@@ -34,7 +34,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     *p_aSlc = NULL;
     *p_aSlc = g_ptr_array_new_with_free_func(SlcFreeSliceArray);
     if (!*p_aSlc) {
-        EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE_ARRAY);
+        EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
     }
 
     /* Check the MZ header. */
@@ -118,7 +118,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
         while (iSizeSec > 0) {
             SLICE *p_Slc = (SLICE*)malloc(sizeof(SLICE));
             if (!p_Slc) {
-                EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", FAIL_MEM_ALLOC_SLICE);
+                EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
             }
             p_Slc->iIdSec = usIterFst;
             p_Slc->ulOfstAbs = uiOfstSec;

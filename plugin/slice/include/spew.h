@@ -30,6 +30,7 @@
                                      SETNGO(rc, label)
 #define EXIT2(rc, label, p0, p1, p2) SPEW2(p0, p1, p2);                         \
                                      SETNGO(rc, label)
+#define EXITQ(rc, label)             SETNGO(rc, label)
 
 
 /**

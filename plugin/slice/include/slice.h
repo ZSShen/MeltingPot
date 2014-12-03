@@ -6,10 +6,6 @@
 #include <glib.h>
 
 
-#define FAIL_MEM_ALLOC_SLICE_ARRAY      "Fail to allocate array for SLICEs"
-#define FAIL_MEM_ALLOC_SLICE            "Fail to allocate SLICE structure"
-
-
 enum {
     SLC_SUCCESS = 0,
     SLC_FAIL_FILE_IO = -1,

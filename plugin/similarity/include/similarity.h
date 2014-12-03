@@ -5,8 +5,7 @@
 #include <stdint.h>
 
 
-#define FAIL_MEM_ALLOC_HASH_STRING      "Fail to allocate buffer for hash string"
-#define FAIL_EXTERNAL_LIBRARY_CALL      "Fail to call the library for similarity computation"
+#define FAIL_EXTERNAL_LIBRARY_CALL "Fail to call external library"
 
 
 enum {

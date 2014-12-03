@@ -29,7 +29,7 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHas
 
     *p_szHash = (char*)malloc(sizeof(char) * FUZZY_MAX_RESULT);
     if (*p_szHash == NULL) {
-        EXIT1(SIM_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HASH_STRING);
+        EXIT1(SIM_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
 
     /* Apply ssdeep libaray to covert the binary sequence into fuzzy hash string. */

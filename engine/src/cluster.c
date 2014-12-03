@@ -37,7 +37,7 @@ ClsInit(char *szPathCfg)
     }
     p_Conf = (CONFIG*)malloc(sizeof(CONFIG));
     if (p_Conf == NULL) {
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_CONF);
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
 
     /* Resolve the user specified configuration. */
@@ -85,7 +85,7 @@ ClsInit(char *szPathCfg)
     /* Load the file slicing plugin. */
     plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
     if (plg_Slc == NULL) {
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HDLE_SLC);
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
     plg_Slc->hdle_Lib = dlopen(p_Conf->szPathPluginSlc, RTLD_LAZY);
     if (plg_Slc->hdle_Lib == NULL) {
@@ -105,13 +105,13 @@ ClsInit(char *szPathCfg)
     }
     cStat = plg_Slc->Init();
     if (cStat != SLC_SUCCESS) {
-        EXIT1(CLS_FAIL_PLUGIN_INTERACT, EXIT, "Error: %s.", FAIL_INIT_HDLE_SLC);
+        EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
     }
 
     /* Load the similarity computation plugin. */
     plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
     if (plg_Sim == NULL) {
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", FAIL_MEM_ALLOC_HDLE_SIM);
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
     }
     plg_Sim->hdle_Lib = dlopen(p_Conf->szPathPluginSim, RTLD_LAZY);
     if (plg_Sim->hdle_Lib == NULL) {
@@ -135,7 +135,7 @@ ClsInit(char *szPathCfg)
     }
     cStat = plg_Sim->Init();
     if (cStat != SIM_SUCCESS) {
-        EXIT1(CLS_FAIL_PLUGIN_INTERACT, EXIT, "Error: %s.", FAIL_INIT_HDLE_SIM);
+        EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
     }
 
     /* Allocate the integrated structure to record clustering progress. */

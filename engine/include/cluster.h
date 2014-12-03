@@ -7,11 +7,6 @@
 
 /* The error messages for debugging. */
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
-#define FAIL_MEM_ALLOC_CONF      "Fail to allocate CONFIG structure"
-#define FAIL_MEM_ALLOC_HDLE_SLC  "Fail to allocate PLUGIN_SLICE structure"
-#define FAIL_MEM_ALLOC_HDLE_SIM  "Fail to allocate PLUGIN_SIMILARITY structure"
-#define FAIL_INIT_HDLE_SLC       "Fail to initialize PLUGIN_SLICE"
-#define FAIL_INIT_HDLE_SIM       "Fail to initialize PLUGIN_SIMILARITY"
 
 /* The constants for command option parsing. */
 #define BUF_SIZE_OPT          64      /* The size of option order buffer. */
