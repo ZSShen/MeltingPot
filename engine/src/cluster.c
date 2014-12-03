@@ -57,7 +57,7 @@ ClsInit(char *szPathCfg)
     if (cStat == CONFIG_FALSE) {
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_HEX_BLOCK);
     }
-    cStat = config_lookup_int(&cfg, C_SIZE_SLICE, (int*)&(p_Conf->ucSizeSlc));
+    cStat = config_lookup_int(&cfg, C_SIZE_SLICE, (int*)&(p_Conf->usSizeSlc));
     if (cStat == CONFIG_FALSE) {
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_SLICE);
     }

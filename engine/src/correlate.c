@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glib.h>
 #include <errno.h>
 #include <dirent.h>
 #include <pthread.h>
@@ -54,7 +55,7 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc)
     /* Spew multipe threads each of which slices a file and returns an array of
        SLICE structure and the corresponding array of hashes. */
     sem_init(&ins_Sem, 0, p_Conf->ucCntThrd);
-    THREAD_SLICE *p_Rec = (THREAD_SLICE*)malloc(sizeof(THREAD_SLICE) * iCntFile); 
+    THREAD_SLICE *p_Rec = (THREAD_SLICE*)malloc(sizeof(THREAD_SLICE) * iCntFile);
     int32_t iIdxFile = 0;
     seekdir(dirRoot, iIdxFile);
     while (iIdxFile < iCntFile) {
@@ -63,9 +64,10 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc)
             entFile = readdir(dirRoot);
         } while((strcmp(entFile->d_name, ".") == 0) || 
                 (strcmp(entFile->d_name, "..") == 0));
-        p_Rec[iIdxFile].szPathFile = entFile->d_name;
+        p_Rec[iIdxFile].szNameFile = entFile->d_name;
         p_Rec[iIdxFile].a_Hash = NULL;
         p_Rec[iIdxFile].a_Slc = NULL;
+        p_Rec[iIdxFile].p_Conf = p_Conf;
         p_Rec[iIdxFile].plg_Slc = plg_Slc;
         pthread_create(&(p_Rec[iIdxFile].tIdThrd), NULL, _CrlHandleSlice, 
                        (void*)&(p_Rec[iIdxFile]));
@@ -80,6 +82,11 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc)
 
 FREERECORD:
     if (p_Rec != NULL) {
+        for (iIdxFile = 0 ; iIdxFile < iCntFile ; iIdxFile++) {
+            if (p_Rec[iIdxFile].a_Slc != NULL) {
+                g_ptr_array_free (p_Rec[iIdxFile].a_Slc, TRUE);
+            }
+        }
         free(p_Rec);
     }
 
@@ -104,8 +111,20 @@ CrlCorrelateSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SIMILARITY *plg_Sim)
 
 void* _CrlHandleSlice(void *vp_ThrdParam)
 {
-    THREAD_SLICE *p_ThrdParam = (THREAD_SLICE*)vp_ThrdParam;
+    int8_t cRtnCode = CLS_SUCCESS;
+    THREAD_SLICE *p_Param = (THREAD_SLICE*)vp_ThrdParam;
 
+    /* Get the file slices. */
+    char szPathFile[PATH_BUF_SIZE];
+    snprintf(szPathFile, PATH_BUF_SIZE, "%s/%s", p_Param->p_Conf->szPathRootIn,
+                                                 p_Param->szNameFile);
+    int8_t cStat = p_Param->plg_Slc->GetFileSlice(szPathFile, p_Param->p_Conf->usSizeSlc, 
+                                                  &(p_Param->a_Slc));
+    if (cStat != SLC_SUCCESS) {
+        EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+    }
     sem_post(&ins_Sem);
+
+EXIT:
     return;
 }

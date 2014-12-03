@@ -45,7 +45,7 @@ typedef struct _CONFIG_T {
     uint8_t ucScoreSim;     /* The threshold to group similar binary slices. */
     uint8_t ucCntBlk;       /* The number of hex byte blocks in pattern. */
     uint8_t ucSizeBlk;      /* The size of the hex byte block. */    
-    uint8_t ucSizeSlc;      /* The size of the binary slice extracted from file
+    uint16_t usSizeSlc;      /* The size of the binary slice extracted from file
                                which is the basic unit of clustering process. */
     char *szPathRootIn;     /* The root pathname of the input sample set. */
     char *szPathRootOut;    /* The root pathname of the output patterns. */
