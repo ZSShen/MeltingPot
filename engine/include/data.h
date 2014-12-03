@@ -31,13 +31,13 @@ typedef struct _GROUP_T {
 } GROUP;
 
 
-/* The structure recording the complete information of clustering process.  */
-typedef struct _MELT_PLOT_T {
+/* The structure recording the complete information of clustering progress.  */
+typedef struct _MELT_POT_T {
     uint64_t ulCntGrp;      /* The number of groups. */
     GPtrArray *a_Hash;      /* The list of slice hashes. */
-    GPtrArray *a_Slc        /* The list of detailed slice information.*/
-    GHashTable *a_Grp;      /* The hash table aiding to access group information. */
-} MELT_PLOT;
+    GPtrArray *a_Slc;       /* The list of detailed slice information. */
+    GHashTable *a_Grp;      /* The hash table storing the groups. */
+} MELT_POT;
 
 
 #endif
