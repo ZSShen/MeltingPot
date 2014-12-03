@@ -37,6 +37,7 @@ set(TGE_CLUSTER "CLUSTER")
 set(OUT_CLUSTER "cluster")
 set(IMPORT_CONFIG "-lconfig")
 set(IMPORT_DL "-ldl")
+set(IMPORT_PTHREAD "-lpthread")
 
 
 # Parse the command options.
@@ -64,7 +65,8 @@ include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS} ${PATH_INC_SLICE} ${PATH_I
 add_executable( ${TGE_CLUSTER}
     ${SRC_CLUSTER} ${SRC_CORRELATE} ${SRC_PATTERN} ${SRC_SPEW} ${SRC_DATA}
 )
-target_link_libraries(${TGE_CLUSTER} ${GLIB2_LIBRARIES} ${IMPORT_CONFIG} ${IMPORT_DL})
+target_link_libraries(${TGE_CLUSTER} ${GLIB2_LIBRARIES} ${IMPORT_CONFIG} ${IMPORT_DL}
+                      ${IMPORT_PTHREAD})
 
 set_target_properties( ${TGE_CLUSTER} PROPERTIES
     PUBLIC_HEADER ${HEADER}
