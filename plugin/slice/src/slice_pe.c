@@ -32,7 +32,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     }
 
     *p_aSlc = NULL;
-    *p_aSlc = g_ptr_array_new_with_free_func(SlcFreeSliceArray);
+    *p_aSlc = g_ptr_array_new();
     if (!*p_aSlc) {
         EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
     }

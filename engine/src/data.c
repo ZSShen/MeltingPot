@@ -3,16 +3,24 @@
 
 
 void
-DsFreeNameArray(gpointer gp_Slc)
+DsFreeNameArray(gpointer gp_Name)
 {
-    free(gp_Slc);
-    return;    
+    char *szName = (char*)gp_Name;
+    if (szName) {
+        free(szName);
+    }
+
+    return;
 }
 
 
 void
-DsFreeHashArray(gpointer gp_Name)
+DsFreeHashArray(gpointer gp_Hash)
 {
-    free(gp_Name);
+    char *szHash = (char*)gp_Hash;
+    if (szHash) {
+        free(szHash);
+    }
+
     return;
 }

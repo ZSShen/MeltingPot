@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <glib.h>
 #include <errno.h>
@@ -23,13 +24,29 @@ sem_t ins_Sem;
 /**
  * This function slices a file and generates the hash for each slice.
  * 
- * @param vp_Param      The pointer to the parameter which should be
- *                      recorded with slicing result.
+ * @param vp_Param      The pointer to the structure which should be
+ *                      recorded with the slicing result.
  * 
  * @return (currently deprecated)
  */
 void*
-_CrlHandleSlice(void *vp_Param);
+_CrlMapSlice(void *vp_Param);
+
+
+/**
+ * This function iteratively collects the slices and hashes acqured by each
+ * thread into MELT_POT structure.
+ * 
+ * @param p_Pot         The pointer to the structure which records the clustering progress.
+ * @param p_Param       The pointer to the structure which records the slicing result
+ *                      acquired by a thread.
+ * @param p_ulIdSlc     The pointer to the variable which should be updated with
+ *                      the currently traced index of file slice.
+ * 
+ * @return (currently unused)
+ */
+int8_t
+_CrlReduceSlice(MELT_POT *p_Pot, THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc);
 
 
 /**
@@ -52,6 +69,8 @@ _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, CONFIG *p_Conf, char *szName,
  * This function deinitializes the THREAD_SLICE structure.
  * 
  * @param p_Param       The pointer to the to be deinitialized structure.
+ * 
+ * @return (currently unused)
  */
 int8_t
 _CrlFreeParamThrdSlc(THREAD_SLICE *p_Param);
@@ -102,19 +121,36 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc,
         sem_wait(&ins_Sem);
         char *szName = g_ptr_array_index(p_Pot->a_Name, iIdx);
         _CrlSetParamThrdSlc(&(a_Param[iIdx]), p_Conf, szName, plg_Slc, plg_Sim);
-        pthread_create(&(a_Param[iIdx].tId), NULL, _CrlHandleSlice, (void*)&(a_Param[iIdx]));
+        pthread_create(&(a_Param[iIdx].tId), NULL, _CrlMapSlice, (void*)&(a_Param[iIdx]));
         iIdx++;                    
     }
 
     /* Reduce the results and put them into MELT_POT structure. */
+    bool bClean = false;
+    p_Pot->a_Slc = g_ptr_array_new_with_free_func(plg_Slc->FreeSliceArray);
+    if (!p_Pot->a_Slc) {
+        bClean = true;
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPARAM, "Error: %s.", strerror(errno));
+    }
+    p_Pot->a_Hash = g_ptr_array_new_with_free_func(DsFreeHashArray);
+    if (!p_Pot->a_Hash) {
+        bClean = true;
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPARAM, "Error: %s.", strerror(errno));
+    }
+    uint64_t ulIdSlc = 0;
     for (iIdx = 0 ; iIdx < iCntFile ; iIdx++) {
         pthread_join(a_Param[iIdx].tId, NULL);
+        _CrlReduceSlice(p_Pot, &(a_Param[iIdx]), &ulIdSlc);
     }
     sem_destroy(&ins_Sem);
 
 FREEPARAM:
     if (a_Param) {
         for (iIdx = 0 ; iIdx < iCntFile ; iIdx++) {
+            if (bClean) {
+                g_ptr_array_set_free_func(a_Param[iIdx].a_Hash, DsFreeHashArray);
+                g_ptr_array_set_free_func(a_Param[iIdx].a_Slc, plg_Slc->FreeSliceArray);
+            }
             _CrlFreeParamThrdSlc(&(a_Param[iIdx]));
         }
         free(a_Param);
@@ -143,7 +179,7 @@ CrlCorrelateSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SIMILARITY *plg_Sim)
  *                Implementation for Internal Functions                 *
  *======================================================================*/
 void*
-_CrlHandleSlice(void *vp_Param)
+_CrlMapSlice(void *vp_Param)
 {
     int8_t cRtnCode = CLS_SUCCESS;
     THREAD_SLICE *p_Param = (THREAD_SLICE*)vp_Param;
@@ -167,7 +203,7 @@ _CrlHandleSlice(void *vp_Param)
     if (!szBin) {
         EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEFILE, "Error: %s.", strerror(errno));
     }
-    p_Param->a_Hash = g_ptr_array_new_with_free_func(DsFreeHashArray);
+    p_Param->a_Hash = g_ptr_array_new();
     if (!p_Param->a_Hash) {
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBIN, "Error: %s.", strerror(errno));
     }
@@ -176,9 +212,6 @@ _CrlHandleSlice(void *vp_Param)
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiCntSlc ; uiIdx++) {
         SLICE *p_Slc = g_ptr_array_index(p_Param->a_Slc, uiIdx);
-        if (p_Slc->usSize < p_Param->usSizeSlc) {
-            break;
-        }
         cStat = fseek(fp, p_Slc->ulOfstAbs, SEEK_SET);
         if (cStat != 0) {
             EXIT1(CLS_FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
@@ -210,6 +243,29 @@ EXIT:
 
 
 int8_t
+_CrlReduceSlice(MELT_POT *p_Pot, THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc)
+{
+    uint64_t ulIdBase = *p_ulIdSlc;
+    uint32_t uiLen = p_Param->a_Slc->len;
+    uint32_t uiIdx;
+    GPtrArray *a_Slc = p_Param->a_Slc;
+    GPtrArray *a_Hash = p_Param->a_Hash;
+
+    for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
+        SLICE *p_Slc = g_ptr_array_index(a_Slc, uiIdx);
+        p_Slc->ulIdSlc = ulIdBase + uiIdx;
+        g_ptr_array_add(p_Pot->a_Slc, (gpointer)p_Slc);
+        
+        char *szHash = g_ptr_array_index(a_Hash, uiIdx);
+        g_ptr_array_add(p_Pot->a_Hash, (gpointer)szHash);
+    }
+    *p_ulIdSlc += uiLen;
+
+    return CLS_SUCCESS;
+}
+
+
+int8_t
 _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, CONFIG *p_Conf, char *szName,
                     PLUGIN_SLICE *plg_Slc, PLUGIN_SIMILARITY *plg_Sim)
 {
@@ -237,10 +293,10 @@ int8_t
 _CrlFreeParamThrdSlc(THREAD_SLICE *p_Param)
 {
     if (p_Param->a_Slc) {
-        g_ptr_array_free(p_Param->a_Slc, TRUE);
+        g_ptr_array_free(p_Param->a_Slc, true);
     }
     if (p_Param->a_Hash) {
-        g_ptr_array_free(p_Param->a_Hash, TRUE);
+        g_ptr_array_free(p_Param->a_Hash, true);
     }
     if (p_Param->szPath) {
         free(p_Param->szPath);

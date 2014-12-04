@@ -22,8 +22,8 @@ typedef struct _SLICE_T {
     uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
     uint16_t usSize;        /* The slice size. */
     union {
-        uint64_t uiIdSlc;   /* The logic id for memorization. */
-        uint64_t uiIdGrp;   /* The group id (after correlation) this slice belonging to.*/
+        uint64_t ulIdSlc;   /* The logic id for memorization. */
+        uint64_t ulIdGrp;   /* The group id (after correlation) this slice belonging to.*/
     };
     char *szPathFile;       /* The aboslute path of the host file. */
 } SLICE;
@@ -34,6 +34,7 @@ typedef struct _SLICE_T {
 typedef int8_t (*func_SlcInit) ();
 typedef int8_t (*func_SlcDeinit) ();
 typedef int8_t (*func_SlcGetFileSlice) (char*, uint16_t, GPtrArray**);
+typedef void (*func_SlcFreeSliceArray) (gpointer);
 
 /* The integrated structure to store exported functions. */
 typedef struct _PLUGIN_SLICE_T {
@@ -41,12 +42,14 @@ typedef struct _PLUGIN_SLICE_T {
     func_SlcInit Init;
     func_SlcDeinit Deinit;
     func_SlcGetFileSlice GetFileSlice;
+    func_SlcFreeSliceArray FreeSliceArray;
 } PLUGIN_SLICE;
 
 /* The function name symbols. */
 #define SYM_SLC_INIT                "SlcInit"
 #define SYM_SLC_DEINIT              "SlcDeinit"
 #define SYM_SLC_GET_FILE_SLICE      "SlcGetFileSlice"
+#define SYM_SLC_FREE_SLICE_ARRAY    "SlcFreeSliceArray"
 
 
 /**

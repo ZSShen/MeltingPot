@@ -34,7 +34,7 @@ typedef struct _GROUP_T {
 /* The structure recording the complete information of clustering progress.  */
 typedef struct _MELT_POT_T {
     uint64_t ulCntGrp;      /* The number of groups. */
-    GPtrArray *a_Name;  /* The list of filenames belonged to the given sample set. */ 
+    GPtrArray *a_Name;      /* The list of filenames belonged to the given sample set. */ 
     GPtrArray *a_Hash;      /* The list of slice hashes. */
     GPtrArray *a_Slc;       /* The list of detailed slice information. */
     GHashTable *a_Grp;      /* The hash table storing the groups. */
@@ -44,19 +44,19 @@ typedef struct _MELT_POT_T {
 /**
  * This function hints the Glib to deallocate file name elements.
  *
- * @param gp_Slc       The pointer to the to be deallocated element.
+ * @param gp_Name       The pointer to the to be deallocated element.
  */
 void
-DsFreeNameArray(gpointer gp_Slc);
+DsFreeNameArray(gpointer gp_Name);
 
 
 /**
  * This function hints the Glib to deallocate hash elements.
  * 
- * @param gp_Name      The pointer to the to be deallocated element.
+ * @param gp_Hash      The pointer to the to be deallocated element.
  */ 
 void
-DsFreeHashArray(gpointer gp_Name);
+DsFreeHashArray(gpointer gp_Hash);
 
 
 #endif

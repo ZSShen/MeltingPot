@@ -104,6 +104,11 @@ ClsInit(char *szPathCfg)
     if (!plg_Slc->GetFileSlice) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
+    plg_Slc->FreeSliceArray = dlsym(plg_Slc->hdle_Lib, SYM_SLC_FREE_SLICE_ARRAY);
+    if (!plg_Slc->FreeSliceArray) {
+        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+    }
+
     cStat = plg_Slc->Init();
     if (cStat != SLC_SUCCESS) {
         EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
@@ -164,6 +169,12 @@ ClsDeinit()
     if (p_Pot) {
         if (p_Pot->a_Name) {
             g_ptr_array_free(p_Pot->a_Name, true);
+        }
+        if (p_Pot->a_Hash) {
+            g_ptr_array_free(p_Pot->a_Hash, true);
+        }
+        if (p_Pot->a_Slc) {
+            g_ptr_array_free(p_Pot->a_Slc, true);
         }
         free(p_Pot);
     }
