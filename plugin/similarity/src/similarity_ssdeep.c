@@ -39,7 +39,9 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHas
         p_szHash = NULL;
         EXIT1(SIM_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
     }
-    *p_uiLenHash = strlen(*p_szHash);
+    if (p_uiLenHash) {
+        *p_uiLenHash = strlen(*p_szHash);
+    }
 
 EXIT:
     return cRtnCode;

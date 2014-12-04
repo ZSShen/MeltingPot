@@ -191,7 +191,7 @@ ClsRunTask()
 {
     int8_t cRtnCode = CLS_SUCCESS;
     
-    cRtnCode = CrlPrepareSlice(p_Pot, p_Conf, plg_Slc);
+    cRtnCode = CrlPrepareSlice(p_Pot, p_Conf, plg_Slc, plg_Sim);
     
     return cRtnCode;
 }

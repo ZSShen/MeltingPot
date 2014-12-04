@@ -20,6 +20,7 @@ typedef struct THREAD_SLICE_T {
     GPtrArray *a_Hash;
     GPtrArray *a_Slc;
     PLUGIN_SLICE *plg_Slc;
+    PLUGIN_SIMILARITY *plg_Sim;
 } THREAD_SLICE;
 
 
@@ -28,12 +29,14 @@ typedef struct THREAD_SLICE_T {
  *
  * @param p_Pot     The pointer to the structure which records the clustering progress.
  * @param p_Conf    The pointer to the clustering configuration.
- * @param plg_Slc   The pointer to the file slicing plugin.
+ * @param plg_Slc   The handle to the file slicing plugin.
+ * @param plg_Sim   The handle to the similarity computation plugin.
  *
  * @return status code
  */
 int8_t
-CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc);
+CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc,
+                PLUGIN_SIMILARITY *plg_Sim);
 
 
 /**
@@ -42,7 +45,7 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc);
  *
  * @param p_Pot     The pointer to the structure which records the clustering progress.
  * @param p_Conf    The pointer to the clustering configuration.
- * @param plg_Sim   The pointer to the similarity computation plugin.
+ * @param plg_Sim   The handle to the similarity computation plugin.
  *
  * @return status code
  */
