@@ -69,11 +69,13 @@ _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, CONFIG *p_Conf, char *szName,
  * This function deinitializes the THREAD_SLICE structure.
  * 
  * @param p_Param       The pointer to the to be deinitialized structure.
+ * @param bClean        The flag which hints for early clean of the slicing result.
+ * @param plg_Slc       The handle to the file slicing plugin.
  * 
  * @return (currently unused)
  */
 int8_t
-_CrlFreeParamThrdSlc(THREAD_SLICE *p_Param);
+_CrlFreeParamThrdSlc(THREAD_SLICE *p_Param, bool bClean, PLUGIN_SLICE *plg_Slc);
 
 
 /*======================================================================*
@@ -109,8 +111,11 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc,
         EXIT1(CLS_FAIL_FILE_IO, CLOSEDIR, "Error: %s.", FAIL_NO_SAMPLE);
     }
 
-    /* Spwan multipe threads each of which slices a file and returns an array of
-       SLICE structure and the corresponding array of hashes. */
+    /* ----------------------------------------------------------------------*
+     * Spawn multipe threads each of which:                                  *
+     * 1. Slices a given file and returns an array of SLICE structure.       *
+     * 2. Generate an array of hashes each of which is derived a file slice. *
+     *-----------------------------------------------------------------------*/
     THREAD_SLICE *a_Param = (THREAD_SLICE*)malloc(sizeof(THREAD_SLICE) * iCntFile);
     if (!a_Param) {
         EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEDIR, "Error: %s.", strerror(errno));
@@ -125,7 +130,11 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc,
         iIdx++;                    
     }
 
-    /* Reduce the results and put them into MELT_POT structure. */
+    /* ----------------------------------------------------------------------*
+     * Join the spawned threads:                                             *
+     * 1. Merge the array of SLICE structures into MELT_POT structure.       *
+     * 2. Merge the array of hashes into MELT_POT structure.                 *
+     *-----------------------------------------------------------------------*/
     bool bClean = false;
     p_Pot->a_Slc = g_ptr_array_new_with_free_func(plg_Slc->FreeSliceArray);
     if (!p_Pot->a_Slc) {
@@ -147,11 +156,7 @@ CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc,
 FREEPARAM:
     if (a_Param) {
         for (iIdx = 0 ; iIdx < iCntFile ; iIdx++) {
-            if (bClean) {
-                g_ptr_array_set_free_func(a_Param[iIdx].a_Hash, DsFreeHashArray);
-                g_ptr_array_set_free_func(a_Param[iIdx].a_Slc, plg_Slc->FreeSliceArray);
-            }
-            _CrlFreeParamThrdSlc(&(a_Param[iIdx]));
+            _CrlFreeParamThrdSlc(&(a_Param[iIdx]), bClean, plg_Slc);
         }
         free(a_Param);
     }
@@ -290,8 +295,13 @@ EXIT:
 
 
 int8_t
-_CrlFreeParamThrdSlc(THREAD_SLICE *p_Param)
+_CrlFreeParamThrdSlc(THREAD_SLICE *p_Param, bool bClean, PLUGIN_SLICE *plg_Slc)
 {
+    if (bClean) {
+        g_ptr_array_set_free_func(p_Param->a_Hash, DsFreeHashArray);
+        g_ptr_array_set_free_func(p_Param->a_Slc, plg_Slc->FreeSliceArray);
+    }
+
     if (p_Param->a_Slc) {
         g_ptr_array_free(p_Param->a_Slc, true);
     }
