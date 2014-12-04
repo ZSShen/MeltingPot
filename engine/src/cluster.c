@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
@@ -36,7 +37,7 @@ ClsInit(char *szPathCfg)
         EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", config_error_text(&cfg));
     }
     p_Conf = (CONFIG*)malloc(sizeof(CONFIG));
-    if (p_Conf == NULL) {
+    if (!p_Conf) {
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
 
@@ -84,23 +85,23 @@ ClsInit(char *szPathCfg)
 
     /* Load the file slicing plugin. */
     plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
-    if (plg_Slc == NULL) {
+    if (!plg_Slc) {
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
     plg_Slc->hdle_Lib = dlopen(p_Conf->szPathPluginSlc, RTLD_LAZY);
-    if (plg_Slc->hdle_Lib == NULL) {
+    if (!plg_Slc->hdle_Lib) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Slc->Init = dlsym(plg_Slc->hdle_Lib, SYM_SLC_INIT);
-    if (plg_Slc->Init == NULL) {
+    if (!plg_Slc->Init) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Slc->Deinit = dlsym(plg_Slc->hdle_Lib, SYM_SLC_DEINIT);
-    if (plg_Slc->Deinit == NULL) {
+    if (!plg_Slc->Deinit) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Slc->GetFileSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_GET_FILE_SLICE);
-    if (plg_Slc->GetFileSlice == NULL) {
+    if (!plg_Slc->GetFileSlice) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     cStat = plg_Slc->Init();
@@ -110,27 +111,27 @@ ClsInit(char *szPathCfg)
 
     /* Load the similarity computation plugin. */
     plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
-    if (plg_Sim == NULL) {
+    if (!plg_Sim) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
     }
     plg_Sim->hdle_Lib = dlopen(p_Conf->szPathPluginSim, RTLD_LAZY);
-    if (plg_Sim->hdle_Lib == NULL) {
+    if (!plg_Sim->hdle_Lib) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Sim->Init = dlsym(plg_Sim->hdle_Lib, SYM_SIM_INIT);
-    if (plg_Sim->Init == NULL) {
+    if (!plg_Sim->Init) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Sim->Deinit = dlsym(plg_Sim->hdle_Lib, SYM_SIM_DEINIT);
-    if (plg_Sim->Deinit == NULL) {
+    if (!plg_Sim->Deinit) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Sim->GetHash = dlsym(plg_Sim->hdle_Lib, SYM_SIM_GET_HASH);
-    if (plg_Sim->GetHash == NULL) {
+    if (!plg_Sim->GetHash) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     plg_Sim->CompareHashPair = dlsym(plg_Sim->hdle_Lib, SYM_SIM_COMPARE_HASH_PAIR);
-    if (plg_Sim->CompareHashPair == NULL) {
+    if (!plg_Sim->CompareHashPair) {
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
     }
     cStat = plg_Sim->Init();
@@ -140,9 +141,13 @@ ClsInit(char *szPathCfg)
 
     /* Allocate the integrated structure to record clustering progress. */
     p_Pot = (MELT_POT*)malloc(sizeof(MELT_POT));
-    if (p_Pot == NULL) {
+    if (!p_Pot) {
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
+    p_Pot->a_Name = NULL;
+    p_Pot->a_Hash = NULL;
+    p_Pot->a_Slc = NULL;
+    p_Pot->a_Grp = NULL;
 
 EXIT:
     return cRtnCode;    
@@ -153,21 +158,24 @@ int8_t
 ClsDeinit()
 {
     config_destroy(&cfg);
-    if (p_Conf != NULL) {
+    if (p_Conf) {
         free(p_Conf);
     }
-    if (p_Pot != NULL) {
+    if (p_Pot) {
+        if (p_Pot->a_Name) {
+            g_ptr_array_free(p_Pot->a_Name, true);
+        }
         free(p_Pot);
     }
-    if (plg_Slc != NULL) {
-        if (plg_Slc->hdle_Lib != NULL) {
+    if (plg_Slc) {
+        if (plg_Slc->hdle_Lib) {
             plg_Slc->Deinit();
             dlclose(plg_Slc->hdle_Lib);
         }
         free(plg_Slc);
     }
-    if (plg_Sim != NULL) {
-        if (plg_Sim->hdle_Lib != NULL) {
+    if (plg_Sim) {
+        if (plg_Sim->hdle_Lib) {
             plg_Sim->Deinit();
             dlclose(plg_Sim->hdle_Lib);
         }
@@ -185,7 +193,7 @@ ClsRunTask()
     
     cRtnCode = CrlPrepareSlice(p_Pot, p_Conf, plg_Slc);
     
-    return CLS_SUCCESS;
+    return cRtnCode;
 }
 
 
@@ -217,7 +225,7 @@ main(int argc, char **argv, char **envp)
             }
         }
     }
-    if (szPathCfg == NULL) {
+    if (!szPathCfg) {
         EXIT1(CLS_FAIL_OPT_PARSE, EXIT, "Error: %s.", FAIL_OPT_PARSE_CONF);
     }
 

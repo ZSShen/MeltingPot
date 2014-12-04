@@ -14,11 +14,11 @@
 
 /* The thread parameter to record the result of file slicing. */
 typedef struct THREAD_SLICE_T {
-    pthread_t tIdThrd;
-    char *szNameFile;
+    pthread_t tId;
+    uint16_t usSizeSlc;
+    char *szPath;
     GPtrArray *a_Hash;
     GPtrArray *a_Slc;
-    CONFIG *p_Conf;
     PLUGIN_SLICE *plg_Slc;
 } THREAD_SLICE;
 
