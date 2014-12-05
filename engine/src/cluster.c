@@ -211,7 +211,11 @@ ClsRunTask()
     
     CrlSetContext(p_Ctx);
     cRtnCode = CrlPrepareSlice();
+    if (cRtnCode != CLS_SUCCESS)
+        EXIT1(CLS_FAIL_PROCESS, EXIT, "Error: %s.", SLICE_GENERATION_FAIL);
+    SPEW1("Notice: %s.", SLICE_GENERATION_SUCC);
 
+EXIT:
     return cRtnCode;
 }
 

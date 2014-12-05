@@ -53,6 +53,13 @@ typedef struct _CONTEXT_T {
 } CONTEXT;
 
 
+/* The structure recording the slice pair with score fitting the threshold. */
+typedef struct _BIND_T {
+    uint64_t ulIdSlcSrc;
+    uint64_t ulIdSlcTge;
+} BIND;
+
+
 /**
  * This function hints the Glib to deallocate file name elements.
  *
@@ -69,6 +76,15 @@ DsFreeNameArray(gpointer gp_Name);
  */ 
 void
 DsFreeHashArray(gpointer gp_Hash);
+
+
+/**
+ * This function hints the Glib to deallocate bind elements.
+ * 
+ * @param gp_Bind      The pointer to the to be deallocated element.
+ */
+void
+DsFreeBindArray(gpointer gp_Bind);
 
 
 #endif

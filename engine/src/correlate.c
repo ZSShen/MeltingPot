@@ -38,6 +38,19 @@ _CrlMapSlice(void *vp_Param);
 
 
 /**
+ * This function compares the slices within the designated range and records
+ * the slice pair with similarity score fitting the threshold.
+ * 
+ * @param vp_Param      The pointer to the structure which should be
+ *                      recorded with the slice pair.
+ * 
+ * @return (currently deprecated)
+ */
+void*
+_CrlMapCompare(void *vp_Param);
+
+
+/**
  * This function iteratively collects the slices and hashes acqured by each
  * thread into MELT_POT structure.
  * 
@@ -169,6 +182,8 @@ CrlPrepareSlice()
     for (uiIdx = 0 ; uiIdx < uiCntFile ; uiIdx++) {
         pthread_join(a_Param[uiIdx].tId, NULL);
         _CrlReduceSlice(&(a_Param[uiIdx]), &ulIdSlc);
+        if (!a_Param[uiIdx].bSuccess)
+            cRtnCode = CLS_FAIL_PROCESS;
     }
     sem_destroy(&ins_Sem);
 
@@ -236,6 +251,7 @@ _CrlMapSlice(void *vp_Param)
         cStat = plg_Sim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
         g_ptr_array_add(p_Param->a_Hash, (gpointer)szHash);
     }
+    p_Param->bSuccess = true;
 
 FREEBIN:
     if (szBin)
@@ -245,6 +261,13 @@ CLOSEFILE:
         fclose(fp);
 EXIT:
     sem_post(&ins_Sem);
+    return;
+}
+
+
+void*
+_CrlMapCompare(void *vp_Param)
+{
     return;
 }
 
@@ -301,6 +324,7 @@ _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize)
     THREAD_SLICE *a_Param = *p_aParam;
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
+        a_Param[uiIdx].bSuccess = false;
         a_Param[uiIdx].a_Slc = NULL;
         a_Param[uiIdx].a_Hash = NULL;
         a_Param[uiIdx].szPath = NULL;

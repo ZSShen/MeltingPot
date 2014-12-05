@@ -5,9 +5,12 @@
 #include <stdint.h>
 
 
-/* The error messages for debugging. */
+/* The messages for debugging. */
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
 #define FAIL_NO_SAMPLE           "No samples in the given folder"
+#define SLICE_GENERATION_FAIL    "[Slice Generation] failed!"
+#define SLICE_GENERATION_SUCC    "[Slice Generation] succeed!"
+
 
 /* The constants for command option parsing. */
 #define BUF_SIZE_OPT          64      /* The size of option order buffer. */
@@ -15,6 +18,7 @@
 #define OPT_LONG_PATH_CONF    "conf"  /* The abbreviated character. */
 #define OPT_HELP              'h'     /* The option for the path of configuration file. */
 #define OPT_PATH_CONF         'c'     /* The abbreviated character. */
+
 
 /* The tags for each kind of configuration. */
 #define C_COUNT_THREAD              "COUNT_THREAD"
@@ -35,7 +39,8 @@ enum {
     CLS_FAIL_OPT_PARSE = -3,
     CLS_FAIL_CONF_PARSE = -4,
     CLS_FAIL_PLUGIN_RESOLVE = -5,
-    CLS_FAIL_PLUGIN_INTERACT = -6
+    CLS_FAIL_PLUGIN_INTERACT = -6,
+    CLS_FAIL_PROCESS = -7
 };
 
 

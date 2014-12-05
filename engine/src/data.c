@@ -5,10 +5,8 @@
 void
 DsFreeNameArray(gpointer gp_Name)
 {
-    char *szName = (char*)gp_Name;
-    if (szName) {
-        free(szName);
-    }
+    if (gp_Name)
+        free(gp_Name);
 
     return;
 }
@@ -17,10 +15,18 @@ DsFreeNameArray(gpointer gp_Name)
 void
 DsFreeHashArray(gpointer gp_Hash)
 {
-    char *szHash = (char*)gp_Hash;
-    if (szHash) {
-        free(szHash);
-    }
+    if (gp_Hash)
+        free(gp_Hash);
+
+    return;
+}
+
+
+void
+DsFreeBindArray(gpointer gp_Bind)
+{
+    if (gp_Bind)
+        free(gp_Bind);
 
     return;
 }
