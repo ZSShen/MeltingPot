@@ -27,24 +27,22 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     int8_t cRtnCode = SLC_SUCCESS;
 
     FILE *fp = fopen(szPathFile, "r");
-    if (!fp) {
-        EXIT1(SLC_FAIL_FILE_IO, RTN, "Error: %s.", strerror(errno));
-    }
+    if (!fp)
+        EXIT1(SLC_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
 
     *p_aSlc = NULL;
     *p_aSlc = g_ptr_array_new();
-    if (!*p_aSlc) {
+    if (!*p_aSlc)
         EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
-    }
 
     fseek(fp, 0, SEEK_END);
     uint64_t ulSizeFile = ftell(fp);
     uint64_t ulOfst = 0;
     while (ulOfst < ulSizeFile) {
         SLICE *p_Slc = (SLICE*)malloc(sizeof(SLICE));
-        if (!p_Slc) {
+        if (!p_Slc)
             EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
-        }
+
         p_Slc->iIdSec = -1;
         p_Slc->ulOfstAbs = ulOfst;
         p_Slc->ulOfstRel = ulOfst;
@@ -54,10 +52,10 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     }
 
 CLOSE:
-    if (fp) {
+    if (fp)
         fclose(fp);
-    }
-RTN:
+
+EXIT:
     return cRtnCode;
 }
 
@@ -66,9 +64,8 @@ void
 SlcFreeSliceArray(gpointer gp_Slc)
 {
     SLICE *p_Slc = (SLICE*)gp_Slc;
-    if (p_Slc) {
+    if (p_Slc)
         free(p_Slc);
-    }
 
     return;
 }

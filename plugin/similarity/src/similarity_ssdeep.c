@@ -28,9 +28,8 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHas
     int8_t cRtnCode = SIM_SUCCESS;
 
     *p_szHash = (char*)malloc(sizeof(char) * FUZZY_MAX_RESULT);
-    if (*p_szHash == NULL) {
+    if (*p_szHash == NULL)
         EXIT1(SIM_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-    }
 
     /* Apply ssdeep libaray to covert the binary sequence into fuzzy hash string. */
     int32_t iStat = fuzzy_hash_buf(szBin, uiLenBuf, *p_szHash);
@@ -39,9 +38,9 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHas
         p_szHash = NULL;
         EXIT1(SIM_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
     }
-    if (p_uiLenHash) {
+
+    if (p_uiLenHash)
         *p_uiLenHash = strlen(*p_szHash);
-    }
 
 EXIT:
     return cRtnCode;
@@ -57,9 +56,9 @@ SimCompareHashPair(char *szHashSrc, uint32_t uiLenSrc,
     /* Apply ssdeep libaray to compute the similarity between a pair of ssdeep
        hash strings. */
     int32_t iStat = fuzzy_compare(szHashSrc, szHashTge);
-    if (iStat == -1) {
+    if (iStat == -1)
         EXIT1(SIM_FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
-    }
+
     *p_ucSim = iStat;    
 
 EXIT:

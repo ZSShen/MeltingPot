@@ -25,32 +25,37 @@ typedef struct THREAD_SLICE_T {
 
 
 /**
- * This function slices the given set of files via designated plugin.
+ * This function sets the context which:
+ *     1. Provides the user specified configuration and plugins.
+ *     2. Should be updated with he clustering progress.
  *
- * @param p_Pot     The pointer to the structure which records the clustering progress.
- * @param p_Conf    The pointer to the clustering configuration.
- * @param plg_Slc   The handle to the file slicing plugin.
- * @param plg_Sim   The handle to the similarity computation plugin.
- *
+ * @param p_Ctx     The pointer to the CONTEXT structure.
+ * 
+ * @return (currently unused)
+ */
+int8_t
+CrlSetContext(CONTEXT *p_Ctx);
+
+
+/**
+ * This function processes the given set of files, each of which:
+ *     1. Will be divided into slices.
+ *     2. Each slice will be hashed into a string for similarity comparison.
+ * 
  * @return status code
  */
 int8_t
-CrlPrepareSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SLICE *plg_Slc,
-                PLUGIN_SIMILARITY *plg_Sim);
+CrlPrepareSlice();
 
 
 /**
  * This function correlates the similar slices into groups and extracts the common 
  * features shared by each group.
  *
- * @param p_Pot     The pointer to the structure which records the clustering progress.
- * @param p_Conf    The pointer to the clustering configuration.
- * @param plg_Sim   The handle to the similarity computation plugin.
- *
  * @return status code
  */
 int8_t
-CrlCorrelateSlice(MELT_POT *p_Pot, CONFIG *p_Conf, PLUGIN_SIMILARITY *plg_Sim);
+CrlCorrelateSlice();
 
 
 #endif

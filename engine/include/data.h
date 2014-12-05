@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 #include <glib.h>
+#include "cluster.h"
+#include "slice.h"
+#include "similarity.h"
 
 
 /* The addressing method to locate this binary block. */
@@ -39,6 +42,15 @@ typedef struct _MELT_POT_T {
     GPtrArray *a_Slc;       /* The list of detailed slice information. */
     GHashTable *a_Grp;      /* The hash table storing the groups. */
 } MELT_POT;
+
+
+/* The structure recording the entire process context. */
+typedef struct _CONTEXT_T {
+    CONFIG *p_Conf;
+    MELT_POT *p_Pot;
+    PLUGIN_SLICE *plg_Slc;
+    PLUGIN_SIMILARITY *plg_Sim;
+} CONTEXT;
 
 
 /**
