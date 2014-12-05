@@ -257,7 +257,6 @@ main(int argc, char **argv, char **envp)
     /* Release the resources allocated by the engine. */
 DEINIT:
     ClsDeinit();    
-
 EXIT:
     return cRtnCode;
 }

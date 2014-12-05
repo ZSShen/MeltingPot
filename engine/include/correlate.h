@@ -15,13 +15,19 @@
 /* The thread parameter to record the result of file slicing. */
 typedef struct THREAD_SLICE_T {
     pthread_t tId;
-    uint16_t usSizeSlc;
     char *szPath;
     GPtrArray *a_Hash;
     GPtrArray *a_Slc;
-    PLUGIN_SLICE *plg_Slc;
-    PLUGIN_SIMILARITY *plg_Sim;
 } THREAD_SLICE;
+
+
+/* The thread parameter to record the range information for parallel pairwise
+   similarity computation. */
+typedef struct THREAD_COMPARE_T {
+    uint8_t ucIdThrd;
+    uint8_t ucCntThrd;
+    uint64_t ulCntSlc;
+} THREAD_COMPARE;
 
 
 /**

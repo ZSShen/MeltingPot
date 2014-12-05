@@ -174,11 +174,9 @@ CrlPrepareSlice()
 
 FREEPARAM:
     _CrlDeinitArrayThrdSlc(a_Param, uiCntFile, bClean);
-
 CLOSEDIR:
     if (dirRoot)
         closedir(dirRoot);
-
 EXIT:
     return cRtnCode;
 }
@@ -203,7 +201,7 @@ _CrlMapSlice(void *vp_Param)
     THREAD_SLICE *p_Param = (THREAD_SLICE*)vp_Param;
 
     /* Extract the file slices. */
-    int8_t cStat = plg_Slc->GetFileSlice(p_Param->szPath, p_Param->usSizeSlc, 
+    int8_t cStat = plg_Slc->GetFileSlice(p_Param->szPath, p_Conf->usSizeSlc, 
                                          &(p_Param->a_Slc));
     if (cStat != SLC_SUCCESS)
         EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
@@ -213,7 +211,7 @@ _CrlMapSlice(void *vp_Param)
     if (!fp)
         EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
     
-    char *szBin = (char*)malloc(sizeof(char) * p_Param->usSizeSlc);
+    char *szBin = (char*)malloc(sizeof(char) * p_Conf->usSizeSlc);
     if (!szBin)
         EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEFILE, "Error: %s.", strerror(errno));
 
@@ -242,11 +240,9 @@ _CrlMapSlice(void *vp_Param)
 FREEBIN:
     if (szBin)
         free(szBin);
-
 CLOSEFILE:
     if (fp)
         fclose(fp);
-
 EXIT:
     sem_post(&ins_Sem);
     return;
@@ -270,8 +266,8 @@ _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc)
         char *szHash = g_ptr_array_index(a_Hash, uiIdx);
         g_ptr_array_add(p_Pot->a_Hash, (gpointer)szHash);
     }
-    *p_ulIdSlc += uiLen;
 
+    *p_ulIdSlc += uiLen;
     return CLS_SUCCESS;
 }
 
@@ -305,12 +301,9 @@ _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize)
     THREAD_SLICE *a_Param = *p_aParam;
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
-        a_Param[uiIdx].usSizeSlc = p_Conf->usSizeSlc;
         a_Param[uiIdx].a_Slc = NULL;
         a_Param[uiIdx].a_Hash = NULL;
         a_Param[uiIdx].szPath = NULL;
-        a_Param[uiIdx].plg_Slc = plg_Slc;
-        a_Param[uiIdx].plg_Sim = plg_Sim;
     }
 
 EXIT:
