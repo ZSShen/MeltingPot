@@ -22,16 +22,27 @@
 
 
 /* Wrapper for early return mechanism. */
-#define SETNGO(rc, label)            cRtnCode = rc;                             \
-                                     goto label
-#define EXIT0(rc, label, p0)         SPEW0(p0);                                 \
-                                     SETNGO(rc, label)
-#define EXIT1(rc, label, p0, p1)     SPEW1(p0, p1);                             \
-                                     SETNGO(rc, label)
-#define EXIT2(rc, label, p0, p1, p2) SPEW2(p0, p1, p2);                         \
-                                     SETNGO(rc, label)
-#define EXITQ(rc, label)             SETNGO(rc, label)
+#define SETNGO(rc, label)            cRtnCode = rc;                     \
+                                     goto label;
 
+#define EXIT0(rc, label, p0)         do {                               \
+                                        SPEW0(p0);                      \
+                                        SETNGO(rc, label);              \
+                                     } while (0);
+
+#define EXIT1(rc, label, p0, p1)     do {                               \
+                                        SPEW1(p0, p1);                  \
+                                        SETNGO(rc, label);              \
+                                     } while (0);
+                                    
+#define EXIT2(rc, label, p0, p1, p2) do {                               \
+                                        SPEW2(p0, p1, p2);              \
+                                        SETNGO(rc, label);              \
+                                     } while (0);
+                                     
+#define EXITQ(rc, label)             do {                               \
+                                        SETNGO(rc, label);              \
+                                     } while (0);
 
 /**
  * This function generates the log message.
