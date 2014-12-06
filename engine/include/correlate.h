@@ -14,7 +14,7 @@
 
 /* The thread parameter to record the result of file slicing. */
 typedef struct THREAD_SLICE_T {
-    bool bSuccess;
+    int8_t cRtnCode;
     pthread_t tId;
     char *szPath;
     GPtrArray *a_Hash;
@@ -25,7 +25,7 @@ typedef struct THREAD_SLICE_T {
 /* The thread parameter to record the range information for parallel pairwise
    similarity computation. */
 typedef struct THREAD_COMPARE_T {
-    bool bSuccess;
+    int8_t cRtnCode;
     uint8_t ucIdThrd;
     uint8_t ucCntThrd;
     uint64_t ulCntSlc;

@@ -182,7 +182,7 @@ CrlPrepareSlice()
     for (uiIdx = 0 ; uiIdx < uiCntFile ; uiIdx++) {
         pthread_join(a_Param[uiIdx].tId, NULL);
         _CrlReduceSlice(&(a_Param[uiIdx]), &ulIdSlc);
-        if (!a_Param[uiIdx].bSuccess)
+        if (a_Param[uiIdx].cRtnCode != CLS_SUCCESS)
             cRtnCode = CLS_FAIL_PROCESS;
     }
     sem_destroy(&ins_Sem);
@@ -251,7 +251,6 @@ _CrlMapSlice(void *vp_Param)
         cStat = plg_Sim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
         g_ptr_array_add(p_Param->a_Hash, (gpointer)szHash);
     }
-    p_Param->bSuccess = true;
 
 FREEBIN:
     if (szBin)
@@ -260,6 +259,7 @@ CLOSEFILE:
     if (fp)
         fclose(fp);
 EXIT:
+    p_Param->cRtnCode = cRtnCode;
     sem_post(&ins_Sem);
     return;
 }
@@ -324,7 +324,6 @@ _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize)
     THREAD_SLICE *a_Param = *p_aParam;
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
-        a_Param[uiIdx].bSuccess = false;
         a_Param[uiIdx].a_Slc = NULL;
         a_Param[uiIdx].a_Hash = NULL;
         a_Param[uiIdx].szPath = NULL;

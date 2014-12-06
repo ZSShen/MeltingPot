@@ -44,23 +44,23 @@ ClsInit(char *szPathCfg)
 
     /* Resolve the user specified configuration. */
     CONFIG *p_Conf = p_Ctx->p_Conf;
-    cStat = config_lookup_int(&cfg, C_COUNT_THREAD, (int*)&(p_Conf->ucCntThrd));    
+    cStat = config_lookup_int(&cfg, C_COUNT_THREAD, (int64_t*)&(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);        
 
-    cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, (int*)&(p_Conf->ucCntThrd));    
+    cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, (int64_t*)&(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
 
-    cStat = config_lookup_int(&cfg, C_COUNT_HEX_BLOCK, (int*)&(p_Conf->ucCntBlk));
+    cStat = config_lookup_int(&cfg, C_COUNT_HEX_BLOCK, (int64_t*)&(p_Conf->ucCntBlk));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_HEX_BLOCK);
 
-    cStat = config_lookup_int(&cfg, C_SIZE_HEX_BLOCK, (int*)&(p_Conf->ucSizeBlk));
+    cStat = config_lookup_int(&cfg, C_SIZE_HEX_BLOCK, (int64_t*)&(p_Conf->ucSizeBlk));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_HEX_BLOCK);
 
-    cStat = config_lookup_int(&cfg, C_SIZE_SLICE, (int*)&(p_Conf->usSizeSlc));
+    cStat = config_lookup_int(&cfg, C_SIZE_SLICE, (int64_t*)&(p_Conf->usSizeSlc));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_SLICE);
 
