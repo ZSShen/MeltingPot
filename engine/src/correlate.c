@@ -247,7 +247,7 @@ int8_t
 CrlCorrelateSlice()
 {
     int8_t cRtnCode = CLS_SUCCESS;
-    
+
     /*-----------------------------------------------------------------------*
      * Spawn multipe threads each of which:                                  *
      * 1. Do pairwise similarity computation using the given range of hashes.*
@@ -263,9 +263,11 @@ CrlCorrelateSlice()
         _CrlSetParamThrdCmp(&(a_Param[ucIdx]), ucIdx + 1);
         pthread_create(&(a_Param[ucIdx].tId), NULL, _CrlMapCompare, (void*)&(a_Param[ucIdx]));
     }
-    
+
     /*-----------------------------------------------------------------------*
      * Join the spawned threads:                                             *
+     * 1. Merge the slice pairs and assign an initial group id to each SLICE * 
+     *    structure. The group id will be updated upon group construction.   *
      *-----------------------------------------------------------------------*/
     for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
         pthread_join(a_Param[ucIdx].tId, NULL);
@@ -309,10 +311,10 @@ _CrlMapSlice(void *vp_Param)
     if (!p_Param->a_Hash)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBIN, "Error: %s.", strerror(errno));
     
-    uint32_t uiCntSlc = p_Param->a_Slc->len;
-    uint32_t uiIdx;
-    for (uiIdx = 0 ; uiIdx < uiCntSlc ; uiIdx++) {
-        SLICE *p_Slc = g_ptr_array_index(p_Param->a_Slc, uiIdx);
+    uint64_t ulCntSlc = p_Param->a_Slc->len;
+    uint64_t ulIdx;
+    for (ulIdx = 0 ; ulIdx < ulCntSlc ; ulIdx++) {
+        SLICE *p_Slc = g_ptr_array_index(p_Param->a_Slc, ulIdx);
         cStat = fseek(fp, p_Slc->ulOfstAbs, SEEK_SET);
         if (cStat != 0)
             EXIT1(CLS_FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
@@ -398,21 +400,21 @@ int8_t
 _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc)
 {
     uint64_t ulIdBase = *p_ulIdSlc;
-    uint32_t uiLen = p_Param->a_Slc->len;
-    uint32_t uiIdx;
+    uint64_t ulLen = p_Param->a_Slc->len;
+    uint64_t ulIdx;
     GPtrArray *a_Slc = p_Param->a_Slc;
     GPtrArray *a_Hash = p_Param->a_Hash;
 
-    for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
-        SLICE *p_Slc = g_ptr_array_index(a_Slc, uiIdx);
-        p_Slc->ulIdSlc = ulIdBase + uiIdx;
+    for (ulIdx = 0 ; ulIdx < ulLen ; ulIdx++) {
+        SLICE *p_Slc = g_ptr_array_index(a_Slc, ulIdx);
+        p_Slc->ulIdSlc = ulIdBase + ulIdx;
         g_ptr_array_add(p_Pot->a_Slc, (gpointer)p_Slc);
 
-        char *szHash = g_ptr_array_index(a_Hash, uiIdx);
+        char *szHash = g_ptr_array_index(a_Hash, ulIdx);
         g_ptr_array_add(p_Pot->a_Hash, (gpointer)szHash);
     }
 
-    *p_ulIdSlc += uiLen;
+    *p_ulIdSlc += ulLen;
     return CLS_SUCCESS;
 }
 
