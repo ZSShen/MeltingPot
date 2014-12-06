@@ -9,6 +9,11 @@
 #include "similarity.h"
 
 
+/* Useful number comparison macros. */
+#define MIN(a, b)   (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)   (((a) > (b)) ? (a) : (b))
+
+
 /* The addressing method to locate this binary block. */
 typedef struct _CONTENT_ADDR_T {
     int32_t iIdSec;         /* The section id of the host file. (For certain file type) */

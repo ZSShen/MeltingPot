@@ -66,6 +66,16 @@ _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc);
 
 
 /**
+ * This function iteratively merges the similar slice pairs. Note that the 
+ * group id is initially assigned to a slice which will be formally updated later.
+ * 
+ * @param p_Param       The pointer to the structure which records the slice pairs.
+ */
+int8_t
+_CrlReduceCompare(THREAD_COMPARE *p_Param);
+
+
+/**
  * This function initializes the THREAD_SLICE structure.
  * 
  * @param p_Param       The pointer to the to be initialized structure.
@@ -259,8 +269,11 @@ CrlCorrelateSlice()
      *-----------------------------------------------------------------------*/
     for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
         pthread_join(a_Param[ucIdx].tId, NULL);
+        _CrlReduceCompare(&(a_Param[ucIdx]));
+        if (a_Param[ucIdx].cRtnCode != CLS_SUCCESS)
+            cRtnCode = CLS_FAIL_PROCESS;
     }
-    
+
 FREEPARAM:    
     _CrlDeinitArrayThrdCmp(a_Param, p_Conf->ucCntThrd);    
 EXIT:
@@ -400,6 +413,28 @@ _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc)
     }
 
     *p_ulIdSlc += uiLen;
+    return CLS_SUCCESS;
+}
+
+
+int8_t
+_CrlReduceCompare(THREAD_COMPARE *p_Param)
+{
+    uint64_t ulLen = p_Param->a_Bind->len;
+    uint64_t ulIdx;
+
+    for (ulIdx = 0 ; ulIdx < ulLen ; ulIdx++) {
+        BIND *p_Bind = g_ptr_array_index(p_Param->a_Bind, ulIdx);
+        uint64_t ulIdSrc = p_Bind->ulIdSlcSrc;
+        uint64_t ulIdTge = p_Bind->ulIdSlcTge;
+        uint64_t ulIdGrp = MIN(ulIdSrc, ulIdTge);
+
+        SLICE *p_SlcSrc = g_ptr_array_index(p_Pot->a_Slc, ulIdSrc);
+        SLICE *p_SlcTge = g_ptr_array_index(p_Pot->a_Slc, ulIdTge);
+        p_SlcSrc->ulIdGrp = ulIdGrp;
+        p_SlcTge->ulIdGrp = ulIdGrp;
+    }
+
     return CLS_SUCCESS;
 }
 

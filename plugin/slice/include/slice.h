@@ -21,10 +21,8 @@ typedef struct _SLICE_T {
     uint64_t ulOfstAbs;     /* The absolate offset of the host file. */
     uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
     uint16_t usSize;        /* The slice size. */
-    union {
-        uint64_t ulIdSlc;   /* The logic id for memorization. */
-        uint64_t ulIdGrp;   /* The group id (after correlation) this slice belonging to.*/
-    };
+    uint64_t ulIdSlc;       /* The logic id for memorization. */
+    uint64_t ulIdGrp;       /* The group id (after correlation) this slice belonging to.*/
     char *szPathFile;       /* The aboslute path of the host file. */
 } SLICE;
 
