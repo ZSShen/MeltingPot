@@ -78,6 +78,19 @@ _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szName);
 
 
 /**
+ * This function initializes the THREAD_COMPARE structure.
+ * 
+ * @param p_Param       The pointer to the to be initialized structure.
+ * @param ucIdThrd      The index of the thread group.
+ * @param ucCntThrd     The size of the thread group.
+ * 
+ * @return (currently unused)
+ */
+int8_t
+_CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd, uint8_t ucCntThrd);
+
+
+/**
  * This function initializes the array of THREAD_SLICE structures.
  * 
  * @param p_aParam      The pointer to the array of THREAD_SLICE structures.
@@ -87,6 +100,18 @@ _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szName);
  */
 int8_t
 _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize);
+
+
+/**
+ * This function initializes the array of THREAD_COMPARE structures.
+ * 
+ * @param p_aParam      The pointer to the array of THREAD_COMPARE structures.
+ * @param uiSize        The array size.
+ * 
+ * @return status code
+ */
+int8_t
+_CrlInitArrayThrdCmp(THREAD_COMPARE **p_aParam, uint32_t uiSize);
 
 
 /**
@@ -100,6 +125,18 @@ _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize);
  */
 int8_t
 _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize, bool bClean);
+
+
+/**
+ * This function deinitializes the array of THREAD_COMPARE structures.
+ * 
+ * @param a_Param       The array of THREAD_COMPARE structures.
+ * @param uiSize        The array size.
+ * 
+ * @return (currently unused)
+ */
+int8_t
+_CrlDeinitArrayThrdCmp(THREAD_COMPARE *a_Param, uint32_t uiSize);
 
 
 /*======================================================================*
@@ -249,6 +286,8 @@ _CrlMapSlice(void *vp_Param)
 
         char *szHash;
         cStat = plg_Sim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
+        if (cStat != SLC_SUCCESS)
+            EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
         g_ptr_array_add(p_Param->a_Hash, (gpointer)szHash);
     }
 
@@ -268,6 +307,49 @@ EXIT:
 void*
 _CrlMapCompare(void *vp_Param)
 {
+    int8_t cRtnCode = CLS_SUCCESS;
+    THREAD_COMPARE *p_Param = (THREAD_COMPARE*)vp_Param;
+    uint8_t ucIdThrd = p_Param->ucIdThrd;
+    uint8_t ucCntThrd = p_Param->ucCntThrd;
+    uint64_t ulCntSlc = p_Pot->a_Hash->len;
+
+    p_Param->a_Bind = g_ptr_array_new_with_free_func(DsFreeBindArray);
+    if (!p_Param->a_Bind)
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    uint64_t ulIdSrc = 0;
+    uint64_t ulIdTge = ulIdSrc + ucIdThrd - ucCntThrd;
+    while (true) {
+        ulIdTge += ucCntThrd;
+        while (ulIdTge >= ulCntSlc) {
+            ulIdSrc++;
+            if (ulIdSrc == ulCntSlc)
+                break;
+            ulIdTge -= ulCntSlc;
+            ulIdTge += ulIdSrc + 1;    
+        }
+        if ((ulIdSrc >= ulCntSlc) || (ulIdTge >= ulCntSlc))
+            break;
+            
+        char *szSrc = g_ptr_array_index(p_Pot->a_Hash, ulIdSrc);
+        char *szTge = g_ptr_array_index(p_Pot->a_Hash, ulIdTge);
+        uint32_t uiLenSrc = strlen(szSrc);
+        uint32_t uiLenTge = strlen(szTge);
+        uint8_t ucSim;
+        int8_t cStat = plg_Sim->CompareHashPair(szSrc, uiLenSrc,
+                                                szTge, uiLenTge, &ucSim);
+        if (cStat != SIM_SUCCESS)
+            EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+            
+        if (ucSim >= p_Conf->ucScoreSim) {
+            BIND *p_Bind = (BIND*)malloc(sizeof(BIND));
+            p_Bind->ulIdSlcSrc = ulIdSrc;
+            p_Bind->ulIdSlcTge = ulIdTge;
+            g_ptr_array_add(p_Param->a_Bind, (gpointer)p_Bind);
+        }    
+    }
+    
+EXIT:    
     return;
 }
 
@@ -313,6 +395,16 @@ EXIT:
 
 
 int8_t
+_CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd, uint8_t ucCntThrd)
+{
+    p_Param->ucIdThrd = ucIdThrd;
+    p_Param->ucCntThrd = ucCntThrd;
+    p_Param->a_Bind = NULL;
+    return CLS_SUCCESS;
+}
+
+
+int8_t
 _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize)
 {
     int8_t cRtnCode = CLS_SUCCESS;
@@ -328,6 +420,25 @@ _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize)
         a_Param[uiIdx].a_Hash = NULL;
         a_Param[uiIdx].szPath = NULL;
     }
+
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_CrlInitArrayThrdCmp(THREAD_COMPARE **p_aParam, uint32_t uiSize)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    *p_aParam = (THREAD_COMPARE*)malloc(sizeof(THREAD_COMPARE) * uiSize);
+    if (!(*p_aParam))
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    THREAD_COMPARE *a_Param = *p_aParam;
+    uint32_t uiIdx;
+    for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++)
+        a_Param[uiIdx].a_Bind = NULL;
 
 EXIT:
     return cRtnCode;
@@ -358,4 +469,21 @@ _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize, bool bClean)
     
     free(a_Param);
     return CLS_SUCCESS;
+}
+
+
+int8_t
+_CrlDeinitArrayThrdCmp(THREAD_COMPARE *a_Param, uint32_t uiSize)
+{
+    if (!a_Param)
+        return CLS_SUCCESS;
+
+    uint32_t uiIdx;
+    for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
+        if (a_Param[uiIdx].a_Bind)
+            g_ptr_array_free(a_Param[uiIdx].a_Bind, true);
+    }
+
+    free(a_Param);
+    return CLS_SUCCESS;        
 }

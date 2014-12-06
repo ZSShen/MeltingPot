@@ -28,7 +28,6 @@ typedef struct THREAD_COMPARE_T {
     int8_t cRtnCode;
     uint8_t ucIdThrd;
     uint8_t ucCntThrd;
-    uint64_t ulCntSlc;
     GPtrArray *a_Bind;
 } THREAD_COMPARE;
 
