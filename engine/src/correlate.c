@@ -82,12 +82,11 @@ _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szName);
  * 
  * @param p_Param       The pointer to the to be initialized structure.
  * @param ucIdThrd      The index of the thread group.
- * @param ucCntThrd     The size of the thread group.
  * 
  * @return (currently unused)
  */
 int8_t
-_CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd, uint8_t ucCntThrd);
+_CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd);
 
 
 /**
@@ -239,6 +238,32 @@ CrlCorrelateSlice()
 {
     int8_t cRtnCode = CLS_SUCCESS;
     
+    /*-----------------------------------------------------------------------*
+     * Spawn multipe threads each of which:                                  *
+     * 1. Do pairwise similarity computation using the given range of hashes.*
+     * 2. Record the slice pair with similarity score fitting the threshold. *
+     *-----------------------------------------------------------------------*/
+    THREAD_COMPARE *a_Param;
+    int8_t cStat = _CrlInitArrayThrdCmp(&a_Param, p_Conf->ucCntThrd);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(CLS_FAIL_MEM_ALLOC, EXIT);
+
+    uint8_t ucIdx;
+    for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
+        _CrlSetParamThrdCmp(&(a_Param[ucIdx]), ucIdx + 1);
+        pthread_create(&(a_Param[ucIdx].tId), NULL, _CrlMapCompare, (void*)&(a_Param[ucIdx]));
+    }
+    
+    /*-----------------------------------------------------------------------*
+     * Join the spawned threads:                                             *
+     *-----------------------------------------------------------------------*/
+    for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
+        pthread_join(a_Param[ucIdx].tId, NULL);
+    }
+    
+FREEPARAM:    
+    _CrlDeinitArrayThrdCmp(a_Param, p_Conf->ucCntThrd);    
+EXIT:
     return cRtnCode;
 }
 
@@ -310,13 +335,14 @@ _CrlMapCompare(void *vp_Param)
     int8_t cRtnCode = CLS_SUCCESS;
     THREAD_COMPARE *p_Param = (THREAD_COMPARE*)vp_Param;
     uint8_t ucIdThrd = p_Param->ucIdThrd;
-    uint8_t ucCntThrd = p_Param->ucCntThrd;
+    uint8_t ucCntThrd = p_Conf->ucCntThrd;
     uint64_t ulCntSlc = p_Pot->a_Hash->len;
 
     p_Param->a_Bind = g_ptr_array_new_with_free_func(DsFreeBindArray);
     if (!p_Param->a_Bind)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
+    /* The thread index should start from "1". */
     uint64_t ulIdSrc = 0;
     uint64_t ulIdTge = ulIdSrc + ucIdThrd - ucCntThrd;
     while (true) {
@@ -330,7 +356,7 @@ _CrlMapCompare(void *vp_Param)
         }
         if ((ulIdSrc >= ulCntSlc) || (ulIdTge >= ulCntSlc))
             break;
-            
+
         char *szSrc = g_ptr_array_index(p_Pot->a_Hash, ulIdSrc);
         char *szTge = g_ptr_array_index(p_Pot->a_Hash, ulIdTge);
         uint32_t uiLenSrc = strlen(szSrc);
@@ -340,16 +366,17 @@ _CrlMapCompare(void *vp_Param)
                                                 szTge, uiLenTge, &ucSim);
         if (cStat != SIM_SUCCESS)
             EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
-            
+
         if (ucSim >= p_Conf->ucScoreSim) {
             BIND *p_Bind = (BIND*)malloc(sizeof(BIND));
             p_Bind->ulIdSlcSrc = ulIdSrc;
             p_Bind->ulIdSlcTge = ulIdTge;
             g_ptr_array_add(p_Param->a_Bind, (gpointer)p_Bind);
-        }    
+        }
     }
-    
-EXIT:    
+
+EXIT:
+    p_Param->cRtnCode = cRtnCode;
     return;
 }
 
@@ -395,10 +422,9 @@ EXIT:
 
 
 int8_t
-_CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd, uint8_t ucCntThrd)
+_CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd)
 {
     p_Param->ucIdThrd = ucIdThrd;
-    p_Param->ucCntThrd = ucCntThrd;
     p_Param->a_Bind = NULL;
     return CLS_SUCCESS;
 }

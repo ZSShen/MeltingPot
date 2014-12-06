@@ -27,7 +27,7 @@ typedef struct THREAD_SLICE_T {
 typedef struct THREAD_COMPARE_T {
     int8_t cRtnCode;
     uint8_t ucIdThrd;
-    uint8_t ucCntThrd;
+    pthread_t tId;
     GPtrArray *a_Bind;
 } THREAD_COMPARE;
 

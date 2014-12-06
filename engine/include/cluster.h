@@ -10,6 +10,8 @@
 #define FAIL_NO_SAMPLE           "No samples in the given folder"
 #define SLICE_GENERATION_FAIL    "[Slice Generation] failed!"
 #define SLICE_GENERATION_SUCC    "[Slice Generation] succeed!"
+#define SLICE_CORRELATION_FAIL   "[Slice Correlation] failed!"
+#define SLICE_CORRELATION_SUCC   "[Slice Correlation] succeed!"
 
 
 /* The constants for command option parsing. */

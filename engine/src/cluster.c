@@ -48,7 +48,7 @@ ClsInit(char *szPathCfg)
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);        
 
-    cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, (int64_t*)&(p_Conf->ucCntThrd));    
+    cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, (int64_t*)&(p_Conf->ucScoreSim));    
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
 
@@ -208,12 +208,17 @@ int8_t
 ClsRunTask()
 {
     int8_t cRtnCode = CLS_SUCCESS;
-    
+
     CrlSetContext(p_Ctx);
-    cRtnCode = CrlPrepareSlice();
-    if (cRtnCode != CLS_SUCCESS)
-        EXIT1(CLS_FAIL_PROCESS, EXIT, "Error: %s.", SLICE_GENERATION_FAIL);
+    int8_t cStat = CrlPrepareSlice();
+    if (cStat != CLS_SUCCESS)
+        EXIT1(cStat, EXIT, "Notice: %s.", SLICE_GENERATION_FAIL);
     SPEW1("Notice: %s.", SLICE_GENERATION_SUCC);
+
+    cStat = CrlCorrelateSlice();
+    if (cStat != CLS_SUCCESS)
+        EXIT1(cStat, EXIT, "Notice: %s.", SLICE_CORRELATION_FAIL);
+    SPEW1("Notice: %s.", SLICE_CORRELATION_SUCC);
 
 EXIT:
     return cRtnCode;
