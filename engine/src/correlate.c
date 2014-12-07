@@ -573,6 +573,7 @@ _CrlGenerateGroup()
             ulIdGrpReal = p_SlcRep->ulIdGrp;
         } while (ulIdGrpTemp != ulIdGrpReal);
         p_SlcMbr->ulIdGrp = ulIdGrpReal;
+        
     }
 
 EXIT:
