@@ -69,7 +69,7 @@ typedef struct _BIND_T {
 
 
 /**
- * The deinitialization function for c-string.
+ * The deinitialization function of c-string.
  *
  * @param gp_Str       The pointer to the target string.
  */
@@ -78,7 +78,7 @@ DsDeleteString(gpointer gp_Str);
 
 
 /**
- * The deinitialization function for BIND structure.
+ * The deinitialization function of BIND structure.
  * 
  * @param gp_Bind      The pointer to the target structure.
  */
@@ -87,7 +87,7 @@ DsDeleteBind(gpointer gp_Bind);
 
 
 /**
- * This function hints the Glib to deallocate the BLOCK_CAND elements.
+ * This deinitialization function of BLOCK_CAND structure.
  * 
  * @param gp_BlkCand    The pointer to the to be deallocated element.
  */
@@ -96,22 +96,30 @@ DsDeleteBlkCand(gpointer gp_BlkCand);
 
 
 /**
- * This function hints the Glib to deallocate the uint64_t key of hash table.
+ * The deinitialization function of hash key.
  * 
- * @param gp_Key        The pointer to the to be deallocated key.
+ * @param gp_Key        The pointer to the target key.
  */
 void
 DsDeleteHashKey(gpointer gp_Key);
 
 
 /**
- * This function hints the Glib to deallocate the GROUP structure asoociated
- * with a hash key.
+ * The deinitialization function of GROUP structure.
  * 
- * @param gp_Val        The pointer to the to be deallocated structure.
+ * @param gp_Val        The pointer to the target structure.
  */
 void
 DsDeleteGroup(gpointer gp_Val);
+
+
+/**
+ * The deinitialization function of MELT_POT structure.
+ * 
+ * @param gp_Pot        The pointer to the target structure.
+ */
+void
+DsDeleteMeltPot(gpointer gp_Pot);
 
 
 /**
@@ -123,5 +131,17 @@ DsDeleteGroup(gpointer gp_Val);
  */
 int8_t
 DsNewGroup(GROUP **pp_Grp);
+
+
+/**
+ * The initialization function of MELT_POT structure.
+ * 
+ * @param pp_Pot        The pointer to the pointer of target structure.
+ * @param plg_Slc       The handle of the file slicing plugin.
+ * 
+ * @return status code
+ */
+int8_t
+DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc);
 
 #endif

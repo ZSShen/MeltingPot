@@ -184,10 +184,6 @@ CrlPrepareSlice()
         EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
 
     /* Record the filenames and count the number. */
-    p_Pot->a_Name = g_ptr_array_new_with_free_func(DsDeleteString);
-    if (!p_Pot->a_Name)
-        EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEDIR, "Error: %s.", strerror(errno));
-
     uint32_t uiCntFile = 0;
     struct dirent *entFile;
     while (entFile = readdir(dirRoot)) {
@@ -225,16 +221,6 @@ CrlPrepareSlice()
      * 2. Merge the array of hashes into MELT_POT structure.                 *
      *-----------------------------------------------------------------------*/
     bool bClean = false;
-    p_Pot->a_Slc = g_ptr_array_new_with_free_func(plg_Slc->FreeSliceArray);
-    if (!p_Pot->a_Slc) {
-        bClean = true;
-        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPARAM, "Error: %s.", strerror(errno));
-    }
-    p_Pot->a_Hash = g_ptr_array_new_with_free_func(DsDeleteString);
-    if (!p_Pot->a_Hash) {
-        bClean = true;
-        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPARAM, "Error: %s.", strerror(errno));
-    }
     uint64_t ulIdSlc = 0;
     for (uiIdx = 0 ; uiIdx < uiCntFile ; uiIdx++) {
         pthread_join(a_Param[uiIdx].tId, NULL);
@@ -575,11 +561,6 @@ _CrlGenerateGroup()
      * 2. Build a hash table with group id as key and GROUP structure as     *
      *    value for efficient group member access.                           *
      *-----------------------------------------------------------------------*/
-    p_Pot->h_Grp = g_hash_table_new_full(g_int64_hash, g_int64_equal,
-                                         DsDeleteHashKey, DsDeleteGroup);
-    if (!p_Pot->h_Grp)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-
     uint64_t ulLen = p_Pot->a_Slc->len;
     uint64_t ulIdx;
     for (ulIdx = 0 ; ulIdx < ulLen ; ulIdx++) {
@@ -592,7 +573,6 @@ _CrlGenerateGroup()
             ulIdGrpReal = p_SlcRep->ulIdGrp;
         } while (ulIdGrpTemp != ulIdGrpReal);
         p_SlcMbr->ulIdGrp = ulIdGrpReal;
-
     }
 
 EXIT:

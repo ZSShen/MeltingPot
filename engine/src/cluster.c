@@ -144,15 +144,8 @@ ClsInit(char *szPathCfg)
     if (cStat != SIM_SUCCESS)
         EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
 
-    /* Allocate the integrated structure to record clustering progress. */
-    p_Ctx->p_Pot = (MELT_POT*)malloc(sizeof(MELT_POT));
-    if (!p_Ctx->p_Pot)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-
-    p_Ctx->p_Pot->a_Name = NULL;
-    p_Ctx->p_Pot->a_Hash = NULL;
-    p_Ctx->p_Pot->a_Slc = NULL;
-    p_Ctx->p_Pot->h_Grp = NULL;
+    /* Allocate the MELT_POT structure to record the clustering progress. */
+    cStat = DsNewMeltPot(&(p_Ctx->p_Pot), plg_Slc);
 
 EXIT:
     return cRtnCode;    
@@ -170,21 +163,8 @@ ClsDeinit()
     if (p_Ctx->p_Conf)
         free(p_Ctx->p_Conf);
 
-    if (p_Ctx->p_Pot) {
-        if (p_Ctx->p_Pot->a_Name)
-            g_ptr_array_free(p_Ctx->p_Pot->a_Name, true);
+    DsDeleteMeltPot(p_Ctx->p_Pot);
 
-        if (p_Ctx->p_Pot->a_Hash)
-            g_ptr_array_free(p_Ctx->p_Pot->a_Hash, true);
-
-        if (p_Ctx->p_Pot->a_Slc)
-            g_ptr_array_free(p_Ctx->p_Pot->a_Slc, true);
-
-        if (p_Ctx->p_Pot->h_Grp)
-            g_hash_table_destroy(p_Ctx->p_Pot->h_Grp);
-
-        free(p_Ctx->p_Pot);
-    }
     if (p_Ctx->plg_Slc) {
         if (p_Ctx->plg_Slc->hdle_Lib) {
             p_Ctx->plg_Slc->Deinit();
