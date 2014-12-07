@@ -184,7 +184,7 @@ CrlPrepareSlice()
         EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
 
     /* Record the filenames and count the number. */
-    p_Pot->a_Name = g_ptr_array_new_with_free_func(DsFreeNameArray);
+    p_Pot->a_Name = g_ptr_array_new_with_free_func(DsDeleteString);
     if (!p_Pot->a_Name)
         EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEDIR, "Error: %s.", strerror(errno));
 
@@ -230,7 +230,7 @@ CrlPrepareSlice()
         bClean = true;
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEPARAM, "Error: %s.", strerror(errno));
     }
-    p_Pot->a_Hash = g_ptr_array_new_with_free_func(DsFreeHashArray);
+    p_Pot->a_Hash = g_ptr_array_new_with_free_func(DsDeleteString);
     if (!p_Pot->a_Hash) {
         bClean = true;
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEPARAM, "Error: %s.", strerror(errno));
@@ -365,7 +365,7 @@ _CrlMapCompare(void *vp_Param)
     uint8_t ucCntThrd = p_Conf->ucCntThrd;
     uint64_t ulCntSlc = p_Pot->a_Hash->len;
 
-    p_Param->a_Bind = g_ptr_array_new_with_free_func(DsFreeBindArray);
+    p_Param->a_Bind = g_ptr_array_new_with_free_func(DsDeleteBind);
     if (!p_Param->a_Bind)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
@@ -529,7 +529,7 @@ _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize, bool bClean)
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
         if (bClean) {
-            g_ptr_array_set_free_func(a_Param[uiIdx].a_Hash, DsFreeHashArray);
+            g_ptr_array_set_free_func(a_Param[uiIdx].a_Hash, DsDeleteString);
             g_ptr_array_set_free_func(a_Param[uiIdx].a_Slc, plg_Slc->FreeSliceArray);
         }
         if (a_Param[uiIdx].a_Slc)
@@ -576,7 +576,7 @@ _CrlGenerateGroup()
      *    value for efficient group member access.                           *
      *-----------------------------------------------------------------------*/
     p_Pot->h_Grp = g_hash_table_new_full(g_int64_hash, g_int64_equal,
-                                         DsFreeKeyGroupHash, DsFreeValueGroupHash);
+                                         DsDeleteHashKey, DsDeleteGroup);
     if (!p_Pot->h_Grp)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 

@@ -69,30 +69,21 @@ typedef struct _BIND_T {
 
 
 /**
- * This function hints the Glib to deallocate file name elements.
+ * The deinitialization function for c-string.
  *
- * @param gp_Name       The pointer to the to be deallocated element.
+ * @param gp_Str       The pointer to the target string.
  */
 void
-DsFreeNameArray(gpointer gp_Name);
+DsDeleteString(gpointer gp_Str);
 
 
 /**
- * This function hints the Glib to deallocate hash elements.
+ * The deinitialization function for BIND structure.
  * 
- * @param gp_Hash      The pointer to the to be deallocated element.
- */ 
-void
-DsFreeHashArray(gpointer gp_Hash);
-
-
-/**
- * This function hints the Glib to deallocate BIND elements.
- * 
- * @param gp_Bind      The pointer to the to be deallocated element.
+ * @param gp_Bind      The pointer to the target structure.
  */
 void
-DsFreeBindArray(gpointer gp_Bind);
+DsDeleteBind(gpointer gp_Bind);
 
 
 /**
@@ -101,7 +92,7 @@ DsFreeBindArray(gpointer gp_Bind);
  * @param gp_BlkCand    The pointer to the to be deallocated element.
  */
 void
-DsFreeBlkCandArray(gpointer gp_BlkCand);
+DsDeleteBlkCand(gpointer gp_BlkCand);
 
 
 /**
@@ -110,7 +101,7 @@ DsFreeBlkCandArray(gpointer gp_BlkCand);
  * @param gp_Key        The pointer to the to be deallocated key.
  */
 void
-DsFreeKeyGroupHash(gpointer gp_Key);
+DsDeleteHashKey(gpointer gp_Key);
 
 
 /**
@@ -120,7 +111,7 @@ DsFreeKeyGroupHash(gpointer gp_Key);
  * @param gp_Val        The pointer to the to be deallocated structure.
  */
 void
-DsFreeValueGroupHash(gpointer gp_Val);
+DsDeleteGroup(gpointer gp_Val);
 
 
 /**

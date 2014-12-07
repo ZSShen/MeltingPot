@@ -3,27 +3,24 @@
 
 
 void
-DsFreeNameArray(gpointer gp_Name)
+DsDeleteHashKey(gpointer gp_Key)
 {
-    if (gp_Name)
-        free(gp_Name);
+    return;
+}
+
+
+void
+DsDeleteString(gpointer gp_Str)
+{
+    if (gp_Str)
+        free(gp_Str);
 
     return;
 }
 
 
 void
-DsFreeHashArray(gpointer gp_Hash)
-{
-    if (gp_Hash)
-        free(gp_Hash);
-
-    return;
-}
-
-
-void
-DsFreeBindArray(gpointer gp_Bind)
+DsDeleteBind(gpointer gp_Bind)
 {
     if (gp_Bind)
         free(gp_Bind);
@@ -33,7 +30,7 @@ DsFreeBindArray(gpointer gp_Bind)
 
 
 void
-DsFreeBlkCandArray(gpointer gp_BlkCand)
+DsDeleteBlkCand(gpointer gp_BlkCand)
 {
     if (gp_BlkCand) {
         BLOCK_CAND *p_BlkCand = (BLOCK_CAND*)gp_BlkCand;    
@@ -46,14 +43,7 @@ DsFreeBlkCandArray(gpointer gp_BlkCand)
 
 
 void
-DsFreeKeyGroupHash(gpointer gp_Key)
-{
-    return;
-}
-
-
-void
-DsFreeValueGroupHash(gpointer gp_Val)
+DsDeleteGroup(gpointer gp_Val)
 {
     if (gp_Val) {
         GROUP *p_Grp = (GROUP*)gp_Val;
@@ -81,9 +71,10 @@ DsNewGroup(GROUP **pp_Grp)
     if (!p_Grp->a_Mbr)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEGRP, "Error: %s.", strerror(errno));
 
-    p_Grp->a_BlkCand = g_ptr_array_new_with_free_func(DsFreeBlkCandArray);
+    p_Grp->a_BlkCand = g_ptr_array_new_with_free_func(DsDeleteBlkCand);
     if (!p_Grp->a_BlkCand)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEMBR, "Error: %s.", strerror(errno));    
+    goto EXIT;
 
 FREEMBR:
     if (p_Grp->a_Mbr)
