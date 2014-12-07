@@ -137,7 +137,7 @@ EXIT:
 
 
 void
-SlcFreeSliceArray(gpointer gp_Slc)
+SlcDeleteSlice(gpointer gp_Slc)
 {
     SLICE *p_Slc = (SLICE*)gp_Slc;
     if (p_Slc)

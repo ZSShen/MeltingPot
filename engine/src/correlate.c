@@ -516,7 +516,7 @@ _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize, bool bClean)
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
         if (bClean) {
             g_ptr_array_set_free_func(a_Param[uiIdx].a_Hash, DsDeleteString);
-            g_ptr_array_set_free_func(a_Param[uiIdx].a_Slc, plg_Slc->FreeSliceArray);
+            g_ptr_array_set_free_func(a_Param[uiIdx].a_Slc, plg_Slc->DeleteSlice);
         }
         if (a_Param[uiIdx].a_Slc)
             g_ptr_array_free(a_Param[uiIdx].a_Slc, true);

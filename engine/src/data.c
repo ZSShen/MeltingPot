@@ -127,7 +127,7 @@ DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc)
     if (!p_Pot->a_Hash)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREENAME, "Error: %s.", strerror(errno));
 
-    p_Pot->a_Slc = g_ptr_array_new_with_free_func(plg_Slc->FreeSliceArray);
+    p_Pot->a_Slc = g_ptr_array_new_with_free_func(plg_Slc->DeleteSlice);
     if (!p_Pot->a_Slc)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEHASH, "Error: %s.", strerror(errno));
 

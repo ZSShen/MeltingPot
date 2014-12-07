@@ -293,8 +293,8 @@ _ClsInitPluginSlice(PLUGIN_SLICE **p_plg_Slc, char *szPath)
     if (!plg_Slc->GetFileSlice)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Slc->FreeSliceArray = dlsym(plg_Slc->hdle_Lib, SYM_SLC_FREE_SLICE_ARRAY);
-    if (!plg_Slc->FreeSliceArray)
+    plg_Slc->DeleteSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_FREE_SLICE_ARRAY);
+    if (!plg_Slc->DeleteSlice)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     int8_t cStat = plg_Slc->Init();

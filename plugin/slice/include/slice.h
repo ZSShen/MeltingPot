@@ -34,7 +34,7 @@ typedef struct _SLICE_T {
 typedef int8_t (*func_SlcInit) ();
 typedef int8_t (*func_SlcDeinit) ();
 typedef int8_t (*func_SlcGetFileSlice) (char*, uint16_t, GPtrArray**);
-typedef void (*func_SlcFreeSliceArray) (gpointer);
+typedef void (*func_SlcDeleteSlice) (gpointer);
 
 /* The integrated structure to store exported functions. */
 typedef struct _PLUGIN_SLICE_T {
@@ -42,14 +42,14 @@ typedef struct _PLUGIN_SLICE_T {
     func_SlcInit Init;
     func_SlcDeinit Deinit;
     func_SlcGetFileSlice GetFileSlice;
-    func_SlcFreeSliceArray FreeSliceArray;
+    func_SlcDeleteSlice DeleteSlice;
 } PLUGIN_SLICE;
 
 /* The function name symbols. */
 #define SYM_SLC_INIT                "SlcInit"
 #define SYM_SLC_DEINIT              "SlcDeinit"
 #define SYM_SLC_GET_FILE_SLICE      "SlcGetFileSlice"
-#define SYM_SLC_FREE_SLICE_ARRAY    "SlcFreeSliceArray"
+#define SYM_SLC_FREE_SLICE_ARRAY    "SlcDeleteSlice"
 
 
 /**
@@ -91,7 +91,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc);
  * @param gp_Slc       The pointer to the to be deallocated element.
  */
 void
-SlcFreeSliceArray(gpointer gp_Slc);
+SlcDeleteSlice(gpointer gp_Slc);
 
 
 #endif
