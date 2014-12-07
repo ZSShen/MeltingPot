@@ -2,8 +2,11 @@
 #define _DATA_H_
 
 
+#include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <glib.h>
+#include "spew.h"
 #include "cluster.h"
 #include "slice.h"
 #include "similarity.h"
@@ -25,7 +28,7 @@ typedef struct _CONTENT_ADDR_T {
    belonged to certain group. */
 typedef struct _BLOCK_CAND_T {
     uint16_t *p_usCont;     /* The normalized byte sequence. */
-    GPtrArray *a_ContAddr;  /* The list of addressing methods to locate this block. */
+    GArray *a_ContAddr;     /* The list of addressing methods to locate this block. */
 } BLOCK_CAND;
 
 
@@ -84,12 +87,21 @@ DsFreeHashArray(gpointer gp_Hash);
 
 
 /**
- * This function hints the Glib to deallocate bind elements.
+ * This function hints the Glib to deallocate BIND elements.
  * 
  * @param gp_Bind      The pointer to the to be deallocated element.
  */
 void
 DsFreeBindArray(gpointer gp_Bind);
+
+
+/**
+ * This function hints the Glib to deallocate the BLOCK_CAND elements.
+ * 
+ * @param gp_BlkCand    The pointer to the to be deallocated element.
+ */
+void
+DsFreeBlkCandArray(gpointer gp_BlkCand);
 
 
 /**
@@ -109,5 +121,16 @@ DsFreeKeyGroupHash(gpointer gp_Key);
  */
 void
 DsFreeValueGroupHash(gpointer gp_Val);
+
+
+/**
+ * The initialization function of GROUP structure.
+ *
+ * @param pp_Grp        The pointer to the pointer of target structure.
+ * 
+ * @return status code
+ */
+int8_t
+DsNewGroup(GROUP **pp_Grp);
 
 #endif
