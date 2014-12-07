@@ -34,7 +34,7 @@ typedef struct _GROUP_T {
     uint16_t usCntBlk;      /* The number of distilled binary blocks. */
     uint64_t ulIdGrp;       /* The group id. */
     uint64_t ulSizeGrp;     /* The number of group members. */
-    GPtrArray *a_Mbr;       /* The list of grouped members. */
+    GArray *a_Mbr;          /* The list of group members. */
     GPtrArray *a_BlkCand;   /* The list of distilled binary blocks. */
 } GROUP;
 
@@ -45,7 +45,7 @@ typedef struct _MELT_POT_T {
     GPtrArray *a_Name;      /* The list of filenames belonged to the given sample set. */ 
     GPtrArray *a_Hash;      /* The list of slice hashes. */
     GPtrArray *a_Slc;       /* The list of detailed slice information. */
-    GHashTable *a_Grp;      /* The hash table storing the groups. */
+    GHashTable *h_Grp;      /* The hash table storing the groups. */
 } MELT_POT;
 
 
@@ -91,5 +91,23 @@ DsFreeHashArray(gpointer gp_Hash);
 void
 DsFreeBindArray(gpointer gp_Bind);
 
+
+/**
+ * This function hints the Glib to deallocate the uint64_t key of hash table.
+ * 
+ * @param gp_Key        The pointer to the to be deallocated key.
+ */
+void
+DsFreeKeyGroupHash(gpointer gp_Key);
+
+
+/**
+ * This function hints the Glib to deallocate the GROUP structure asoociated
+ * with a hash key.
+ * 
+ * @param gp_Val        The pointer to the to be deallocated structure.
+ */
+void
+DsFreeValueGroupHash(gpointer gp_Val);
 
 #endif

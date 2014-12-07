@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include "data.h"
 
 
@@ -27,6 +28,28 @@ DsFreeBindArray(gpointer gp_Bind)
 {
     if (gp_Bind)
         free(gp_Bind);
+
+    return;
+}
+
+
+void
+DsFreeKeyGroupHash(gpointer gp_Key)
+{
+    return;
+}
+
+
+void
+DsFreeValueGroupHash(gpointer gp_Val)
+{
+    if (gp_Val) {
+        GROUP *p_Grp = (GROUP*)gp_Val;
+        if (p_Grp->a_Mbr)
+            g_array_free(p_Grp->a_Mbr, true);
+        if (p_Grp->a_BlkCand)
+            g_ptr_array_free(p_Grp->a_BlkCand, true);
+    }
 
     return;
 }

@@ -152,7 +152,7 @@ ClsInit(char *szPathCfg)
     p_Ctx->p_Pot->a_Name = NULL;
     p_Ctx->p_Pot->a_Hash = NULL;
     p_Ctx->p_Pot->a_Slc = NULL;
-    p_Ctx->p_Pot->a_Grp = NULL;
+    p_Ctx->p_Pot->h_Grp = NULL;
 
 EXIT:
     return cRtnCode;    
@@ -179,6 +179,9 @@ ClsDeinit()
 
         if (p_Ctx->p_Pot->a_Slc)
             g_ptr_array_free(p_Ctx->p_Pot->a_Slc, true);
+
+        if (p_Ctx->p_Pot->h_Grp)
+            g_hash_table_destroy(p_Ctx->p_Pot->h_Grp);
 
         free(p_Ctx->p_Pot);
     }

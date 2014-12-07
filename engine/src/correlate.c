@@ -148,6 +148,17 @@ int8_t
 _CrlDeinitArrayThrdCmp(THREAD_COMPARE *a_Param, uint32_t uiSize);
 
 
+/**
+ * This function summarizes the correlation result:
+ *     1. Update each SLICE structure with the real group id.
+ *     2. Construct the GROUP hash table for efficient group member access.
+ * 
+ * @return status code
+ */
+int8_t
+_CrlGenerateGroup();
+
+
 /*======================================================================*
  *                Implementation for Exported Functions                 *
  *======================================================================*/
@@ -275,6 +286,7 @@ CrlCorrelateSlice()
         if (a_Param[ucIdx].cRtnCode != CLS_SUCCESS)
             cRtnCode = CLS_FAIL_PROCESS;
     }
+    _CrlGenerateGroup();
 
 FREEPARAM:    
     _CrlDeinitArrayThrdCmp(a_Param, p_Conf->ucCntThrd);    
@@ -549,4 +561,39 @@ _CrlDeinitArrayThrdCmp(THREAD_COMPARE *a_Param, uint32_t uiSize)
 
     free(a_Param);
     return CLS_SUCCESS;        
+}
+
+
+int8_t
+_CrlGenerateGroup()
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    /*-----------------------------------------------------------------------*
+     * Comprehensive group construction                                      *
+     * 1. Update each SLICE structure with the real group id.                *
+     * 2. Build a hash table with group id as key and GROUP structure as     *
+     *    value for efficient group member access.                           *
+     *-----------------------------------------------------------------------*/
+    p_Pot->h_Grp = g_hash_table_new_full(g_int64_hash, g_int64_equal,
+                                         DsFreeKeyGroupHash, DsFreeValueGroupHash);
+    if (!p_Pot->h_Grp)
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    uint64_t ulLen = p_Pot->a_Slc->len;
+    uint64_t ulIdx;
+    for (ulIdx = 0 ; ulIdx < ulLen ; ulIdx++) {
+        SLICE *p_SlcMbr = g_ptr_array_index(p_Pot->a_Slc, ulIdx);
+        uint64_t ulIdGrpReal = p_SlcMbr->ulIdGrp;
+        uint64_t ulIdGrpTemp;
+        do {
+            ulIdGrpTemp = ulIdGrpReal;
+            SLICE *p_SlcRep = g_ptr_array_index(p_Pot->a_Slc, ulIdGrpTemp);
+            ulIdGrpReal = p_SlcRep->ulIdGrp;
+        } while (ulIdGrpTemp != ulIdGrpReal);
+        p_SlcMbr->ulIdGrp = ulIdGrpReal;
+    }
+
+EXIT:
+    return cRtnCode;
 }
