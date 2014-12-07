@@ -19,6 +19,75 @@ config_t cfg;
 CONTEXT *p_Ctx;
 
 
+/*======================================================================*
+ *                 Declaration for Internal Functions                   *
+ *======================================================================*/
+/**
+ * The initialization function of CONFIG structure.
+ * 
+ * @param pp_Conf       The pointer to the pointer of target structure.
+ * @param szPath        The pathname of the configuration file.
+ * 
+ * @return status code 
+ */
+int8_t
+_ClsInitConfig(CONFIG **pp_Conf, char *szPath);
+
+
+/**
+ * The initialization function of the file slicing plugin.
+ * 
+ * @param p_plg_Slc     The pointer to the plugin handle.
+ * @param szPath        The pathname of the plugin.
+ * 
+ * @return status code
+ */
+int8_t
+_ClsInitPluginSlice(PLUGIN_SLICE **p_plg_Slc, char *szPath);
+
+
+/**
+ * The initialization function of the similarity computation plugin.
+ * 
+ * @param p_plg_Sim     The pointer to the plugin handle.
+ * @param szPath        The pathname of the plugin.
+ * 
+ * @return status code
+ */
+int8_t
+_ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plg_Sim, char *szPath);
+
+
+/**
+ * The deinitialization function of CONFIG structure.
+ * 
+ * @param p_Conf        The pointer to the target structure.
+ */
+void
+_ClsDeinitConfig(CONFIG *p_Conf);
+
+
+/**
+ * The deinitialization function of the file slicing plugin.
+ * 
+ * @param plg_Slc       The plugin handle.
+ */
+void
+_ClsDeinitPluginSlice(PLUGIN_SLICE *plg_Slc);
+
+
+/**
+ * The deinitialization function of the similarity computation plugin.
+ * 
+ * @param plg_Sim       The plugin handle.
+ */
+void
+_ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim);
+
+
+/*======================================================================*
+ *                Implementation for Exported Functions                 *
+ *======================================================================*/
 int8_t
 ClsInit(char *szPathCfg)
 {
@@ -34,16 +103,125 @@ ClsInit(char *szPathCfg)
     p_Ctx->plg_Slc = NULL;
     p_Ctx->plg_Sim = NULL;
 
-    int8_t cStat = config_read_file(&cfg, szPathCfg);
+    /* Resolve the user specified configuration. */
+    int8_t cStat = _ClsInitConfig(&(p_Ctx->p_Conf), szPathCfg);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
+
+    /* Load the file slicing and similarity computation plugins. */
+    CONFIG *p_Conf = p_Ctx->p_Conf;
+    cStat = _ClsInitPluginSlice(&(p_Ctx->plg_Slc), p_Conf->szPathPluginSlc);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
+
+    cStat = _ClsInitPluginSimilarity(&(p_Ctx->plg_Sim), p_Conf->szPathPluginSim);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
+
+    /* Allocate the MELT_POT structure to record the clustering progress. */
+    cStat = DsNewMeltPot(&(p_Ctx->p_Pot), p_Ctx->plg_Slc);
+
+EXIT:
+    return cRtnCode;    
+}
+
+
+int8_t
+ClsDeinit()
+{
+    if (!p_Ctx)
+        return CLS_SUCCESS;
+
+    DsDeleteMeltPot(p_Ctx->p_Pot);
+    _ClsDeinitConfig(p_Ctx->p_Conf);
+    _ClsDeinitPluginSlice(p_Ctx->plg_Slc);
+    _ClsDeinitPluginSimilarity(p_Ctx->plg_Sim);
+
+    free(p_Ctx);
+    return CLS_SUCCESS;
+}
+
+
+int8_t
+ClsRunTask()
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    CrlSetContext(p_Ctx);
+    int8_t cStat = CrlPrepareSlice();
+    if (cStat != CLS_SUCCESS)
+        EXIT1(cStat, EXIT, "Notice: %s.", SLICE_GENERATION_FAIL);
+    SPEW1("Notice: %s.", SLICE_GENERATION_SUCC);
+
+    cStat = CrlCorrelateSlice();
+    if (cStat != CLS_SUCCESS)
+        EXIT1(cStat, EXIT, "Notice: %s.", SLICE_CORRELATION_FAIL);
+    SPEW1("Notice: %s.", SLICE_CORRELATION_SUCC);
+
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+main(int argc, char **argv, char **envp)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    static struct option options[] = {
+        {OPT_LONG_HELP, no_argument, 0, OPT_HELP},
+        {OPT_LONG_PATH_CONF, required_argument, 0, OPT_PATH_CONF},
+    };
+
+    char szOrder[BUF_SIZE_OPT];
+    memset(szOrder, 0, sizeof(char) * BUF_SIZE_OPT);
+    sprintf(szOrder, "%c%c:", OPT_HELP, OPT_PATH_CONF);
+
+    int32_t iIdxOpt = 0, iOpt;
+    char *szPathCfg = NULL;
+    while ((iOpt = getopt_long(argc, argv, szOrder, options, &iIdxOpt)) != -1) {
+        switch (iOpt) {
+            case OPT_PATH_CONF: {
+                szPathCfg = optarg;
+                break;
+            }
+            case OPT_HELP:
+                break;
+        }
+    }
+    if (!szPathCfg)
+        EXIT1(CLS_FAIL_OPT_PARSE, EXIT, "Error: %s.", FAIL_OPT_PARSE_CONF);
+
+    int8_t cStat = ClsInit(szPathCfg);
+    if (cStat != CLS_SUCCESS)
+        goto DEINIT;
+
+    cStat = ClsRunTask();
+
+DEINIT:
+    ClsDeinit();    
+EXIT:
+    return cRtnCode;
+}
+
+
+/*======================================================================*
+ *                Implementation for Internal Functions                 *
+ *======================================================================*/
+ int8_t
+_ClsInitConfig(CONFIG **pp_Conf, char *szPath)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    int8_t cStat = config_read_file(&cfg, szPath);
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", config_error_text(&cfg));
 
-    p_Ctx->p_Conf = (CONFIG*)malloc(sizeof(CONFIG));
-    if (!p_Ctx->p_Conf)
+    *pp_Conf = (CONFIG*)malloc(sizeof(CONFIG));
+    if (!(*pp_Conf))
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
-    /* Resolve the user specified configuration. */
-    CONFIG *p_Conf = p_Ctx->p_Conf;
+    CONFIG *p_Conf = *pp_Conf;
     cStat = config_lookup_int(&cfg, C_COUNT_THREAD, (int64_t*)&(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);        
@@ -84,13 +262,22 @@ ClsInit(char *szPathCfg)
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
 
-    /* Load the file slicing plugin. */
-    p_Ctx->plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
-    if (!p_Ctx->plg_Slc)
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_ClsInitPluginSlice(PLUGIN_SLICE **p_plg_Slc, char *szPath)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    *p_plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
+    if (!(*p_plg_Slc))
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
-    PLUGIN_SLICE *plg_Slc = p_Ctx->plg_Slc;
-    plg_Slc->hdle_Lib = dlopen(p_Conf->szPathPluginSlc, RTLD_LAZY);
+    PLUGIN_SLICE *plg_Slc = *p_plg_Slc;
+    plg_Slc->hdle_Lib = dlopen(szPath, RTLD_LAZY);
     if (!plg_Slc->hdle_Lib)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
@@ -110,17 +297,26 @@ ClsInit(char *szPathCfg)
     if (!plg_Slc->FreeSliceArray)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    cStat = plg_Slc->Init();
+    int8_t cStat = plg_Slc->Init();
     if (cStat != SLC_SUCCESS)
         EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
 
-    /* Load the similarity computation plugin. */
-    p_Ctx->plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
-    if (!p_Ctx->plg_Sim)
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plg_Sim, char *szPath)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+    
+    *p_plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
+    if (!(*p_plg_Sim))
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
 
-    PLUGIN_SIMILARITY *plg_Sim = p_Ctx->plg_Sim;
-    plg_Sim->hdle_Lib = dlopen(p_Conf->szPathPluginSim, RTLD_LAZY);
+    PLUGIN_SIMILARITY *plg_Sim = *p_plg_Sim;
+    plg_Sim->hdle_Lib = dlopen(szPath, RTLD_LAZY);
     if (!plg_Sim->hdle_Lib)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
@@ -140,115 +336,51 @@ ClsInit(char *szPathCfg)
     if (!plg_Sim->CompareHashPair)
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    cStat = plg_Sim->Init();
+    int8_t cStat = plg_Sim->Init();
     if (cStat != SIM_SUCCESS)
         EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
 
-    /* Allocate the MELT_POT structure to record the clustering progress. */
-    cStat = DsNewMeltPot(&(p_Ctx->p_Pot), plg_Slc);
-
 EXIT:
-    return cRtnCode;    
+    return cRtnCode;
 }
 
 
-int8_t
-ClsDeinit()
+void
+_ClsDeinitConfig(CONFIG *p_Conf)
 {
     config_destroy(&cfg);
-    
-    if (!p_Ctx)
-        return CLS_SUCCESS;
-    
-    if (p_Ctx->p_Conf)
-        free(p_Ctx->p_Conf);
+    if (p_Conf)
+        free(p_Conf);
 
-    DsDeleteMeltPot(p_Ctx->p_Pot);
-
-    if (p_Ctx->plg_Slc) {
-        if (p_Ctx->plg_Slc->hdle_Lib) {
-            p_Ctx->plg_Slc->Deinit();
-            dlclose(p_Ctx->plg_Slc->hdle_Lib);
-        }
-        
-        free(p_Ctx->plg_Slc);
-    }
-    if (p_Ctx->plg_Sim) {
-        if (p_Ctx->plg_Sim->hdle_Lib) {
-            p_Ctx->plg_Sim->Deinit();
-            dlclose(p_Ctx->plg_Sim->hdle_Lib);
-        }
-        
-        free(p_Ctx->plg_Sim);
-    }
-
-    free(p_Ctx);
-    return CLS_SUCCESS;
+    return;
 }
 
 
-int8_t
-ClsRunTask()
+void
+_ClsDeinitPluginSlice(PLUGIN_SLICE *plg_Slc)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    if (plg_Slc) {
+        if (plg_Slc->hdle_Lib) {
+            plg_Slc->Deinit();
+            dlclose(plg_Slc->hdle_Lib);
+        }
+        free(plg_Slc);
+    }
 
-    CrlSetContext(p_Ctx);
-    int8_t cStat = CrlPrepareSlice();
-    if (cStat != CLS_SUCCESS)
-        EXIT1(cStat, EXIT, "Notice: %s.", SLICE_GENERATION_FAIL);
-    SPEW1("Notice: %s.", SLICE_GENERATION_SUCC);
-
-    cStat = CrlCorrelateSlice();
-    if (cStat != CLS_SUCCESS)
-        EXIT1(cStat, EXIT, "Notice: %s.", SLICE_CORRELATION_FAIL);
-    SPEW1("Notice: %s.", SLICE_CORRELATION_SUCC);
-
-EXIT:
-    return cRtnCode;
+    return;
 }
 
 
-int8_t
-main(int argc, char **argv, char **envp)
+void
+_ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
-
-    /* Handle comman line option. */
-    static struct option options[] = {
-        {OPT_LONG_HELP, no_argument, 0, OPT_HELP},
-        {OPT_LONG_PATH_CONF, required_argument, 0, OPT_PATH_CONF},
-    };
-
-    char szOrder[BUF_SIZE_OPT];
-    memset(szOrder, 0, sizeof(char) * BUF_SIZE_OPT);
-    sprintf(szOrder, "%c%c:", OPT_HELP, OPT_PATH_CONF);
-
-    int32_t iIdxOpt = 0, iOpt;
-    char *szPathCfg = NULL;
-    while ((iOpt = getopt_long(argc, argv, szOrder, options, &iIdxOpt)) != -1) {
-        switch (iOpt) {
-            case OPT_PATH_CONF: {
-                szPathCfg = optarg;
-                break;
-            }
-            case OPT_HELP:
-                break;
+    if (plg_Sim) {
+        if (plg_Sim->hdle_Lib) {
+            plg_Sim->Deinit();
+            dlclose(plg_Sim->hdle_Lib);
         }
+        free(plg_Sim);
     }
-    if (!szPathCfg)
-        EXIT1(CLS_FAIL_OPT_PARSE, EXIT, "Error: %s.", FAIL_OPT_PARSE_CONF);
 
-    /* Initialize the clustering engine with user specified configurations. */
-    int8_t cStat = ClsInit(szPathCfg);
-    if (cStat != CLS_SUCCESS)
-        goto DEINIT;
-
-    /* Launch binary slice correlation and pattern generation. */
-    cStat = ClsRunTask();
-
-    /* Release the resources allocated by the engine. */
-DEINIT:
-    ClsDeinit();    
-EXIT:
-    return cRtnCode;
+    return;
 }
