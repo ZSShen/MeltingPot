@@ -9,9 +9,6 @@
 #include "similarity.h"
 
 
-#define PATH_BUF_SIZE   1024
-
-
 /* The thread parameter to record the result of file slicing. */
 typedef struct THREAD_SLICE_T {
     int8_t cRtnCode;
@@ -35,7 +32,7 @@ typedef struct THREAD_COMPARE_T {
 /**
  * This function sets the context which:
  *     1. Provides the user specified configuration and plugins.
- *     2. Should be updated with he clustering progress.
+ *     2. Should be updated with the correlation result.
  *
  * @param p_Ctx     The pointer to the CONTEXT structure.
  * 
@@ -57,8 +54,7 @@ CrlPrepareSlice();
 
 
 /**
- * This function correlates the similar slices into groups and extracts the common 
- * features shared by each group.
+ * This function correlates the similar slices into groups.
  *
  * @return status code
  */

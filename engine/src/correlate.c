@@ -15,11 +15,11 @@
 #include "similarity.h"
 
 
-sem_t ins_Sem;
-CONFIG *p_Conf;
-MELT_POT *p_Pot;
-PLUGIN_SLICE *plg_Slc;
-PLUGIN_SIMILARITY *plg_Sim;
+static sem_t synSem;
+static CONFIG *p_Conf;
+static MELT_POT *p_Pot;
+static PLUGIN_SLICE *plg_Slc;
+static PLUGIN_SIMILARITY *plg_Sim;
 
 
 /*======================================================================*
@@ -28,8 +28,7 @@ PLUGIN_SIMILARITY *plg_Sim;
 /**
  * This function slices a file and generates the hash for each slice.
  * 
- * @param vp_Param      The pointer to the structure which should be
- *                      recorded with the slicing result.
+ * @param vp_Param      The THREAD_SLICE type parameter.
  * 
  * @return (currently deprecated)
  */
@@ -41,8 +40,7 @@ _CrlMapSlice(void *vp_Param);
  * This function compares the slices within the designated range and records
  * the slice pair with similarity score fitting the threshold.
  * 
- * @param vp_Param      The pointer to the structure which should be
- *                      recorded with the slice pair.
+ * @param vp_Param      The THREAD_COMPARE type parameter.
  * 
  * @return (currently deprecated)
  */
@@ -54,8 +52,7 @@ _CrlMapCompare(void *vp_Param);
  * This function iteratively collects the slices and hashes acqured by each
  * thread into MELT_POT structure.
  * 
- * @param p_Param       The pointer to the structure which records the slicing result
- *                      acquired by a thread.
+ * @param p_Param       The pointer to the result updated by Slice thread.
  * @param p_ulIdSlc     The pointer to the variable which should be updated with
  *                      the currently traced index of file slice.
  * 
@@ -69,7 +66,7 @@ _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc);
  * This function iteratively merges the similar slice pairs. Note that the 
  * group id is initially assigned to a slice which will be formally updated later.
  * 
- * @param p_Param       The pointer to the structure which records the slice pairs.
+ * @param p_Param       The pointer to the result updated by Compare thread.
  */
 int8_t
 _CrlReduceCompare(THREAD_COMPARE *p_Param);
@@ -206,10 +203,10 @@ CrlPrepareSlice()
     if (cStat != CLS_SUCCESS)
         EXITQ(CLS_FAIL_MEM_ALLOC, CLOSEDIR);
 
-    sem_init(&ins_Sem, 0, p_Conf->ucCntThrd);
+    sem_init(&synSem, 0, p_Conf->ucCntThrd);
     uint32_t uiIdx = 0;
     while (uiIdx < uiCntFile) {
-        sem_wait(&ins_Sem);
+        sem_wait(&synSem);
         _CrlSetParamThrdSlc(&(a_Param[uiIdx]), g_ptr_array_index(p_Pot->a_Name, uiIdx));
         pthread_create(&(a_Param[uiIdx].tId), NULL, _CrlMapSlice, (void*)&(a_Param[uiIdx]));
         uiIdx++;                    
@@ -228,7 +225,7 @@ CrlPrepareSlice()
         if (a_Param[uiIdx].cRtnCode != CLS_SUCCESS)
             cRtnCode = CLS_FAIL_PROCESS;
     }
-    sem_destroy(&ins_Sem);
+    sem_destroy(&synSem);
 
 FREEPARAM:
     _CrlDeinitArrayThrdSlc(a_Param, uiCntFile, bClean);
@@ -337,7 +334,7 @@ CLOSEFILE:
         fclose(fp);
 EXIT:
     p_Param->cRtnCode = cRtnCode;
-    sem_post(&ins_Sem);
+    sem_post(&synSem);
     return;
 }
 
