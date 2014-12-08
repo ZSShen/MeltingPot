@@ -15,8 +15,8 @@
 #include "similarity.h"
 
 
-config_t cfg;
-CONTEXT *p_Ctx;
+static config_t cfg;
+static CONTEXT *p_Ctx;
 
 
 /*======================================================================*
