@@ -51,17 +51,19 @@ enum {
 };
 
 
-/* This ds records the paramters to control the clustering process. */
+/* This ds records the paramters to control the clustering process.
+   Note the reason that we do not follow the definition of standard integer 
+   is due to the type definition of libconfig. */
 typedef struct _CONFIG_T {
     bool bTrunc;            /* The option to truncate trivial groups. */
-    uint8_t ucCntThrd;      /* The number of threads used for parallel processing. */
-    uint8_t ucScoreSim;     /* The threshold to group similar binary slices. */
-    uint8_t ucCntBlk;       /* The number of hex byte blocks in pattern. */
-    uint8_t ucSizeBlk;      /* The size of the hex byte block. */
-    uint8_t ucRatNoise;     /* The ratio of meaningless bytes in one hex block. */
-    uint8_t ucRatWild;      /* The ratio of wildcard characters in one hex block. */
-    uint8_t ucIoBand;       /* The number of files a thread can simultaneously open. */
-    uint16_t usSizeSlc;     /* The size of the binary slice extracted from file
+    int ucCntThrd;          /* The number of threads used for parallel processing. */
+    int ucScoreSim;         /* The threshold to group similar binary slices. */
+    int ucCntBlk;           /* The number of hex byte blocks in pattern. */
+    int ucSizeBlk;          /* The size of the hex byte block. */
+    int ucRatNoise;         /* The ratio of meaningless bytes in one hex block. */
+    int ucRatWild;          /* The ratio of wildcard characters in one hex block. */
+    int ucIoBand;           /* The number of files a thread can simultaneously open. */
+    int usSizeSlc;          /* The size of the binary slice extracted from file
                                which is the basic unit of clustering process. */
     char *szPathRootIn;     /* The root pathname of the input sample set. */
     char *szPathRootOut;    /* The root pathname of the output patterns. */

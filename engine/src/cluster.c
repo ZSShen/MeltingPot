@@ -222,44 +222,41 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     CONFIG *p_Conf = *pp_Conf;
-    cStat = config_lookup_int(&cfg, C_COUNT_THREAD, (int*)&(p_Conf->ucCntThrd));    
+    cStat = config_lookup_int(&cfg, C_COUNT_THREAD, &(p_Conf->ucCntThrd));    
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);        
 
-    cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, (int*)&(p_Conf->ucScoreSim));    
+    cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, &(p_Conf->ucScoreSim));    
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
 
-    cStat = config_lookup_int(&cfg, C_COUNT_HEX_BLOCK, (int*)&(p_Conf->ucCntBlk));
+    cStat = config_lookup_int(&cfg, C_COUNT_HEX_BLOCK, &(p_Conf->ucCntBlk));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_HEX_BLOCK);
 
-    cStat = config_lookup_int(&cfg, C_SIZE_HEX_BLOCK, (int*)&(p_Conf->ucSizeBlk));
+    cStat = config_lookup_int(&cfg, C_SIZE_HEX_BLOCK, &(p_Conf->ucSizeBlk));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_HEX_BLOCK);
 
-    cStat = config_lookup_int(&cfg, C_SIZE_SLICE, (int*)&(p_Conf->usSizeSlc));
+    cStat = config_lookup_int(&cfg, C_SIZE_SLICE, &(p_Conf->usSizeSlc));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_SLICE);
 
-    cStat = config_lookup_int(&cfg, C_RATIO_NOISE, (int*)&(p_Conf->ucRatNoise));
+    cStat = config_lookup_int(&cfg, C_RATIO_NOISE, &(p_Conf->ucRatNoise));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_RATIO_NOISE);
-    /*
-    cStat = config_lookup_int(&cfg, C_RATIO_WILDCARD, (int*)&(p_Conf->ucRatWild));
+
+    cStat = config_lookup_int(&cfg, C_RATIO_WILDCARD, &(p_Conf->ucRatWild));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_RATIO_WILDCARD);
-    */
-    /*
-    cStat = config_lookup_int(&cfg, C_IO_BANDWIDTH, (int*)&(p_Conf->ucIoBand));
+
+    cStat = config_lookup_int(&cfg, C_IO_BANDWIDTH, &(p_Conf->ucIoBand));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_IO_BANDWIDTH);
-    */
-    /*
-    cStat = config_lookup_bool(&cfg, C_TRUNCATE_TRIVIAL_GROUP, (int*)&(p_Conf->bTrunc));
+
+    cStat = config_lookup_bool(&cfg, C_TRUNCATE_TRIVIAL_GROUP, &(p_Conf->bTrunc));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_TRUNCATE_TRIVIAL_GROUP);
-    */
     
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_INPUT,
                                 (const char**)&(p_Conf->szPathRootIn));
@@ -280,7 +277,7 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
                                 (const char**)&(p_Conf->szPathPluginSim));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
-
+    
 EXIT:
     return cRtnCode;
 }
