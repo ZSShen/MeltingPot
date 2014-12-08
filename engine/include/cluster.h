@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include <stdbool.h>
 
 
 /* The messages for debugging. */
@@ -28,6 +29,10 @@
 #define C_COUNT_HEX_BLOCK           "COUNT_HEX_BLOCK"
 #define C_SIZE_HEX_BLOCK            "SIZE_HEX_BLOCK"
 #define C_SIZE_SLICE                "SIZE_SLICE"
+#define C_RATIO_NOISE               "RATIO_NOISE"
+#define C_RATIO_WILDCARD            "RATIO_WILDCARD"
+#define C_IO_BANDWIDTH              "IO_BANDWIDTH"
+#define C_TRUNCATE_TRIVIAL_GROUP    "TRUNCATE_TRIVIAL_GROUP"
 #define C_PATH_ROOT_INPUT           "PATH_ROOT_INPUT"
 #define C_PATH_ROOT_OUTPUT          "PATH_ROOT_OUTPUT"
 #define C_PATH_PLUGIN_SLICE         "PATH_PLUGIN_SLICE"
@@ -48,11 +53,15 @@ enum {
 
 /* This ds records the paramters to control the clustering process. */
 typedef struct _CONFIG_T {
+    bool bTrunc;            /* The option to truncate trivial groups. */
     uint8_t ucCntThrd;      /* The number of threads used for parallel processing. */
     uint8_t ucScoreSim;     /* The threshold to group similar binary slices. */
     uint8_t ucCntBlk;       /* The number of hex byte blocks in pattern. */
-    uint8_t ucSizeBlk;      /* The size of the hex byte block. */    
-    uint16_t usSizeSlc;      /* The size of the binary slice extracted from file
+    uint8_t ucSizeBlk;      /* The size of the hex byte block. */
+    uint8_t ucRatNoise;     /* The ratio of meaningless bytes in one hex block. */
+    uint8_t ucRatWild;      /* The ratio of wildcard characters in one hex block. */
+    uint8_t ucIoBand;       /* The number of files a thread can simultaneously open. */
+    uint16_t usSizeSlc;     /* The size of the binary slice extracted from file
                                which is the basic unit of clustering process. */
     char *szPathRootIn;     /* The root pathname of the input sample set. */
     char *szPathRootOut;    /* The root pathname of the output patterns. */
