@@ -125,12 +125,11 @@ _CrlInitArrayThrdCmp(THREAD_COMPARE **p_aParam, uint32_t uiSize);
  * 
  * @param a_Param       The array of THREAD_SLICE structures.
  * @param uiSize        The array size.
- * @param bClean        The flag which hints for early clean of the slicing result.
  * 
  * @return (currently unused)
  */
 int8_t
-_CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize, bool bClean);
+_CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize);
 
 
 /**
@@ -201,15 +200,18 @@ CrlPrepareSlice()
     THREAD_SLICE *a_Param;
     int8_t cStat = _CrlInitArrayThrdSlc(&a_Param, uiCntFile);
     if (cStat != CLS_SUCCESS)
-        EXITQ(CLS_FAIL_MEM_ALLOC, CLOSEDIR);
+        EXITQ(cStat, CLOSEDIR);
 
     sem_init(&synSem, 0, p_Conf->ucCntThrd);
-    uint32_t uiIdx = 0;
+    uint32_t uiIdx = 0, uiCntFork = 0;
     while (uiIdx < uiCntFile) {
         sem_wait(&synSem);
-        _CrlSetParamThrdSlc(&(a_Param[uiIdx]), g_ptr_array_index(p_Pot->a_Name, uiIdx));
+        cStat = _CrlSetParamThrdSlc(&(a_Param[uiIdx]), g_ptr_array_index(p_Pot->a_Name, uiIdx));
+        if (cStat != CLS_SUCCESS)
+            break;        
         pthread_create(&(a_Param[uiIdx].tId), NULL, _CrlMapSlice, (void*)&(a_Param[uiIdx]));
-        uiIdx++;                    
+        uiIdx++;
+        uiCntFork++;
     }
 
     /*-----------------------------------------------------------------------*
@@ -217,9 +219,8 @@ CrlPrepareSlice()
      * 1. Merge the array of SLICE structures into MELT_POT structure.       *
      * 2. Merge the array of hashes into MELT_POT structure.                 *
      *-----------------------------------------------------------------------*/
-    bool bClean = false;
     uint64_t ulIdSlc = 0;
-    for (uiIdx = 0 ; uiIdx < uiCntFile ; uiIdx++) {
+    for (uiIdx = 0 ; uiIdx < uiCntFork ; uiIdx++) {
         pthread_join(a_Param[uiIdx].tId, NULL);
         _CrlReduceSlice(&(a_Param[uiIdx]), &ulIdSlc);
         if (a_Param[uiIdx].cRtnCode != CLS_SUCCESS)
@@ -228,7 +229,7 @@ CrlPrepareSlice()
     sem_destroy(&synSem);
 
 FREEPARAM:
-    _CrlDeinitArrayThrdSlc(a_Param, uiCntFile, bClean);
+    _CrlDeinitArrayThrdSlc(a_Param, uiCntFile);
 CLOSEDIR:
     if (dirRoot)
         closedir(dirRoot);
@@ -250,12 +251,15 @@ CrlCorrelateSlice()
     THREAD_COMPARE *a_Param;
     int8_t cStat = _CrlInitArrayThrdCmp(&a_Param, p_Conf->ucCntThrd);
     if (cStat != CLS_SUCCESS)
-        EXITQ(CLS_FAIL_MEM_ALLOC, EXIT);
+        EXITQ(cStat, EXIT);
 
-    uint8_t ucIdx;
+    uint8_t ucIdx, ucCntFork = 0;
     for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
-        _CrlSetParamThrdCmp(&(a_Param[ucIdx]), ucIdx + 1);
+        cStat = _CrlSetParamThrdCmp(&(a_Param[ucIdx]), ucIdx + 1);
+        if (cStat != CLS_SUCCESS)
+            break;
         pthread_create(&(a_Param[ucIdx].tId), NULL, _CrlMapCompare, (void*)&(a_Param[ucIdx]));
+        ucCntFork++;
     }
 
     /*-----------------------------------------------------------------------*
@@ -263,13 +267,13 @@ CrlCorrelateSlice()
      * 1. Merge the slice pairs and assign an initial group id to each SLICE * 
      *    structure. The group id will be updated upon group construction.   *
      *-----------------------------------------------------------------------*/
-    for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
+    for (ucIdx = 0 ; ucIdx < ucCntFork ; ucIdx++) {
         pthread_join(a_Param[ucIdx].tId, NULL);
         _CrlReduceCompare(&(a_Param[ucIdx]));
         if (a_Param[ucIdx].cRtnCode != CLS_SUCCESS)
             cRtnCode = CLS_FAIL_PROCESS;
     }
-    _CrlGenerateGroup();
+    cRtnCode = _CrlGenerateGroup();
 
 FREEPARAM:    
     _CrlDeinitArrayThrdCmp(a_Param, p_Conf->ucCntThrd);    
@@ -301,10 +305,6 @@ _CrlMapSlice(void *vp_Param)
     char *szBin = (char*)malloc(sizeof(char) * p_Conf->usSizeSlc);
     if (!szBin)
         EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEFILE, "Error: %s.", strerror(errno));
-
-    p_Param->a_Hash = g_ptr_array_new();
-    if (!p_Param->a_Hash)
-        EXIT1(CLS_FAIL_MEM_ALLOC, FREEBIN, "Error: %s.", strerror(errno));
     
     uint64_t ulCntSlc = p_Param->a_Slc->len;
     uint64_t ulIdx;
@@ -347,10 +347,6 @@ _CrlMapCompare(void *vp_Param)
     uint8_t ucIdThrd = p_Param->ucIdThrd;
     uint8_t ucCntThrd = p_Conf->ucCntThrd;
     uint64_t ulCntSlc = p_Pot->a_Hash->len;
-
-    p_Param->a_Bind = g_ptr_array_new_with_free_func(DsDeleteBind);
-    if (!p_Param->a_Bind)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     /* The thread index should start from "1". */
     uint64_t ulIdSrc = 0;
@@ -445,8 +441,11 @@ _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szName)
     p_Param->szPath = (char*)malloc(sizeof(char) * iLen);
     if (!p_Param->szPath)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-
     snprintf(p_Param->szPath, iLen, "%s/%s", p_Conf->szPathRootIn, szName);
+
+    p_Param->a_Hash = g_ptr_array_new();
+    if (!p_Param->a_Hash)
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
 EXIT:    
     return cRtnCode;
@@ -456,9 +455,15 @@ EXIT:
 int8_t
 _CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd)
 {
-    p_Param->ucIdThrd = ucIdThrd;
-    p_Param->a_Bind = NULL;
-    return CLS_SUCCESS;
+    int8_t cRtnCode = CLS_SUCCESS;    
+
+    p_Param->ucIdThrd = ucIdThrd;    
+    p_Param->a_Bind = g_ptr_array_new_with_free_func(DsDeleteBind);
+    if (!p_Param->a_Bind)
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+EXIT:
+    return cRtnCode;
 }
 
 
@@ -504,27 +509,21 @@ EXIT:
 
 
 int8_t
-_CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize, bool bClean)
+_CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize)
 {
     if (!a_Param)
         return CLS_SUCCESS;
 
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
-        if (bClean) {
-            g_ptr_array_set_free_func(a_Param[uiIdx].a_Hash, DsDeleteString);
-            g_ptr_array_set_free_func(a_Param[uiIdx].a_Slc, plg_Slc->DeleteSlice);
-        }
         if (a_Param[uiIdx].a_Slc)
             g_ptr_array_free(a_Param[uiIdx].a_Slc, true);
-
         if (a_Param[uiIdx].a_Hash)
             g_ptr_array_free(a_Param[uiIdx].a_Hash, true);
-
         if (a_Param[uiIdx].szPath)
             free(a_Param[uiIdx].szPath);
     }
-    
+
     free(a_Param);
     return CLS_SUCCESS;
 }

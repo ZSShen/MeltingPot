@@ -257,7 +257,7 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
     cStat = config_lookup_bool(&cfg, C_TRUNCATE_TRIVIAL_GROUP, &(p_Conf->bTrunc));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_TRUNCATE_TRIVIAL_GROUP);
-    
+
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_INPUT,
                                 (const char**)&(p_Conf->szPathRootIn));
     if (cStat == CONFIG_FALSE)
@@ -277,7 +277,7 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
                                 (const char**)&(p_Conf->szPathPluginSim));
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
-    
+
 EXIT:
     return cRtnCode;
 }
@@ -326,7 +326,7 @@ int8_t
 _ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plg_Sim, char *szPath)
 {
     int8_t cRtnCode = CLS_SUCCESS;
-    
+
     *p_plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
     if (!(*p_plg_Sim))
         EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
