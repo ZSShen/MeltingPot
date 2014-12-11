@@ -42,7 +42,7 @@ typedef struct _GROUP_T {
 
 /* The structure recording the complete information of clustering progress.  */
 typedef struct _MELT_POT_T {
-    GPtrArray *a_Name;      /* The list of filenames belonged to the given sample set. */ 
+    GPtrArray *a_Path;      /* The list of pathnames belonged to the given sample set. */ 
     GPtrArray *a_Hash;      /* The list of slice hashes. */
     GPtrArray *a_Slc;       /* The list of detailed slice information. */
     GHashTable *h_Grp;      /* The hash table storing the groups. */

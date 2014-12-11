@@ -25,6 +25,19 @@ static PLUGIN_SIMILARITY *plg_Sim;
 /*======================================================================*
  *                 Declaration for Internal Functions                   *
  *======================================================================*/
+
+/**
+ * This function collects all the absolute paths of the samples belonged 
+ * to the given sample set.
+ * 
+ * @param p_uiCntFile       The pointer to the to be filled file count.
+ * 
+ * @return status code
+ */
+int8_t
+_CrlCollectSamplePath(uint32_t *p_uiCntFile);
+
+
 /**
  * This function slices a file and generates the hash for each slice.
  * 
@@ -175,22 +188,11 @@ CrlPrepareSlice()
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
-    DIR *dirRoot = opendir(p_Conf->szPathRootIn);
-    if (!dirRoot)
-        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
-
-    /* Record the filenames and count the number. */
-    uint32_t uiCntFile = 0;
-    struct dirent *entFile;
-    while (entFile = readdir(dirRoot)) {
-        if (!strcmp(entFile->d_name, ".") || !strcmp(entFile->d_name, ".."))
-            continue;
-
-        uiCntFile++;
-        g_ptr_array_add(p_Pot->a_Name, (gpointer)strdup(entFile->d_name));
-    }
-    if (uiCntFile == 0)
-        EXIT1(CLS_FAIL_FILE_IO, CLOSEDIR, "Error: %s.", FAIL_NO_SAMPLE);
+    /* Collect the paths for all the samples. */
+    uint32_t uiCntFile;
+    int8_t cStat = _CrlCollectSamplePath(&uiCntFile);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
 
     /*-----------------------------------------------------------------------*
      * Spawn multipe threads each of which:                                  *
@@ -198,15 +200,15 @@ CrlPrepareSlice()
      * 2. Generate an array of hashes which are derived from file slices.    *
      *-----------------------------------------------------------------------*/
     THREAD_SLICE *a_Param;
-    int8_t cStat = _CrlInitArrayThrdSlc(&a_Param, uiCntFile);
+    cStat = _CrlInitArrayThrdSlc(&a_Param, uiCntFile);
     if (cStat != CLS_SUCCESS)
-        EXITQ(cStat, CLOSEDIR);
+        EXITQ(cStat, EXIT);
 
     sem_init(&synSem, 0, p_Conf->ucCntThrd);
     uint32_t uiIdx = 0, uiCntFork = 0;
     while (uiIdx < uiCntFile) {
         sem_wait(&synSem);
-        cStat = _CrlSetParamThrdSlc(&(a_Param[uiIdx]), g_ptr_array_index(p_Pot->a_Name, uiIdx));
+        cStat = _CrlSetParamThrdSlc(&(a_Param[uiIdx]), g_ptr_array_index(p_Pot->a_Path, uiIdx));
         if (cStat != CLS_SUCCESS)
             break;        
         pthread_create(&(a_Param[uiIdx].tId), NULL, _CrlMapSlice, (void*)&(a_Param[uiIdx]));
@@ -230,9 +232,6 @@ CrlPrepareSlice()
 
 FREEPARAM:
     _CrlDeinitArrayThrdSlc(a_Param, uiCntFile);
-CLOSEDIR:
-    if (dirRoot)
-        closedir(dirRoot);
 EXIT:
     return cRtnCode;
 }
@@ -285,6 +284,43 @@ EXIT:
 /*======================================================================*
  *                Implementation for Internal Functions                 *
  *======================================================================*/
+int8_t
+_CrlCollectSamplePath(uint32_t *p_uiCntFile)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+    uint32_t uiCntFile = 0;
+    DIR *dirRoot = opendir(p_Conf->szPathRootIn);
+    if (!dirRoot)
+        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+
+    /* Record the filenames and accumulate the file count. */
+    struct dirent *entFile;
+    while (entFile = readdir(dirRoot)) {
+        if (!strcmp(entFile->d_name, ".") || !strcmp(entFile->d_name, ".."))
+            continue;
+
+        int32_t iLen = strlen(p_Conf->szPathRootIn) + strlen(entFile->d_name) + 2;
+        char *szPath = (char*)malloc(sizeof(char) * iLen);
+        if (!szPath)
+            EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEDIR, "Error: %s.", strerror(errno));
+
+        snprintf(szPath, iLen, "%s/%s", p_Conf->szPathRootIn, entFile->d_name);
+        g_ptr_array_add(p_Pot->a_Path, szPath);
+        uiCntFile++;
+    }
+
+    if (uiCntFile == 0)
+        EXIT1(CLS_FAIL_FILE_IO, CLOSEDIR, "Error: %s.", FAIL_NO_SAMPLE);
+
+CLOSEDIR:
+    if (dirRoot)
+        closedir(dirRoot);
+EXIT:
+    *p_uiCntFile = uiCntFile;
+    return cRtnCode;        
+}
+
+
 void*
 _CrlMapSlice(void *vp_Param)
 {
@@ -433,16 +469,11 @@ _CrlReduceCompare(THREAD_COMPARE *p_Param)
 
 
 int8_t
-_CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szName)
+_CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szPath)
 {
     int8_t cRtnCode = CLS_SUCCESS;    
-
-    int32_t iLen = strlen(p_Conf->szPathRootIn) + strlen(szName) + 2;
-    p_Param->szPath = (char*)malloc(sizeof(char) * iLen);
-    if (!p_Param->szPath)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-    snprintf(p_Param->szPath, iLen, "%s/%s", p_Conf->szPathRootIn, szName);
-
+    
+    p_Param->szPath = szPath;
     p_Param->a_Hash = g_ptr_array_new();
     if (!p_Param->a_Hash)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
@@ -520,8 +551,6 @@ _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize)
             g_ptr_array_free(a_Param[uiIdx].a_Slc, true);
         if (a_Param[uiIdx].a_Hash)
             g_ptr_array_free(a_Param[uiIdx].a_Hash, true);
-        if (a_Param[uiIdx].szPath)
-            free(a_Param[uiIdx].szPath);
     }
 
     free(a_Param);

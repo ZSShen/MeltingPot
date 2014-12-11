@@ -66,8 +66,8 @@ DsDeleteMeltPot(gpointer gp_Pot)
 {
     if (gp_Pot) {
         MELT_POT *p_Pot = (MELT_POT*)gp_Pot;
-        if (p_Pot->a_Name)
-            g_ptr_array_free(p_Pot->a_Name, true);
+        if (p_Pot->a_Path)
+            g_ptr_array_free(p_Pot->a_Path, true);
         if (p_Pot->a_Hash)
             g_ptr_array_free(p_Pot->a_Hash, true);
         if (p_Pot->a_Slc)        
@@ -144,8 +144,8 @@ DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));    
 
     MELT_POT *p_Pot = *pp_Pot;
-    p_Pot->a_Name = g_ptr_array_new_with_free_func(DsDeleteString);    
-    if (!p_Pot->a_Name)
+    p_Pot->a_Path = g_ptr_array_new_with_free_func(DsDeleteString);    
+    if (!p_Pot->a_Path)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEPOT, "Error: %s.", strerror(errno));
 
     p_Pot->a_Hash = g_ptr_array_new_with_free_func(DsDeleteString);
@@ -169,8 +169,8 @@ FREEHASH:
     if (p_Pot->a_Hash)
         g_ptr_array_free(p_Pot->a_Hash, true);
 FREENAME:
-    if (p_Pot->a_Name)
-        g_ptr_array_free(p_Pot->a_Name, true);
+    if (p_Pot->a_Path)
+        g_ptr_array_free(p_Pot->a_Path, true);
 FREEPOT:
     if (*pp_Pot)
         free(*pp_Pot);
