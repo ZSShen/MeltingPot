@@ -207,12 +207,22 @@ _PtnMapCraft(void *vp_Param)
      *-----------------------------------------------------------------------*/
     uint64_t ulCntMbr = a_Mbr->len;
     uint64_t ulCntSlot = (uint64_t)ceil((double)ulCntMbr / p_Conf->ucIoBand);
+    THREAD_SLOT *a_Param;
+    int8_t cStat = _PtnInitArrayThrdSlt(&a_Param, ulCntSlot);    
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
+
     uint64_t ulIdxSlot, ulIdxBgn, ulIdxEnd = 0;
     for (ulIdxSlot = 0 ; ulIdxSlot < ulCntSlot ; ulIdxSlot++) {
         ulIdxBgn = ulIdxEnd;
         ulIdxEnd = MIN(ulIdxBgn + p_Conf->ucIoBand, ulCntMbr);
+        cStat = _PtnSetParamThrdSlt(&(a_Param[ulIdxSlot]), a_Mbr, ulIdxBgn, ulIdxEnd);
+        if (cStat != CLS_SUCCESS)
+            break;
     }
 
+FREEPARAM:
+    _PtnDeinitArrayThrdSlt(a_Param, ulCntSlot);
 EXIT:
     p_Param->cRtnCode = cRtnCode;
     sem_post(&synSem);
@@ -269,7 +279,29 @@ _PtnSetParamThrdSlt(THREAD_SLOT *p_Param, GArray *a_Mbr, uint64_t ulIdxBgn, uint
         uint64_t ulIdSlc = g_array_index(a_Mbr, uint64_t, ulIdx);
         SLICE *p_Slc = g_ptr_array_index(p_Pot->a_Slc, ulIdSlc);
 
-        // Under construction.
+        p_Param->a_szBin[ulOfst] = (char*)malloc(sizeof(char) * p_Slc->usSize);
+        if (!(p_Param->a_szBin[ulOfst]))
+            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+        FILE *fp = fopen(p_Slc->szPathFile, "rb");
+        if (!fp)
+            EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+
+        int8_t cStat = fseek(fp, p_Slc->ulOfstAbs, SEEK_SET);
+        if (cStat != 0) {
+            EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+        }
+
+        size_t nReadExpt = p_Slc->usSize;
+        size_t nReadReal = fread(p_Param->a_szBin[ulOfst], sizeof(char), nReadExpt, fp);
+        if (nReadExpt != nReadReal)
+            EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+
+    CLOSE:
+        if (fp)
+            fclose(fp);
+        if (cRtnCode != CLS_SUCCESS)    
+            break;
     }
 
 EXIT:
