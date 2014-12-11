@@ -12,7 +12,7 @@
 typedef struct THREAD_CRAFT_T {
     pthread_t tId;
     GROUP *p_Grp;
-    BLOCK_CAND *p_BlkCand;
+    GPtrArray *a_BlkCand;
 } THREAD_CRAFT;
 
 

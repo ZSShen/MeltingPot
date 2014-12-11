@@ -29,7 +29,7 @@ static MELT_POT *p_Pot;
  * @return (currently deprecated)
  */
 void*
-_CrlMapCraft(void *vp_Param);
+_PtnMapCraft(void *vp_Param);
 
 
 /**
@@ -38,7 +38,43 @@ _CrlMapCraft(void *vp_Param);
  * @param p_Param       The pointer to the result updated by Craft thread.
  */
 int8_t
-_CrlReduceCraft(THREAD_CRAFT *p_Param);
+_PtnReduceCraft(THREAD_CRAFT *p_Param);
+
+
+/**
+ * This function initializes the THREAD_CRAFT structure.
+ * 
+ * @param p_Param       The pointer to the to be initialized structure.
+ * @param p_Grp         The pointer to the GROUP structure.
+ * 
+ * @return status code
+ */
+int8_t
+_PtnSetParamThrdCrt(THREAD_CRAFT *p_Param, GROUP *p_Grp);
+
+
+/**
+ * This function initializes the array of THREAD_CRAFT structures.
+ * 
+ * @param p_aParam      The pointer to the array of THREAD_CRAFT structures.
+ * @param uiSize        The array size.
+ * 
+ * @return status code
+ */
+int8_t
+_PtnInitArrayThrdCrt(THREAD_CRAFT **p_aParam, uint32_t uiSize);
+
+
+/**
+ * This function deinitializes the array of THREAD_CRAFT structures.
+ * 
+ * @param a_Param       The array of THREAD_CRAFT structures.
+ * @param uiSize        The array size.
+ * 
+ * @return (currently unused)
+ */
+int8_t
+_PtnDeinitArrayThrdCrt(THREAD_CRAFT *a_Param, uint32_t uiSize);
 
 
 /*======================================================================*
@@ -75,4 +111,54 @@ PtnOutputYara()
 /*======================================================================*
  *                Implementation for Internal Functions                 *
  *======================================================================*/
- 
+int8_t
+_PtnSetParamThrdCrt(THREAD_CRAFT *p_Param, GROUP *p_Grp)
+{
+    int8_t cRtnCode = CLS_SUCCESS;    
+
+    p_Param->p_Grp = p_Grp;
+    p_Param->a_BlkCand = g_ptr_array_new();
+    if (!p_Param->a_BlkCand)
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+EXIT:    
+    return cRtnCode;
+}
+
+
+int8_t
+_PtnInitArrayThrdCrt(THREAD_CRAFT **p_aParam, uint32_t uiSize)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    *p_aParam = (THREAD_CRAFT*)malloc(sizeof(THREAD_CRAFT) * uiSize);
+    if (!(*p_aParam))
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    THREAD_CRAFT *a_Param = *p_aParam;
+    uint32_t uiIdx;
+    for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
+        a_Param[uiIdx].p_Grp = NULL;
+        a_Param[uiIdx].a_BlkCand = NULL;
+    }
+
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_PtnDeinitArrayThrdCrt(THREAD_CRAFT *a_Param, uint32_t uiSize)
+{
+    if (!a_Param)
+        return CLS_SUCCESS;
+
+    uint32_t uiIdx;
+    for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
+        if (a_Param[uiIdx].a_BlkCand)
+            g_ptr_array_free(a_Param[uiIdx].a_BlkCand, true);
+    }
+
+    free(a_Param);
+    return CLS_SUCCESS;
+}

@@ -36,6 +36,8 @@ DsDeleteBlkCand(gpointer gp_BlkCand)
         BLOCK_CAND *p_BlkCand = (BLOCK_CAND*)gp_BlkCand;    
         if (p_BlkCand->a_ContAddr)
             g_array_free(p_BlkCand->a_ContAddr, true);
+        if (p_BlkCand->p_usCont)
+            free(p_BlkCand->p_usCont);    
         free(p_BlkCand);
     }
 
@@ -76,6 +78,29 @@ DsDeleteMeltPot(gpointer gp_Pot)
     }
 
     return;
+}
+
+
+int8_t
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    *pp_BlkCand = (BLOCK_CAND*)malloc(sizeof(BLOCK_CAND));
+    if (!(*pp_BlkCand))
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    BLOCK_CAND *p_BlkCand = *pp_BlkCand;
+    p_BlkCand->a_ContAddr = g_array_new(false, false, sizeof(CONTENT_ADDR));
+    if (!p_BlkCand->a_ContAddr)
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
+    goto EXIT;    
+
+FREEBLK:
+    if (*pp_BlkCand)
+        free(*pp_BlkCand);
+EXIT:
+    return cRtnCode;
 }
 
 

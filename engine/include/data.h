@@ -123,6 +123,17 @@ DsDeleteMeltPot(gpointer gp_Pot);
 
 
 /**
+ * The initialization function of BLOCK_CAND structure.
+ * 
+ * @param pp_BlkCand    The pointer to the pointer of target structure.
+ * 
+ * @return status code
+ */
+int8_t
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand);
+
+
+/**
  * The initialization function of GROUP structure.
  *
  * @param pp_Grp        The pointer to the pointer of target structure.
