@@ -34,9 +34,7 @@ typedef struct _BLOCK_CAND_T {
 
 /* The structure recording the information shared by the members belonged to certain group. */
 typedef struct _GROUP_T {
-    uint16_t usCntBlk;      /* The number of distilled binary blocks. */
     uint64_t ulIdGrp;       /* The group id. */
-    uint64_t ulSizeGrp;     /* The number of group members. */
     GArray *a_Mbr;          /* The list of group members. */
     GPtrArray *a_BlkCand;   /* The list of distilled binary blocks. */
 } GROUP;
@@ -44,7 +42,6 @@ typedef struct _GROUP_T {
 
 /* The structure recording the complete information of clustering progress.  */
 typedef struct _MELT_POT_T {
-    uint64_t ulCntGrp;      /* The number of groups. */
     GPtrArray *a_Name;      /* The list of filenames belonged to the given sample set. */ 
     GPtrArray *a_Hash;      /* The list of slice hashes. */
     GPtrArray *a_Slc;       /* The list of detailed slice information. */

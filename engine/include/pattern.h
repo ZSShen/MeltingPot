@@ -9,12 +9,24 @@
 #include "similarity.h"
 
 
+/* The number of shifting bytes applied for common block extraction. */
+#define ROLLING_SHIFT_SIZE      16
+
+
 typedef struct THREAD_CRAFT_T {
     int8_t cRtnCode;
     pthread_t tId;
     GROUP *p_Grp;
     GPtrArray *a_BlkCand;
 } THREAD_CRAFT;
+
+
+typedef struct THREAD_SLOT_T {
+    uint64_t ulIdxBgn, ulIdxEnd;
+    char **a_szBin;
+    GArray *a_Mbr;
+    GPtrArray *a_BlkCand;
+} THREAD_SLOT;
 
 
 /**

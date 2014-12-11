@@ -557,7 +557,6 @@ _CrlGenerateGroup()
      * 2. Build a hash table with group id as key and GROUP structure as     *
      *    value for efficient group member access.                           *
      *-----------------------------------------------------------------------*/
-    p_Pot->ulCntGrp = 0;
     uint64_t ulLen = p_Pot->a_Slc->len;
     uint64_t ulIdx;
     for (ulIdx = 0 ; ulIdx < ulLen ; ulIdx++) {
@@ -579,7 +578,6 @@ _CrlGenerateGroup()
                 EXITQ(cStat, EXIT);
                 p_Grp->ulIdGrp = ulIdGrpReal;
             g_hash_table_insert(p_Pot->h_Grp, &ulIdGrpReal, p_Grp);
-            p_Pot->ulCntGrp++;
         }
         p_Grp = g_hash_table_lookup(p_Pot->h_Grp, &ulIdGrpReal);
         g_array_append_val(p_Grp->a_Mbr, ulIdx);   
