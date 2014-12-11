@@ -93,8 +93,49 @@ PtnSetContext(CONTEXT *p_Ctx)
 int8_t
 PtnCraftPattern()
 {
-    int8_t cRtnCode;
+    int8_t cRtnCode = CLS_SUCCESS;
 
+    /*-----------------------------------------------------------------------*
+     * Spawn multipe threads each of which:                                  *
+     * 1. Extract a set of commonly shared byte blocks with user specified   *
+     *    quality for the given group.                                       *
+     *-----------------------------------------------------------------------*/
+    THREAD_CRAFT *a_Param;
+    int8_t cStat = _PtnInitArrayThrdCrt(&a_Param, p_Pot->ulCntGrp);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
+
+    sem_init(&synSem, 0, p_Conf->ucCntThrd);
+    GHashTableIter iterHash;
+    gpointer gpKey, gpValue;
+    uint32_t uiIdx = 0;
+    g_hash_table_iter_init(&iterHash, p_Pot->h_Grp);
+    while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
+        GROUP *p_Grp = (GROUP*)gpValue;
+        sem_wait(&synSem);
+        cStat = _PtnSetParamThrdCrt(&(a_Param[uiIdx]), p_Grp);
+        if (cStat != CLS_SUCCESS)
+            break;
+        pthread_create(&(a_Param[uiIdx].tId), NULL, _PtnMapCraft, (void*)&(a_Param[uiIdx]));    
+        uiIdx++;
+    }
+
+    /*-----------------------------------------------------------------------*
+     * Join the spawned threads:                                             *
+     * 1. Merge the byte block sets collected from each group.               * 
+     *-----------------------------------------------------------------------*/
+    uint32_t uiCntFork = uiIdx;
+    for (uiIdx = 0 ; uiIdx < uiCntFork ; uiIdx++) {
+        pthread_join(a_Param[uiIdx].tId, NULL);
+        _PtnReduceCraft(&(a_Param[uiIdx]));
+        if (a_Param[uiIdx].cRtnCode != CLS_SUCCESS)
+            cRtnCode = CLS_FAIL_PROCESS;
+    }
+    sem_destroy(&synSem);
+
+FREEPARAM:    
+    _PtnDeinitArrayThrdCrt(a_Param, p_Pot->ulCntGrp);  
+EXIT:
     return cRtnCode;
 }
 
@@ -102,7 +143,7 @@ PtnCraftPattern()
 int8_t
 PtnOutputYara()
 {
-    int8_t cRtnCode;
+    int8_t cRtnCode = CLS_SUCCESS;
     
     return cRtnCode;
 }
@@ -111,6 +152,26 @@ PtnOutputYara()
 /*======================================================================*
  *                Implementation for Internal Functions                 *
  *======================================================================*/
+void*
+_PtnMapCraft(void *vp_Param)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+    THREAD_CRAFT *p_Param = (THREAD_CRAFT*)vp_Param;
+
+EXIT:
+    p_Param->cRtnCode = cRtnCode;
+    sem_post(&synSem);
+    return;
+}
+
+
+int8_t
+_PtnReduceCraft(THREAD_CRAFT *p_Param)
+{
+    return CLS_SUCCESS;
+}
+
+
 int8_t
 _PtnSetParamThrdCrt(THREAD_CRAFT *p_Param, GROUP *p_Grp)
 {

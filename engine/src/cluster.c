@@ -158,6 +158,17 @@ ClsRunTask()
         EXIT1(cStat, EXIT, "Notice: %s.", SLICE_CORRELATION_FAIL);
     SPEW1("Notice: %s.", SLICE_CORRELATION_SUCC);
 
+    PtnSetContext(p_Ctx);
+    cStat = PtnCraftPattern();
+    if (cStat != CLS_SUCCESS)
+        EXIT1(cStat, EXIT, "Notice: %s.", PATTERN_GENERATION_FAIL);
+    SPEW1("Notice: %s.", PATTERN_GENERATION_SUCC);    
+
+    cStat = PtnOutputYara();
+    if (cStat != CLS_SUCCESS)
+        EXIT1(cStat, EXIT, "Notice: %s.", YARA_OUTPUT_FAIL);
+    SPEW1("Notice: %s.", YARA_OUTPUT_SUCC);        
+
 EXIT:
     return cRtnCode;
 }

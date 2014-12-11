@@ -10,6 +10,7 @@
 
 
 typedef struct THREAD_CRAFT_T {
+    int8_t cRtnCode;
     pthread_t tId;
     GROUP *p_Grp;
     GPtrArray *a_BlkCand;

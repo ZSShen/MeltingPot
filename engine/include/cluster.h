@@ -13,6 +13,10 @@
 #define SLICE_GENERATION_SUCC    "[Slice Generation] succeed!"
 #define SLICE_CORRELATION_FAIL   "[Slice Correlation] failed!"
 #define SLICE_CORRELATION_SUCC   "[Slice Correlation] succeed!"
+#define PATTERN_GENERATION_FAIL  "[Pattern Generation] failed!"
+#define PATTERN_GENERATION_SUCC  "[Pattern Generation] succeed!"
+#define YARA_OUTPUT_FAIL         "[YARA Output] failed!"
+#define YARA_OUTPUT_SUCC         "[YARA Output] succeed!"
 
 
 /* The constants for command option parsing. */
