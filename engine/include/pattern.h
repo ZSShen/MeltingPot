@@ -10,7 +10,13 @@
 
 
 /* The number of shifting bytes applied for common block extraction. */
-#define ROLLING_SHIFT_SIZE      16
+#define ROLL_SHFT_COUNT         (16)
+
+/* The marker for wildcard character. */
+#define WILD_CARD_MARK          (0x100)
+
+/* The mask used to extend char type to short. */                
+#define EXTENSION_MASK          (0xff)
 
 
 typedef struct THREAD_CRAFT_T {
@@ -22,7 +28,9 @@ typedef struct THREAD_CRAFT_T {
 
 
 typedef struct THREAD_SLOT_T {
-    uint64_t ulIdxBgn, ulIdxEnd;
+    uint16_t usSizeMin;
+    uint64_t ulIdxBgn;
+    uint64_t ulIdxEnd;
     char **a_szBin;
     GArray *a_Mbr;
     GPtrArray *a_BlkCand;

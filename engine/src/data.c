@@ -82,7 +82,7 @@ DsDeleteMeltPot(gpointer gp_Pot)
 
 
 int8_t
-DsNewBlockCand(BLOCK_CAND **pp_BlkCand)
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t ucSizeCont)
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
@@ -94,8 +94,15 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand)
     p_BlkCand->a_ContAddr = g_array_new(false, false, sizeof(CONTENT_ADDR));
     if (!p_BlkCand->a_ContAddr)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
-    goto EXIT;    
 
+    p_BlkCand->p_usCont = (uint16_t*)malloc(sizeof(uint16_t) * ucSizeCont);
+    if (!p_BlkCand->p_usCont)
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEADDR, "Error: %s.", strerror(errno));
+    goto EXIT;
+
+FREEADDR:
+    if (p_BlkCand->a_ContAddr)
+        g_array_free(p_BlkCand->a_ContAddr, true);
 FREEBLK:
     if (*pp_BlkCand)
         free(*pp_BlkCand);

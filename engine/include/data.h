@@ -123,11 +123,12 @@ DsDeleteMeltPot(gpointer gp_Pot);
  * The initialization function of BLOCK_CAND structure.
  * 
  * @param pp_BlkCand    The pointer to the pointer of target structure.
+ * @param ucSizeCont    The size of the block content.
  * 
  * @return status code
  */
 int8_t
-DsNewBlockCand(BLOCK_CAND **pp_BlkCand);
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t ucSizeCont);
 
 
 /**

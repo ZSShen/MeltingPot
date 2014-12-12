@@ -65,7 +65,7 @@ _CrlMapCompare(void *vp_Param);
  * This function iteratively collects the slices and hashes acqured by each
  * thread into MELT_POT structure.
  * 
- * @param p_Param       The pointer to the result updated by Slice thread.
+ * @param p_Param       The pointer to the updated THREAD_SLICE parameter.
  * @param p_ulIdSlc     The pointer to the variable which should be updated with
  *                      the currently traced index of file slice.
  * 
@@ -79,7 +79,9 @@ _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc);
  * This function iteratively merges the similar slice pairs. Note that the 
  * group id is initially assigned to a slice which will be formally updated later.
  * 
- * @param p_Param       The pointer to the result updated by Compare thread.
+ * @param p_Param       The pointer to the updated THREAD_COMPARE parameter.
+ * 
+ * @return status code
  */
 int8_t
 _CrlReduceCompare(THREAD_COMPARE *p_Param);

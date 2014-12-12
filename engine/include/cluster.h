@@ -20,7 +20,7 @@
 
 
 /* The constants for command option parsing. */
-#define BUF_SIZE_OPT          64      /* The size of option order buffer. */
+#define BUF_SIZE_OPT          (64)    /* The size of option order buffer. */
 #define OPT_LONG_HELP         "help"  /* The option for help message. */
 #define OPT_LONG_PATH_CONF    "conf"  /* The abbreviated character. */
 #define OPT_HELP              'h'     /* The option for the path of configuration file. */

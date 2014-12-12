@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include <limits.h>
 #include <glib.h>
 #include <errno.h>
 #include <pthread.h>
@@ -34,12 +35,36 @@ _PtnMapCraft(void *vp_Param);
 
 
 /**
- * This function iteratively merges the extraction result.
+ * This function extracts the commonly shared byte sequences for the samples
+ * belonged to the same partition slot.
+ * 
+ * @param p_Param       The pointer to the THREAD_SLOT parameter.
+ * 
+ * @return status code
+ */
+int8_t
+_PtnMapSlot(THREAD_SLOT *p_Param);
+
+
+/**
+ * This function iteratively merges the results extracted from each group.
  *
- * @param p_Param       The pointer to the result updated by Craft thread.
+ * @param p_Param       The pointer to the updated THREAD_CRAFT parameter.
+ * 
+ * @return status code
  */
 int8_t
 _PtnReduceCraft(THREAD_CRAFT *p_Param);
+
+
+/**
+ * This function iteratively merges the results extracted from each slot.
+ * 
+ * @param p_Param       The pointer to the updated THREAD_SLOT parameter.
+ * 
+ */
+ int8_t
+ _PtnReduceSlot(THREAD_SLOT *p_Param);
 
 
 /**
@@ -219,6 +244,9 @@ _PtnMapCraft(void *vp_Param)
         cStat = _PtnSetParamThrdSlt(&(a_Param[ulIdxSlot]), a_Mbr, ulIdxBgn, ulIdxEnd);
         if (cStat != CLS_SUCCESS)
             break;
+        cStat = _PtnMapSlot(&(a_Param[ulIdxSlot]));
+        if (cStat != CLS_SUCCESS)
+            break;    
     }
 
 FREEPARAM:
@@ -227,6 +255,65 @@ EXIT:
     p_Param->cRtnCode = cRtnCode;
     sem_post(&synSem);
     return;
+}
+
+
+int8_t
+_PtnMapSlot(THREAD_SLOT *p_Param)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    uint8_t ucSizeBlk = p_Conf->ucSizeBlk;
+    char **a_szBin = p_Param->a_szBin;
+    GArray *a_Mbr = p_Param->a_Mbr;
+    uint64_t ulIdxBgn = p_Param->ulIdxBgn;
+    uint64_t ulIdxEnd = p_Param->ulIdxEnd;
+    uint16_t usFront = 0;
+    uint16_t usRear = ucSizeBlk;
+    uint64_t ulRange = ulIdxEnd - ulIdxBgn;
+
+    while (usRear <= p_Param->usSizeMin) {
+        BLOCK_CAND *p_BlkCand;
+        uint8_t cStat = DsNewBlockCand(&p_BlkCand, ucSizeBlk);
+        if (cStat != CLS_SUCCESS)
+            EXITQ(cStat, EXIT);
+
+        /* Let the first slice be the comparison base. */
+        uint16_t *p_usCont = p_BlkCand->p_usCont;
+        GArray *a_ContAddr = p_BlkCand->a_ContAddr;
+        uint16_t usSrc, usTge;
+        for (usSrc = usFront, usTge = 0 ; usSrc < ucSizeBlk ; usSrc++, usTge++)
+            p_usCont[usTge] = a_szBin[0][usSrc];
+
+        uint64_t ulIdSlc = g_array_index(a_Mbr, uint64_t, ulIdxBgn);
+        SLICE *p_Slc = g_ptr_array_index(p_Pot->a_Slc, ulIdSlc);
+        CONTENT_ADDR addr;
+        addr.iIdSec = p_Slc->iIdSec;
+        addr.ulOfstRel = p_Slc->ulOfstRel + usFront;
+        g_array_append_val(a_ContAddr, addr);
+
+        /* Iteratively compare the rest slices with the base. */
+        uint64_t ulOfst, ulIdx;
+        for (ulOfst = 1, ulIdx = ulIdxBgn + 1; ulOfst < ulRange ; ulOfst++, ulIdx++) {
+            for (usSrc = usFront, usTge = 0 ; usSrc < ucSizeBlk ; usSrc++, usTge++) {
+                if (p_usCont[usTge] != a_szBin[ulOfst][usSrc])
+                    p_usCont[usTge] = WILD_CARD_MARK;
+            }
+
+            ulIdSlc = g_array_index(a_Mbr, uint64_t, ulIdx);
+            p_Slc = g_ptr_array_index(p_Pot->a_Slc, ulIdSlc);
+            addr.iIdSec = p_Slc->iIdSec;
+            addr.ulOfstRel = p_Slc->ulOfstRel + usFront;
+            g_array_append_val(a_ContAddr, addr);
+        }
+
+        g_ptr_array_add(p_Param->a_BlkCand, p_BlkCand);
+        usFront += ROLL_SHFT_COUNT;
+        usRear += ROLL_SHFT_COUNT;
+    }
+
+EXIT:
+    return cRtnCode;
 }
 
 
@@ -296,6 +383,9 @@ _PtnSetParamThrdSlt(THREAD_SLOT *p_Param, GArray *a_Mbr, uint64_t ulIdxBgn, uint
         size_t nReadReal = fread(p_Param->a_szBin[ulOfst], sizeof(char), nReadExpt, fp);
         if (nReadExpt != nReadReal)
             EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+        
+        if (p_Slc->usSize < p_Param->usSizeMin)
+            p_Param->usSizeMin = p_Slc->usSize;
 
     CLOSE:
         if (fp)
@@ -342,6 +432,7 @@ _PtnInitArrayThrdSlt(THREAD_SLOT **p_aParam, uint64_t ulSize)
     THREAD_SLOT *a_Param = *p_aParam;
     uint64_t ulIdx;
     for (ulIdx = 0 ; ulIdx < ulSize ; ulIdx++) {
+        a_Param[ulIdx].usSizeMin = USHRT_MAX;
         a_Param[ulIdx].a_szBin = NULL;
         a_Param[ulIdx].a_Mbr = NULL;
         a_Param[ulIdx].a_BlkCand = NULL;
