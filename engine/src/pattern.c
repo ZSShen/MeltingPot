@@ -227,7 +227,7 @@ _PtnMapCraft(void *vp_Param)
     THREAD_CRAFT *p_Param = (THREAD_CRAFT*)vp_Param;
     GROUP *p_Grp = p_Param->p_Grp;
     GArray *a_Mbr = p_Grp->a_Mbr;
-    
+
     /*-----------------------------------------------------------------------*
      * To avoid opening too many files simultaneously, we split the grouped  *
      * slices into sevaral slots. And we first extract the commonly shared   *
@@ -249,7 +249,7 @@ _PtnMapCraft(void *vp_Param)
             break;
         cStat = _PtnMapSlot(&(a_Param[ulIdxSlot]));
         if (cStat != CLS_SUCCESS)
-            break;    
+            break;
     }
 
     _PtnReduceSlot(a_Param, ulCntSlot, p_Param);
@@ -287,7 +287,7 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
         uint16_t *p_usCont = p_BlkCand->p_usCont;
         GArray *a_ContAddr = p_BlkCand->a_ContAddr;
         uint16_t usSrc, usTge;
-        for (usSrc = usFront, usTge = 0 ; usSrc < ucSizeBlk ; usSrc++, usTge++)
+        for (usSrc = usFront, usTge = 0 ; usTge < ucSizeBlk ; usSrc++, usTge++)
             p_usCont[usTge] = a_szBin[0][usSrc];
 
         uint64_t ulIdSlc = g_array_index(a_Mbr, uint64_t, ulIdxBgn);
@@ -357,7 +357,7 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize, THREAD_CRAFT *p_Merge)
             BLOCK_CAND *p_BlkCandC = g_ptr_array_index(a_BlkCandC, usIdx);
             uint16_t *p_usContC = p_BlkCandC->p_usCont;
             GArray *a_ContAddrC = p_BlkCandC->a_ContAddr;
-            
+
             uint8_t ucIdx;
             for (ucIdx = 0 ; ucIdx < p_Conf->ucSizeBlk ; ucIdx++) {
                 if (p_usContB[ucIdx] != p_usContC[ucIdx])
@@ -366,7 +366,7 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize, THREAD_CRAFT *p_Merge)
 
             uint32_t uiLen = a_ContAddrC->len;
             uint32_t uiIdx;
-            for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx) {
+            for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
                 CONTENT_ADDR addr = g_array_index(a_ContAddrC, CONTENT_ADDR, uiIdx);
                 g_array_append_val(a_ContAddrB, addr);
             }
