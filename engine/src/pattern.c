@@ -60,11 +60,14 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param);
 /**
  * This function iteratively merges the results extracted from each slot.
  * 
- * @param p_Param       The pointer to the updated THREAD_SLOT parameter.
+ * @param a_Param       The array of the updated THREAD_SLOT parameter.
+ * @param ulSize        The array size
+ * @param p_Merge       The pointer to the to be updated THREAD_CRAFT parameter.
  * 
+ * @return status code
  */
- int8_t
- _PtnReduceSlot(THREAD_SLOT *p_Param);
+int8_t
+_PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize, THREAD_CRAFT *p_Merge);
 
 
 /**
@@ -249,6 +252,8 @@ _PtnMapCraft(void *vp_Param)
             break;    
     }
 
+    _PtnReduceSlot(a_Param, ulCntSlot, p_Param);
+
 FREEPARAM:
     _PtnDeinitArrayThrdSlt(a_Param, ulCntSlot);
 EXIT:
@@ -321,6 +326,55 @@ int8_t
 _PtnReduceCraft(THREAD_CRAFT *p_Param)
 {
     return CLS_SUCCESS;
+}
+
+
+int8_t
+_PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize, THREAD_CRAFT *p_Merge)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    uint16_t usCntMin = USHRT_MAX;
+    uint64_t ulIdx;
+    for (ulIdx = 0 ; ulIdx < ulSize ; ulIdx++) {
+        if (a_Param[ulIdx].a_BlkCand->len < usCntMin)
+            usCntMin = a_Param[ulIdx].a_BlkCand->len;
+    }
+
+    /* Let the result of the first slot be the comparison base. */
+    THREAD_SLOT *p_Param = a_Param;
+    GPtrArray *a_BlkCandB = p_Param->a_BlkCand;
+
+    /* Iteratively compare the rest results with the base. */
+    uint16_t usIdx;
+    for (usIdx = 0 ; usIdx < usCntMin ; usIdx++) {
+        BLOCK_CAND *p_BlkCandB = g_ptr_array_index(a_BlkCandB, usIdx);
+        uint16_t *p_usContB = p_BlkCandB->p_usCont;
+        GArray *a_ContAddrB = p_BlkCandB->a_ContAddr;
+        for (ulIdx = 1 ; ulIdx < ulSize ; ulIdx++) {
+            p_Param = a_Param + ulIdx;
+            GPtrArray *a_BlkCandC = p_Param->a_BlkCand;
+            BLOCK_CAND *p_BlkCandC = g_ptr_array_index(a_BlkCandC, usIdx);
+            uint16_t *p_usContC = p_BlkCandC->p_usCont;
+            GArray *a_ContAddrC = p_BlkCandC->a_ContAddr;
+            
+            uint8_t ucIdx;
+            for (ucIdx = 0 ; ucIdx < p_Conf->ucSizeBlk ; ucIdx++) {
+                if (p_usContB[ucIdx] != p_usContC[ucIdx])
+                    p_usContB[ucIdx] = WILD_CARD_MARK;
+            }
+
+            uint32_t uiLen = a_ContAddrC->len;
+            uint32_t uiIdx;
+            for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx) {
+                CONTENT_ADDR addr = g_array_index(a_ContAddrC, CONTENT_ADDR, uiIdx);
+                g_array_append_val(a_ContAddrB, addr);
+            }
+        }
+    }
+
+EXIT:
+    return cRtnCode;
 }
 
 
