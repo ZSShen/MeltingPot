@@ -34,10 +34,10 @@ DsDeleteBlkCand(gpointer gp_BlkCand)
 {
     if (gp_BlkCand) {
         BLOCK_CAND *p_BlkCand = (BLOCK_CAND*)gp_BlkCand;    
-        if (p_BlkCand->a_ContAddr)
-            g_array_free(p_BlkCand->a_ContAddr, true);
-        if (p_BlkCand->p_usCont)
-            free(p_BlkCand->p_usCont);    
+        if (p_BlkCand->a_CtnAddr)
+            g_array_free(p_BlkCand->a_CtnAddr, true);
+        if (p_BlkCand->a_usCtn)
+            free(p_BlkCand->a_usCtn);    
         free(p_BlkCand);
     }
 
@@ -82,7 +82,7 @@ DsDeleteMeltPot(gpointer gp_Pot)
 
 
 int8_t
-DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t ucSizeCont)
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
@@ -91,18 +91,18 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t ucSizeCont)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     BLOCK_CAND *p_BlkCand = *pp_BlkCand;
-    p_BlkCand->a_ContAddr = g_array_new(false, false, sizeof(CONTENT_ADDR));
-    if (!p_BlkCand->a_ContAddr)
+    p_BlkCand->a_CtnAddr = g_array_new(false, false, sizeof(CONTENT_ADDR));
+    if (!p_BlkCand->a_CtnAddr)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
-    p_BlkCand->p_usCont = (uint16_t*)malloc(sizeof(uint16_t) * ucSizeCont);
-    if (!p_BlkCand->p_usCont)
+    p_BlkCand->a_usCtn = (uint16_t*)malloc(sizeof(uint16_t) * usSizeCtn);
+    if (!p_BlkCand->a_usCtn)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEADDR, "Error: %s.", strerror(errno));
     goto EXIT;
 
 FREEADDR:
-    if (p_BlkCand->a_ContAddr)
-        g_array_free(p_BlkCand->a_ContAddr, true);
+    if (p_BlkCand->a_CtnAddr)
+        g_array_free(p_BlkCand->a_CtnAddr, true);
 FREEBLK:
     if (*pp_BlkCand)
         free(*pp_BlkCand);

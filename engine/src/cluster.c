@@ -167,7 +167,7 @@ ClsRunTask()
     cStat = PtnOutputYara();
     if (cStat != CLS_SUCCESS)
         EXIT1(cStat, EXIT, "Notice: %s.", YARA_OUTPUT_FAIL);
-    SPEW1("Notice: %s.", YARA_OUTPUT_SUCC);        
+    SPEW1("Notice: %s.", YARA_OUTPUT_SUCC);
 
 EXIT:
     return cRtnCode;

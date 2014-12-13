@@ -23,12 +23,11 @@ typedef struct THREAD_CRAFT_T {
     int8_t cRtnCode;
     pthread_t tId;
     GROUP *p_Grp;
-    GPtrArray *a_BlkCand;
 } THREAD_CRAFT;
 
 
 typedef struct THREAD_SLOT_T {
-    uint16_t usSizeMin;
+    uint16_t usSizeMinSlc;
     uint64_t ulIdxBgn;
     uint64_t ulIdxEnd;
     char **a_szBin;

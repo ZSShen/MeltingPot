@@ -27,8 +27,8 @@ typedef struct _CONTENT_ADDR_T {
 /* The distilled binary block which shows parts of the common features shared by the members 
    belonged to certain group. */
 typedef struct _BLOCK_CAND_T {
-    uint16_t *p_usCont;     /* The normalized byte sequence. */
-    GArray *a_ContAddr;     /* The list of addressing methods to locate this block. */
+    uint16_t *a_usCtn;      /* The normalized byte sequence. */
+    GArray *a_CtnAddr;      /* The list of addressing methods to locate this block. */
 } BLOCK_CAND;
 
 
@@ -123,12 +123,12 @@ DsDeleteMeltPot(gpointer gp_Pot);
  * The initialization function of BLOCK_CAND structure.
  * 
  * @param pp_BlkCand    The pointer to the pointer of target structure.
- * @param ucSizeCont    The size of the block content.
+ * @param usSizeCtn     The size of the block content.
  * 
  * @return status code
  */
 int8_t
-DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t ucSizeCont);
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn);
 
 
 /**
