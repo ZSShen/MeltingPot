@@ -18,6 +18,11 @@
 /* The mask used to extend char type to short. */                
 #define EXTENSION_MASK          (0xff)
 
+/* The noisy bytes. */
+#define BYTE_NOISE_00           (0x00)
+#define BYTE_NOISE_FF           (0xff)
+#define THLD_DNMNTR             (100)
+
 
 typedef struct THREAD_CRAFT_T {
     int8_t cRtnCode;

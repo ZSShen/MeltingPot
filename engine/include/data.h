@@ -27,6 +27,8 @@ typedef struct _CONTENT_ADDR_T {
 /* The distilled binary block which shows parts of the common features shared by the members 
    belonged to certain group. */
 typedef struct _BLOCK_CAND_T {
+    uint8_t ucCntNoise;     /* The number of noise bytes. */
+    uint8_t ucCntWild;      /* The number of wildcard characters. */
     uint16_t *a_usCtn;      /* The normalized byte sequence. */
     GArray *a_CtnAddr;      /* The list of addressing methods to locate this block. */
 } BLOCK_CAND;
@@ -152,5 +154,29 @@ DsNewGroup(GROUP **pp_Grp);
  */
 int8_t
 DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc);
+
+
+/**
+ * This function sorts the BlockCand structures with noise byte count.
+ * 
+ * @param vp_Src        The pointer to the source BlockCand structure.
+ * @param vp_Tge        The pointer to the target one.
+ * 
+ * @return status code
+ */
+int
+DSCompBlockCandNoise(const void *vp_Src, const void *vp_Tge);
+
+
+/**
+ * This function sorts the BlockCand structures with wildcard character count.
+ * 
+ * @param vp_Src        The pointer to the source BlockCand structure.
+ * @param vp_Tge        The pointer to the target one.
+ * 
+ * @return status code
+ */
+int
+DSCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge);
 
 #endif

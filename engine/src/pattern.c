@@ -322,6 +322,34 @@ EXIT:
 int8_t
 _PtnReduceCraft(THREAD_CRAFT *p_Param)
 {
+    GPtrArray *a_BlkCand = p_Param->p_Grp->a_BlkCand;
+
+    /* Remove the blocks with the number of noisy bytes exceeding the threshold. */
+    g_ptr_array_sort(a_BlkCand, DSCompBlockCandNoise);
+    uint8_t ucThld = p_Conf->ucSizeBlk * p_Conf->ucRatNoise / THLD_DNMNTR;
+    uint32_t uiLen = a_BlkCand->len;
+    uint32_t uiIdx;
+    for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
+        BLOCK_CAND *p_BlkCand = g_ptr_array_index(a_BlkCand, uiIdx);
+        if (p_BlkCand->ucCntNoise >= ucThld)
+            break;
+    }
+    if (uiIdx < uiLen)
+        g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
+
+    /* Sort the blocks and retrieve the candidates with top quality. */
+    g_ptr_array_sort(a_BlkCand, DSCompBlockCandWildCard);
+    ucThld = p_Conf->ucSizeBlk * p_Conf->ucRatWild / THLD_DNMNTR;
+    uiLen = a_BlkCand->len;
+    for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
+        BLOCK_CAND *p_BlkCand = g_ptr_array_index(a_BlkCand, uiIdx);
+        if (p_BlkCand->ucCntWild >= ucThld)
+            break;
+        if (uiIdx == p_Conf->ucCntBlk)
+            break;   
+    }
+    g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
+
     return CLS_SUCCESS;
 }
 
@@ -367,6 +395,15 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
                 CONTENT_ADDR addr = g_array_index(a_CtnAddrC, CONTENT_ADDR, uiIdx);
                 g_array_append_val(a_CtnAddrB, addr);
             }
+        }
+
+        uint8_t ucIdx;
+        for (ucIdx = 0 ; ucIdx < p_Conf->ucSizeBlk ; ucIdx++) {
+            uint16_t usMat = a_usCtnB[ucIdx];
+            if ((usMat == BYTE_NOISE_00) || (usMat == BYTE_NOISE_FF))
+                p_BlkCandB->ucCntNoise++;
+            if (usMat == WILD_CARD_MARK)
+                p_BlkCandB->ucCntWild++;
         }
     }
 

@@ -98,6 +98,9 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
     p_BlkCand->a_usCtn = (uint16_t*)malloc(sizeof(uint16_t) * usSizeCtn);
     if (!p_BlkCand->a_usCtn)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEADDR, "Error: %s.", strerror(errno));
+
+    p_BlkCand->ucCntNoise = 0;
+    p_BlkCand->ucCntWild = 0;
     goto EXIT;
 
 FREEADDR:
@@ -183,4 +186,24 @@ FREEPOT:
         free(*pp_Pot);
 EXIT:
     return cRtnCode;    
+}
+
+
+int
+DSCompBlockCandNoise(const void *vp_Src, const void *vp_Tge)
+{
+    BLOCK_CAND *p_Src = *(BLOCK_CAND**)vp_Src;
+    BLOCK_CAND *p_Tge = *(BLOCK_CAND**)vp_Tge;
+    return p_Src->ucCntNoise - p_Tge->ucCntNoise;
+}
+
+
+int
+DSCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge)
+{
+    BLOCK_CAND *p_Src = *(BLOCK_CAND**)vp_Src;
+    BLOCK_CAND *p_Tge = *(BLOCK_CAND**)vp_Tge;
+    if (p_Src->ucCntWild == p_Tge->ucCntWild)
+        return p_Src->ucCntNoise - p_Tge->ucCntNoise;
+    return p_Src->ucCntWild - p_Tge->ucCntWild;
 }
