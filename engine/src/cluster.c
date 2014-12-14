@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <getopt.h>
 #include <libconfig.h>
 #include <dlfcn.h>
@@ -85,6 +86,18 @@ void
 _ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim);
 
 
+/**
+ * This function ensures that the input and output folder is ready. Note
+ * the clustering process won't be started if the testing fails.
+ * 
+ * @param p_Conf        The pointer to the CONFIG structure.
+ * 
+ * @return status code
+ */
+int8_t
+_ClsCheckFolderExistence(CONFIG *p_Conf);
+
+
 /*======================================================================*
  *                Implementation for Exported Functions                 *
  *======================================================================*/
@@ -105,6 +118,11 @@ ClsInit(char *szPathCfg)
 
     /* Resolve the user specified configuration. */
     int8_t cStat = _ClsInitConfig(&(p_Ctx->p_Conf), szPathCfg);
+    if (cStat != CLS_SUCCESS)
+        EXITQ(cStat, EXIT);
+
+    /* Check the existence of the input and output folder. */
+    cStat = _ClsCheckFolderExistence(p_Ctx->p_Conf);
     if (cStat != CLS_SUCCESS)
         EXITQ(cStat, EXIT);
 
@@ -219,7 +237,7 @@ EXIT:
 /*======================================================================*
  *                Implementation for Internal Functions                 *
  *======================================================================*/
- int8_t
+int8_t
 _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
 {
     int8_t cRtnCode = CLS_SUCCESS;
@@ -410,4 +428,28 @@ _ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim)
     }
 
     return;
+}
+
+
+int8_t
+_ClsCheckFolderExistence(CONFIG *p_Conf)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    /* Check if the input folder exists. */
+    struct stat stDir;
+    int8_t cStat = stat(p_Conf->szPathRootIn, &stDir);
+    if (cStat != 0)
+        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+
+    /* Create the output folder if it does not exist. */
+    cStat = stat(p_Conf->szPathRootOut, &stDir);
+    if (cStat != 0) {
+        cStat = mkdir(p_Conf->szPathRootOut, 0700);
+        if (cStat != 0)
+            EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+    }
+
+EXIT:
+    return cRtnCode;
 }

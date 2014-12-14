@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <sys/stat.h>
 #include "spew.h"
 #include "data.h"
 #include "cluster.h"
@@ -181,10 +180,10 @@ PtnCraftPattern()
         /* Discard the trivial groups using the designated threshold. */
         GROUP *p_Grp = (GROUP*)gpValue;
         if (p_Grp->a_Mbr->len < p_Conf->ucSizeTruncGrp)
-            continue;        
+            continue;
         sem_wait(&synSem);
         _PtnSetParamThrdCrt(&(a_Param[ulIdx]), p_Grp);
-        pthread_create(&(a_Param[ulIdx].tId), NULL, _PtnMapCraft, (void*)&(a_Param[ulIdx]));    
+        pthread_create(&(a_Param[ulIdx].tId), NULL, _PtnMapCraft, (void*)&(a_Param[ulIdx]));
         ulIdx++;
     }
 
@@ -212,7 +211,15 @@ int8_t
 PtnOutputYara()
 {
     int8_t cRtnCode = CLS_SUCCESS;
-    
+
+    /* Create the YARA format pattern for each group. */
+    GHashTableIter iterHash;
+    gpointer gpKey, gpValue;
+    g_hash_table_iter_init(&iterHash, p_Pot->h_Grp);
+    while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
+        GROUP *p_Grp = (GROUP*)gpValue;
+    }
+
     return cRtnCode;
 }
 
