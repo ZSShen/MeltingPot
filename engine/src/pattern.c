@@ -178,8 +178,11 @@ PtnCraftPattern()
     uint64_t ulIdx = 0;
     g_hash_table_iter_init(&iterHash, p_Pot->h_Grp);
     while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
-        sem_wait(&synSem);
+        /* Discard the trivial groups using the designated threshold. */
         GROUP *p_Grp = (GROUP*)gpValue;
+        if (p_Grp->a_Mbr->len < p_Conf->ucSizeTruncGrp)
+            continue;        
+        sem_wait(&synSem);
         _PtnSetParamThrdCrt(&(a_Param[ulIdx]), p_Grp);
         pthread_create(&(a_Param[ulIdx].tId), NULL, _PtnMapCraft, (void*)&(a_Param[ulIdx]));    
         ulIdx++;

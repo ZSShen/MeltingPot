@@ -265,9 +265,9 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_IO_BANDWIDTH);
 
-    cStat = config_lookup_bool(&cfg, C_TRUNCATE_TRIVIAL_GROUP, &(p_Conf->bTrunc));
+    cStat = config_lookup_int(&cfg, C_SIZE_TRUNCATE_GROUP, &(p_Conf->ucSizeTruncGrp));
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_TRUNCATE_TRIVIAL_GROUP);
+        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_TRUNCATE_GROUP);
 
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_INPUT,
                                 (const char**)&(p_Conf->szPathRootIn));

@@ -36,7 +36,7 @@
 #define C_RATIO_NOISE               "RATIO_NOISE"
 #define C_RATIO_WILDCARD            "RATIO_WILDCARD"
 #define C_IO_BANDWIDTH              "IO_BANDWIDTH"
-#define C_TRUNCATE_TRIVIAL_GROUP    "TRUNCATE_TRIVIAL_GROUP"
+#define C_SIZE_TRUNCATE_GROUP       "TRUNCATE_GROUP_SIZE_LESS_THAN"
 #define C_PATH_ROOT_INPUT           "PATH_ROOT_INPUT"
 #define C_PATH_ROOT_OUTPUT          "PATH_ROOT_OUTPUT"
 #define C_PATH_PLUGIN_SLICE         "PATH_PLUGIN_SLICE"
@@ -59,11 +59,11 @@ enum {
    Note the reason that we do not follow the definition of standard integer 
    is due to the type definition of libconfig. */
 typedef struct _CONFIG_T {
-    bool bTrunc;            /* The option to truncate trivial groups. */
     int ucCntThrd;          /* The number of threads used for parallel processing. */
     int ucScoreSim;         /* The threshold to group similar binary slices. */
     int ucCntBlk;           /* The number of hex byte blocks in pattern. */
     int ucSizeBlk;          /* The size of the hex byte block. */
+    int ucSizeTruncGrp;     /* The threshold to truncate groups with size less than it. */
     int ucRatNoise;         /* The ratio of meaningless bytes in one hex block. */
     int ucRatWild;          /* The ratio of wildcard characters in one hex block. */
     int ucIoBand;           /* The number of files a thread can simultaneously open. */
