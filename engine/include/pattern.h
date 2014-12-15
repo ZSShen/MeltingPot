@@ -9,19 +9,25 @@
 #include "similarity.h"
 
 
-/* The number of shifting bytes applied for common block extraction. */
-#define ROLL_SHFT_COUNT         (16)
-
-/* The marker for wildcard character. */
-#define WILD_CARD_MARK          (0x100)
-
-/* The mask used to extend char type to short. */                
-#define EXTENSION_MASK          (0xff)
-
-/* The noisy bytes. */
-#define BYTE_NOISE_00           (0x00)
+/* The constants helping for common byte block extraction. */
+#define ROLL_SHFT_COUNT         (16)    /* The number of shifting bytes. */
+#define WILD_CARD_MARK          (0x100) /* The marker for wildcard character. */
+#define BYTE_NOISE_00           (0x00)  /* The noisy bytes. */
 #define BYTE_NOISE_FF           (0xff)
-#define THLD_DNMNTR             (100)
+#define EXTENSION_MASK          (0xff)  /* The mask used to extend char type to short. */
+#define THLD_DNMNTR             (100)   /* The denominator for threshold computation. */
+
+/* The constants helping for YARA pattern creation. */
+#define HEX_CHUNK_SIZE          (16)    /* The maximum number of bytes in single line. */
+#define PREFIX_PATTERN          "AUTO"  /* The prefix for pattern name. */
+#define PREFIX_HEX_STRING       "SEQ"   /* The prefix for hex string name. */
+#define MODULE_PE               "pe"    /* The external module named "pe". */
+#define SPACE_SUBS_TAB          "    "  /* The spaces substituting a tab. */
+#define DIGIT_COUNT_ULONG       (20)    /* The maximum number of digits to 
+                                           form an unsigned long variable. */
+#define BUF_SIZE_PTN_FILE       (4096)  /* The maximum pattern file size. */
+#define BUF_SIZE_PTN_SECTION    (1024)  /* The maximum pattern section size. */
+#define BUF_SIZE_INDENT         (64)    /* The maxumum indentation length. */
 
 
 typedef struct THREAD_CRAFT_T {
@@ -70,7 +76,7 @@ PtnCraftPattern();
  * @return status code.
  */
 int8_t
-PtnOutputYara();
+PtnOutputResult();
 
 
 #endif

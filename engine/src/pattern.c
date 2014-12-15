@@ -69,6 +69,46 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize);
 
 
 /**
+ * This function prints the pattern file for the designated group.
+ * 
+ * @param ulSizeGrp     The group size.
+ * @param a_BlkCand     The array of BLOCK_CAND structures.
+ * 
+ * @return status code
+ */
+int8_t
+_PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand);
+
+
+/**
+ * This function prints the string section of the pattern.
+ * 
+ * @param szPtnStr      The string showing the content of string section.
+ * @param a_usCtn       The buffer storing the block hex bytes.
+ * @param p_sLen        The pointer to the to be updated section length.
+ * @param ucIdxBlk      The index of the hex block.
+ * 
+ * @return status code (currently unused)
+ */
+int8_t
+_PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen, 
+                       uint8_t ucIdxBlk);
+
+
+/**
+ * This function prints the condition section of the pattern.
+ * 
+ * @param szPtnCond     The string showing the content of condition section.
+ * @param a_CtnAddr     The array of CONTENT_ADDR structures.
+ * @param p_Len         The pointer to the to be updated section length.
+ * 
+ * @return status code (currently unused)
+ */
+int8_t
+_PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int32_t *p_Len);
+
+
+/**
  * This function initializes the THREAD_CRAFT structure.
  * 
  * @param p_Param       The pointer to the to be initialized structure.
@@ -208,7 +248,7 @@ EXIT:
 
 
 int8_t
-PtnOutputYara()
+PtnOutputResult()
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
@@ -218,8 +258,17 @@ PtnOutputYara()
     g_hash_table_iter_init(&iterHash, p_Pot->h_Grp);
     while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
         GROUP *p_Grp = (GROUP*)gpValue;
+        GArray *a_Mbr = p_Grp->a_Mbr;
+        GPtrArray *a_BlkCand = p_Grp->a_BlkCand;
+        uint64_t ulSizeGrp = a_Mbr->len;
+        if (a_BlkCand->len == 0)
+            continue;
+        int8_t cStat = _PtnPrintf(ulSizeGrp, a_BlkCand);
+        if (cStat != CLS_SUCCESS)
+            EXITQ(cStat, EXIT);
     }
 
+EXIT:
     return cRtnCode;
 }
 
@@ -416,6 +465,129 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
                 p_BlkCandB->ucCntWild++;
         }
     }
+
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    int32_t iLen = strlen(p_Conf->szPathRootOut) + DIGIT_COUNT_ULONG + 2;
+    char *szPath = (char*)malloc(sizeof(char) * iLen);
+    if (!szPath)
+        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+    snprintf(szPath, iLen, "%s/%lu", p_Conf->szPathRootOut, ulSizeGrp);
+    
+    char *szPtnFull = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_FILE);
+    if (!szPtnFull)
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPATH, "Error: %s.", strerror(errno));
+    memset(szPtnFull, 0, sizeof(char) * BUF_SIZE_PTN_FILE);
+
+    char *szPtnStr = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
+    if (!szPtnStr)
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPTN_FULL, "Error: %s.", strerror(errno));
+    memset(szPtnStr, 0, sizeof(char) * BUF_SIZE_PTN_SECTION);
+
+    char *szPtnCond = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
+    if (!szPtnCond)
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPTN_STR, "Error: %s.", strerror(errno));
+    memset(szPtnCond, 0, sizeof(char) * BUF_SIZE_PTN_SECTION);
+
+    FILE *fp = fopen(szPath, "w");
+    if (!fp)
+        EXIT1(CLS_FAIL_FILE_IO, FREEPTN_COND, "Error: %s.", strerror(errno));
+
+    /* Print the string and condition section. */
+    int16_t iLenStr = 0;
+    int16_t iLenCond = 0;
+    uint8_t ucCntBlk = a_BlkCand->len;
+    uint8_t ucIdx;
+    for (ucIdx = 0 ; ucIdx < ucCntBlk ; ucIdx++) {
+        BLOCK_CAND *p_BlkCand = g_ptr_array_index(a_BlkCand, ucIdx);
+        uint16_t *a_usCtn = p_BlkCand->a_usCtn;
+        int8_t cStat = _PtnPrintStringSection(szPtnStr, a_usCtn, &iLenStr, ucIdx);
+        if (cStat != CLS_SUCCESS)
+            EXITQ(cStat, CLOSE);
+    }
+
+CLOSE:
+    if (fp)
+        fclose(fp);
+FREEPTN_COND:
+    if (szPtnCond)
+        free(szPtnCond);
+FREEPTN_STR:
+    if (szPtnStr)
+        free(szPtnStr);
+FREEPTN_FULL:
+    if (szPtnFull)
+        free(szPtnFull);
+FREEPATH:
+    if (szPath)
+        free(szPath);
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen, 
+                       uint8_t ucIdxBlk)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+    
+    char *szPivot = szPtnStr + *p_sLen;
+    int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
+    if (sRest <= 0)
+        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+    
+    int8_t cCntWrt = snprintf(szPivot, sRest, "%s%s$%s_%d = { ", SPACE_SUBS_TAB,
+                              SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxBlk);
+    szPivot += cCntWrt;
+    sRest -= cCntWrt;
+    if (sRest <= 0)
+        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+
+    /* Prepare the indentation. */
+    uint8_t ucIndent = cCntWrt;
+    char szIndent[BUF_SIZE_INDENT];
+    memset(szIndent, 0, sizeof(char) * BUF_SIZE_INDENT);
+    uint8_t ucIdx;
+    for (ucIdx = 0 ; ucIdx < ucIndent ; ucIdx++)
+        szIndent[ucIdx] = ' ';
+
+    /* Print the hex byte block as plaintext string. */
+    for (ucIdx = 0 ; ucIdx < p_Conf->ucSizeBlk ; ucIdx++) {
+        if (a_usCtn[ucIdx] != WILD_CARD_MARK)
+            cCntWrt = snprintf(szPivot, sRest, "%02x ", a_usCtn[ucIdx] & EXTENSION_MASK);
+        else
+            cCntWrt = snprintf(szPivot, sRest, "?? ");
+        szPivot += cCntWrt;
+        sRest -= cCntWrt;
+        if (sRest <= 0)
+            EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);    
+
+        /* Newline if the number of writtern bytes exceeding the line boundary.*/
+        if ((ucIdx & HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) && 
+            (ucIdx != p_Conf->ucSizeBlk - 1)) {
+            cCntWrt = snprintf(szPivot, sRest, "\n%s", szIndent);
+            szPivot += cCntWrt;
+            sRest -= cCntWrt;
+            if (sRest <= 0)
+                EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        }
+    }
+
+    if (sRest < 4)
+        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+    szPivot[0] = '}';
+    szPivot[1] = '\n';
+    szPivot[2] = '\n';
+    *p_sLen = szPivot - szPtnStr + 3;
 
 EXIT:
     return cRtnCode;

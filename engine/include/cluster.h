@@ -9,6 +9,7 @@
 /* The messages for debugging. */
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
 #define FAIL_NO_SAMPLE           "No samples in the given folder"
+#define FAIL_PTN_CREATE          "Insufficient pattern buffer size"
 #define SLICE_GENERATION_FAIL    "[Slice Generation] failed!"
 #define SLICE_GENERATION_SUCC    "[Slice Generation] succeed!"
 #define SLICE_CORRELATION_FAIL   "[Slice Correlation] failed!"
@@ -51,7 +52,8 @@ enum {
     CLS_FAIL_CONF_PARSE = -4,
     CLS_FAIL_PLUGIN_RESOLVE = -5,
     CLS_FAIL_PLUGIN_INTERACT = -6,
-    CLS_FAIL_PROCESS = -7
+    CLS_FAIL_PROCESS = -7,
+    CLS_FAIL_PTN_CREATE = -8,
 };
 
 

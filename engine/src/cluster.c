@@ -182,7 +182,7 @@ ClsRunTask()
         EXIT1(cStat, EXIT, "Notice: %s.", PATTERN_GENERATION_FAIL);
     SPEW1("Notice: %s.", PATTERN_GENERATION_SUCC);    
 
-    cStat = PtnOutputYara();
+    cStat = PtnOutputResult();
     if (cStat != CLS_SUCCESS)
         EXIT1(cStat, EXIT, "Notice: %s.", YARA_OUTPUT_FAIL);
     SPEW1("Notice: %s.", YARA_OUTPUT_SUCC);
