@@ -486,22 +486,19 @@ _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
     char *szPath = (char*)malloc(sizeof(char) * iLen);
     if (!szPath)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-    snprintf(szPath, iLen, "%s/%lu_%lu", p_Conf->szPathRootOut, ulIdxGrp, ulSizeGrp);
+    snprintf(szPath, iLen, "%s/%lu_%lu.yara", p_Conf->szPathRootOut, ulSizeGrp, ulIdxGrp);
     
     char *szPtnFull = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_FILE);
     if (!szPtnFull)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEPATH, "Error: %s.", strerror(errno));
-    memset(szPtnFull, 0, sizeof(char) * BUF_SIZE_PTN_FILE);
 
     char *szPtnStr = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
     if (!szPtnStr)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEPTN_FULL, "Error: %s.", strerror(errno));
-    memset(szPtnStr, 0, sizeof(char) * BUF_SIZE_PTN_SECTION);
 
     char *szPtnCond = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
     if (!szPtnCond)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEPTN_STR, "Error: %s.", strerror(errno));
-    memset(szPtnCond, 0, sizeof(char) * BUF_SIZE_PTN_SECTION);
 
     FILE *fp = fopen(szPath, "w");
     if (!fp)
@@ -519,12 +516,39 @@ _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
         int8_t cStat = _PtnPrintStringSection(szPtnStr, a_usCtn, &iLenStr, ucIdx);
         if (cStat != CLS_SUCCESS)
             EXITQ(cStat, CLOSE);
+        szPtnStr[iLenStr] = 0;
 
         GArray *a_CtnAddr = p_BlkCand->a_CtnAddr;
         cStat = _PtnPrintConditionSection(szPtnCond, a_CtnAddr, &iLenCond, ucCntBlk, ucIdx);
         if (cStat != CLS_SUCCESS)
             EXITQ(cStat, CLOSE);
+        szPtnCond[iLenCond] = 0;    
     }
+
+    /* Print the header section. */
+    char *szPivot = szPtnFull;
+    int16_t sRest = BUF_SIZE_PTN_FILE;
+    int16_t sCntWrt = snprintf(szPivot, sRest, "import \"%s\"\n\n", MODULE_PE);
+    szPivot += sCntWrt;
+    sRest -= sCntWrt;
+
+    sCntWrt = snprintf(szPivot, sRest, "rule %s_%ld\n{\n", PREFIX_PATTERN, ulIdxGrp);
+    szPivot += sCntWrt;
+    sRest -= sCntWrt;
+
+    sCntWrt = snprintf(szPivot, sRest, "%s%sstrings:\n%s\n", SPACE_SUBS_TAB, 
+                       SPACE_SUBS_TAB, szPtnStr);
+    szPivot += sCntWrt;
+    sRest -= sCntWrt;
+
+    sCntWrt = snprintf(szPivot, sRest, "%s%scondition:\n%s}\n", SPACE_SUBS_TAB,
+                       SPACE_SUBS_TAB, szPtnCond);
+    szPivot += sCntWrt;
+    
+    size_t nWrtExpt = szPivot - szPtnFull;
+    size_t nWrtReal = fwrite(szPtnFull, sizeof(char), nWrtExpt, fp);
+    if (nWrtReal != nWrtExpt)
+        EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
 
 CLOSE:
     if (fp)
