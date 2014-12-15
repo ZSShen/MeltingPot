@@ -190,7 +190,7 @@ EXIT:
 
 
 int
-DSCompBlockCandNoise(const void *vp_Src, const void *vp_Tge)
+DsCompBlockCandNoise(const void *vp_Src, const void *vp_Tge)
 {
     BLOCK_CAND *p_Src = *(BLOCK_CAND**)vp_Src;
     BLOCK_CAND *p_Tge = *(BLOCK_CAND**)vp_Tge;
@@ -199,11 +199,22 @@ DSCompBlockCandNoise(const void *vp_Src, const void *vp_Tge)
 
 
 int
-DSCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge)
+DsCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge)
 {
     BLOCK_CAND *p_Src = *(BLOCK_CAND**)vp_Src;
     BLOCK_CAND *p_Tge = *(BLOCK_CAND**)vp_Tge;
     if (p_Src->ucCntWild == p_Tge->ucCntWild)
-        return p_Src->ucCntNoise - p_Tge->ucCntNoise;
-    return p_Src->ucCntWild - p_Tge->ucCntWild;
+        return (int16_t)p_Src->ucCntNoise - (int16_t)p_Tge->ucCntNoise;
+    return (int16_t)p_Src->ucCntWild - (int16_t)p_Tge->ucCntWild;
+}
+
+
+int
+DsCompContentAddr(const void *vp_Src, const void *vp_Tge)
+{
+    CONTENT_ADDR *p_Src = (CONTENT_ADDR*)vp_Src;
+    CONTENT_ADDR *p_Tge = (CONTENT_ADDR*)vp_Tge;
+    if (p_Src->iIdSec == p_Tge->iIdSec)
+        return (double)p_Src->ulOfstRel - (double)p_Tge->ulOfstRel;
+    return p_Src->iIdSec - p_Tge->iIdSec;
 }

@@ -159,24 +159,38 @@ DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc);
 /**
  * This function sorts the BlockCand structures with noise byte count.
  * 
- * @param vp_Src        The pointer to the source BlockCand structure.
- * @param vp_Tge        The pointer to the target one.
+ * @param vp_Src        The pointer to the pointer of source BlockCand structure.
+ * @param vp_Tge        The pointer to the pointer of target one.
  * 
- * @return status code
+ * @return comparison order
  */
 int
-DSCompBlockCandNoise(const void *vp_Src, const void *vp_Tge);
+DsCompBlockCandNoise(const void *vp_Src, const void *vp_Tge);
 
 
 /**
  * This function sorts the BlockCand structures with wildcard character count.
  * 
- * @param vp_Src        The pointer to the source BlockCand structure.
- * @param vp_Tge        The pointer to the target one.
+ * @param vp_Src        The pointer to the pointer of source BlockCand structure.
+ * @param vp_Tge        The pointer to the pointer of target one.
  * 
- * @return status code
+ * @return comparison order
  */
 int
-DSCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge);
+DsCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge);
+
+
+/**
+ * This function sorts the CONTENT_ADDR structures using section id as the
+ * first criteria and section offset as the second criteria.
+ * 
+ * @param vp_Src        The pointer to the pointer of source CONTENT_ADDR structure.
+ * @param vp_Tge        The pointer to the pointer of target one.
+ * 
+ * @return comparison order
+ */
+int
+DsCompContentAddr(const void *vp_Src, const void *vp_Tge);
+
 
 #endif

@@ -71,13 +71,14 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize);
 /**
  * This function prints the pattern file for the designated group.
  * 
+ * @param ulIdxGrp      The group index.
  * @param ulSizeGrp     The group size.
  * @param a_BlkCand     The array of BLOCK_CAND structures.
  * 
  * @return status code
  */
 int8_t
-_PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand);
+_PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand);
 
 
 /**
@@ -88,7 +89,7 @@ _PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand);
  * @param p_sLen        The pointer to the to be updated section length.
  * @param ucIdxBlk      The index of the hex block.
  * 
- * @return status code (currently unused)
+ * @return status code
  */
 int8_t
 _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen, 
@@ -100,12 +101,15 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
  * 
  * @param szPtnCond     The string showing the content of condition section.
  * @param a_CtnAddr     The array of CONTENT_ADDR structures.
- * @param p_Len         The pointer to the to be updated section length.
+ * @param p_sLen        The pointer to the to be updated section length.
+ * @param ucCntBlk      The total number of hex blocks.
+ * @param ucIdxBlk      The index of the hex block.
  * 
- * @return status code (currently unused)
+ * @return status code
  */
 int8_t
-_PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int32_t *p_Len);
+_PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
+                          uint8_t ucCntBlk, uint8_t ucIdxBlk);
 
 
 /**
@@ -256,6 +260,7 @@ PtnOutputResult()
     GHashTableIter iterHash;
     gpointer gpKey, gpValue;
     g_hash_table_iter_init(&iterHash, p_Pot->h_Grp);
+    uint64_t ulIdxGrp = 0;
     while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
         GROUP *p_Grp = (GROUP*)gpValue;
         GArray *a_Mbr = p_Grp->a_Mbr;
@@ -263,9 +268,10 @@ PtnOutputResult()
         uint64_t ulSizeGrp = a_Mbr->len;
         if (a_BlkCand->len == 0)
             continue;
-        int8_t cStat = _PtnPrintf(ulSizeGrp, a_BlkCand);
+        int8_t cStat = _PtnPrintf(ulIdxGrp, ulSizeGrp, a_BlkCand);
         if (cStat != CLS_SUCCESS)
             EXITQ(cStat, EXIT);
+        ulIdxGrp++;    
     }
 
 EXIT:
@@ -384,7 +390,7 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param)
     GPtrArray *a_BlkCand = p_Param->p_Grp->a_BlkCand;
 
     /* Remove the blocks with the number of noisy bytes exceeding the threshold. */
-    g_ptr_array_sort(a_BlkCand, DSCompBlockCandNoise);
+    g_ptr_array_sort(a_BlkCand, DsCompBlockCandNoise);
     uint8_t ucThld = p_Conf->ucSizeBlk * p_Conf->ucRatNoise / THLD_DNMNTR;
     uint32_t uiLen = a_BlkCand->len;
     uint32_t uiIdx;
@@ -397,7 +403,7 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param)
         g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
 
     /* Sort the blocks and retrieve the candidates with top quality. */
-    g_ptr_array_sort(a_BlkCand, DSCompBlockCandWildCard);
+    g_ptr_array_sort(a_BlkCand, DsCompBlockCandWildCard);
     ucThld = p_Conf->ucSizeBlk * p_Conf->ucRatWild / THLD_DNMNTR;
     uiLen = a_BlkCand->len;
     for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
@@ -472,7 +478,7 @@ EXIT:
 
 
 int8_t
-_PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
+_PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
@@ -480,7 +486,7 @@ _PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
     char *szPath = (char*)malloc(sizeof(char) * iLen);
     if (!szPath)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-    snprintf(szPath, iLen, "%s/%lu", p_Conf->szPathRootOut, ulSizeGrp);
+    snprintf(szPath, iLen, "%s/%lu_%lu", p_Conf->szPathRootOut, ulIdxGrp, ulSizeGrp);
     
     char *szPtnFull = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_FILE);
     if (!szPtnFull)
@@ -508,8 +514,14 @@ _PtnPrintf(uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
     uint8_t ucIdx;
     for (ucIdx = 0 ; ucIdx < ucCntBlk ; ucIdx++) {
         BLOCK_CAND *p_BlkCand = g_ptr_array_index(a_BlkCand, ucIdx);
+
         uint16_t *a_usCtn = p_BlkCand->a_usCtn;
         int8_t cStat = _PtnPrintStringSection(szPtnStr, a_usCtn, &iLenStr, ucIdx);
+        if (cStat != CLS_SUCCESS)
+            EXITQ(cStat, CLOSE);
+
+        GArray *a_CtnAddr = p_BlkCand->a_CtnAddr;
+        cStat = _PtnPrintConditionSection(szPtnCond, a_CtnAddr, &iLenCond, ucCntBlk, ucIdx);
         if (cStat != CLS_SUCCESS)
             EXITQ(cStat, CLOSE);
     }
@@ -539,7 +551,7 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
                        uint8_t ucIdxBlk)
 {
     int8_t cRtnCode = CLS_SUCCESS;
-    
+
     char *szPivot = szPtnStr + *p_sLen;
     int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
     if (sRest <= 0)
@@ -572,7 +584,7 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
             EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);    
 
         /* Newline if the number of writtern bytes exceeding the line boundary.*/
-        if ((ucIdx & HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) && 
+        if ((ucIdx % HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) && 
             (ucIdx != p_Conf->ucSizeBlk - 1)) {
             cCntWrt = snprintf(szPivot, sRest, "\n%s", szIndent);
             szPivot += cCntWrt;
@@ -582,12 +594,75 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
         }
     }
 
-    if (sRest < 4)
+    cCntWrt = snprintf(szPivot, sRest, "}\n\n");
+    szPivot += cCntWrt;
+    sRest -= cCntWrt;
+    if (sRest <= 0)
         EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-    szPivot[0] = '}';
-    szPivot[1] = '\n';
-    szPivot[2] = '\n';
-    *p_sLen = szPivot - szPtnStr + 3;
+    *p_sLen = szPivot - szPtnStr;
+
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
+                          uint8_t ucCntBlk, uint8_t ucIdxBlk)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    char *szPivot = szPtnCond + *p_sLen;
+    int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
+    if (sRest <= 0)
+        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+
+    g_array_sort(a_CtnAddr, DsCompContentAddr);
+    int8_t cCntWrt;
+    uint64_t ulCntAddr = a_CtnAddr->len;
+    uint64_t ulIdx;
+    CONTENT_ADDR addrPred = {0};
+    for (ulIdx = 0 ; ulIdx < ulCntAddr ; ulIdx++) {
+        CONTENT_ADDR addrCurr = g_array_index(a_CtnAddr, CONTENT_ADDR, ulIdx);
+        if ((addrCurr.iIdSec == addrPred.iIdSec) && 
+            (addrCurr.ulOfstRel == addrPred.ulOfstRel))
+                continue;
+
+        cCntWrt = snprintf(szPivot, sRest,
+                           "%s%s$%s_%d at pe.sections[%d].raw_data_offset + 0x%lx",
+                           SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING,
+                           ucIdxBlk, addrCurr.iIdSec, addrCurr.ulOfstRel);
+        szPivot += cCntWrt;
+        sRest -= cCntWrt;
+        if (sRest <= 0)
+            EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+
+        if (ulIdx < (ulCntAddr - 1)) {
+            cCntWrt = snprintf(szPivot, sRest, " or");
+            szPivot += cCntWrt;
+            sRest -= cCntWrt;
+            if (sRest <= 0)
+                EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        }
+
+        cCntWrt = snprintf(szPivot, sRest, "\n");
+        szPivot += cCntWrt;
+        sRest -= cCntWrt;
+        if (sRest <= 0)
+            EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+
+        addrPred = addrCurr;
+    }
+
+    if (ucIdxBlk < (ucCntBlk - 1))
+        cCntWrt = snprintf(szPivot, sRest, "%s%sor\n", SPACE_SUBS_TAB, SPACE_SUBS_TAB);
+    else
+        cCntWrt = snprintf(szPivot, sRest, "\n");
+    szPivot += cCntWrt;
+    sRest -= cCntWrt;
+    if (sRest <= 0)
+        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+    *p_sLen = szPivot - szPtnCond;
 
 EXIT:
     return cRtnCode;
