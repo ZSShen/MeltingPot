@@ -106,7 +106,6 @@ ClsInit(char *szPathCfg)
 {
     int8_t cRtnCode = CLS_SUCCESS;
     
-    config_init(&cfg);
     p_Ctx = (CONTEXT*)malloc(sizeof(CONTEXT));
     if (!p_Ctx)
         EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
@@ -242,6 +241,7 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
+    config_init(&cfg);
     int8_t cStat = config_read_file(&cfg, szPath);
     if (cStat == CONFIG_FALSE)
         EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", config_error_text(&cfg));

@@ -190,7 +190,7 @@ CrlPrepareSlice()
 {
     int8_t cRtnCode = CLS_SUCCESS;
 
-    /* Collect the paths for all the samples. */
+    /* Collect the pathnames for all the samples. */
     uint32_t uiCntFile;
     int8_t cStat = _CrlCollectSamplePath(&uiCntFile);
     if (cStat != CLS_SUCCESS)
@@ -290,6 +290,7 @@ int8_t
 _CrlCollectSamplePath(uint32_t *p_uiCntFile)
 {
     int8_t cRtnCode = CLS_SUCCESS;
+
     uint32_t uiCntFile = 0;
     DIR *dirRoot = opendir(p_Conf->szPathRootIn);
     if (!dirRoot)
