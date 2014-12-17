@@ -4,16 +4,12 @@
 void
 SpewMessage(const char* szPathFile, const int32_t iLineFile, const char* szNameFunc,
             const char* szFormat, ...) {
-    int32_t iLenMsg;
-    time_t tTime;
-    char *szTime; 
-    struct tm *tmTime;
-    va_list varArgument;
-    char bufMsg[MSG_BUF_SIZE];
 
+    char bufMsg[MSG_BUF_SIZE];
     memset(bufMsg, 0, sizeof(char) * MSG_BUF_SIZE);
+    va_list varArgument;
     va_start(varArgument, szFormat);
-    iLenMsg = vsnprintf(bufMsg, sizeof(bufMsg), szFormat, varArgument);
+    int32_t iLenMsg = vsnprintf(bufMsg, sizeof(bufMsg), szFormat, varArgument);
     va_end(varArgument);
 
     if((iLenMsg == -1) || (iLenMsg >= (int)sizeof(bufMsg))) {
@@ -24,11 +20,12 @@ SpewMessage(const char* szPathFile, const int32_t iLineFile, const char* szNameF
         bufMsg[0] = 0;
     }
 
+    time_t tTime;
     time(&tTime);
-    tmTime = localtime(&tTime);
-    szTime = asctime(tmTime);
-
+    struct tm *tmTime = localtime(&tTime);
+    char *szTime = asctime(tmTime);
     printf("[%s, %d, %s] %s%s\n", szPathFile, iLineFile, szNameFunc, szTime, bufMsg);
 
     return;
 }
+

@@ -334,7 +334,7 @@ _CrlMapSlice(void *vp_Param)
     int8_t cStat = plg_Slc->GetFileSlice(p_Param->szPath, p_Conf->usSizeSlc, 
                                          &(p_Param->a_Slc));
     if (cStat != SLC_SUCCESS)
-        EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+        EXITQ(cStat, EXIT);
 
     /* Generate the hashes for all file slices. */
     FILE *fp = fopen(p_Param->szPath, "rb");
@@ -361,7 +361,7 @@ _CrlMapSlice(void *vp_Param)
         char *szHash;
         cStat = plg_Sim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
         if (cStat != SLC_SUCCESS)
-            EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+            EXITQ(cStat, EXIT);
         g_ptr_array_add(p_Param->a_Hash, (gpointer)szHash);
     }
 
@@ -382,6 +382,7 @@ void*
 _CrlMapCompare(void *vp_Param)
 {
     int8_t cRtnCode = CLS_SUCCESS;
+
     THREAD_COMPARE *p_Param = (THREAD_COMPARE*)vp_Param;
     uint8_t ucIdThrd = p_Param->ucIdThrd;
     uint8_t ucCntThrd = p_Conf->ucCntThrd;
@@ -410,7 +411,7 @@ _CrlMapCompare(void *vp_Param)
         int8_t cStat = plg_Sim->CompareHashPair(szSrc, uiLenSrc,
                                                 szTge, uiLenTge, &ucSim);
         if (cStat != SIM_SUCCESS)
-            EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+            EXITQ(cStat, EXIT);
 
         if (ucSim >= p_Conf->ucScoreSim) {
             BIND *p_Bind = (BIND*)malloc(sizeof(BIND));

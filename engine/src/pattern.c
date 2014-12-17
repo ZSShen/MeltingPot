@@ -286,6 +286,7 @@ void*
 _PtnMapCraft(void *vp_Param)
 {
     int8_t cRtnCode = CLS_SUCCESS;
+    
     THREAD_CRAFT *p_Param = (THREAD_CRAFT*)vp_Param;
     GROUP *p_Grp = p_Param->p_Grp;
     GArray *a_Mbr = p_Grp->a_Mbr;
