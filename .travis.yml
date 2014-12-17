@@ -12,12 +12,17 @@ install:
     - sudo apt-get install -qq cmake python3-minimal
     - sudo apt-get install -qq valgrind
     - sudo apt-get install -qq libfuzzy-dev
+    - sudo apt-get install -qq libglib2.0-dev
+    - sudo apt-get install -qq libconfig-dev
 
 script:
-    - make build_executable DEBUG=yes COVERAGE=yes
-    - make coverage DEBUG=yes
+    - ./clean.py --rebuild
+    - cd build
+    - cmake ..
+    - make
+    #- make coverage DEBUG=yes
 
 after_success:
-    - coveralls
+    #- coveralls
 
 
