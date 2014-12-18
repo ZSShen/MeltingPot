@@ -21,9 +21,6 @@
 #define DATATYPE_SIZE_WORD                  (2)
 #define SHIFT_RANGE_8BIT                    (8)
 
-/* The buffer size to handle file binary. */
-#define BUF_SIZE_BINARY                     (4096)
-
 /* The error message about the invalid PE file. */
 #define INVALID_MZ_HEADER           "Invalid PE file (Invalid MZ header)"
 #define INVALID_PE_HEADER           "Invalid PE file (Invalid PE header)"
