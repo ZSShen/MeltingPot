@@ -7,17 +7,21 @@
 
 
 /* The messages for debugging. */
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
 #define FAIL_NO_SAMPLE           "No samples in the given folder"
 #define FAIL_PTN_CREATE          "Insufficient pattern buffer size"
-#define SLICE_GENERATION_FAIL    "[Slice Generation] failed!"
-#define SLICE_GENERATION_SUCC    "[Slice Generation] succeed!"
-#define SLICE_CORRELATION_FAIL   "[Slice Correlation] failed!"
-#define SLICE_CORRELATION_SUCC   "[Slice Correlation] succeed!"
-#define PATTERN_GENERATION_FAIL  "[Pattern Generation] failed!"
-#define PATTERN_GENERATION_SUCC  "[Pattern Generation] succeed!"
-#define YARA_OUTPUT_FAIL         "[YARA Output] failed!"
-#define YARA_OUTPUT_SUCC         "[YARA Output] succeed!"
+#define SLC_GEN_FAIL    ANSI_COLOR_RED"[Step 1/4] Slice Generation  **FAIL"ANSI_COLOR_RESET
+#define SLC_GEN_SUCC    ANSI_COLOR_GREEN"[Step 1/4] Slice Generation  **SUCC"ANSI_COLOR_RESET
+#define SLC_CRL_FAIL    ANSI_COLOR_RED"[Step 2/4] Slice Correlation  **FAIL"ANSI_COLOR_RESET
+#define SLC_CRL_SUCC    ANSI_COLOR_GREEN"[Step 2/4] Slice Correlation  **SUCC"ANSI_COLOR_RESET
+#define PTN_GEN_FAIL    ANSI_COLOR_RED"[Step 3/4] Pattern Crafting  **FAIL"ANSI_COLOR_RESET
+#define PTN_GEN_SUCC    ANSI_COLOR_GREEN"[Step 3/4] Pattern Crafting  **SUCC"ANSI_COLOR_RESET
+#define PTN_OUT_FAIL    ANSI_COLOR_RED"[Step 4/4] Pattern Output  **FAIL"ANSI_COLOR_RESET
+#define PTN_OUT_SUCC    ANSI_COLOR_GREEN"[Step 4/4] Pattern Output  **SUCC"ANSI_COLOR_RESET
 
 
 /* The constants for command option parsing. */

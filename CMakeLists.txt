@@ -26,3 +26,14 @@ endif()
 # Set the building targets.
 add_subdirectory(${DIR_PLUGIN})
 add_subdirectory(${DIR_ENGINE})
+
+
+# Set the running target.
+set(TARGET_RUN "run")
+set(BIN "engine/bin/debug/cluster")
+set(ARG_CONF_KEY "--conf")
+set(ARG_CONF_VAL "engine/cluster.conf")
+add_custom_target ( ${TARGET_RUN}
+    COMMAND valgrind ${BIN} ${ARG_CONF_KEY} ${ARG_CONF_VAL}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)

@@ -20,7 +20,7 @@ script:
     - cd build
     - cmake ..
     - make
-    #- make coverage DEBUG=yes
+    - make run
 
 after_success:
     #- coveralls
