@@ -61,22 +61,22 @@ enum {
    Note the reason that we do not follow the definition of standard integer 
    is due to the type definition of libconfig. */
 typedef struct _CONFIG_T {
-    int ucCntThrd;          /* The number of threads used for parallel processing. */
-    int ucScoreSim;         /* The threshold to group similar binary slices. */
-    int ucCntBlk;           /* The number of hex byte blocks in pattern. */
-    int ucSizeBlk;          /* The size of the hex byte block. */
-    int ucSizeTruncGrp;     /* The threshold to truncate groups with size less than it. */
-    int ucRatNoise;         /* The ratio of meaningless bytes in one hex block. */
-    int ucRatWild;          /* The ratio of wildcard characters in one hex block. */
-    int ucIoBand;           /* The number of files a thread can simultaneously open. */
-    int usSizeSlc;          /* The size of the binary slice extracted from file
-                               which is the basic unit of clustering process. */
-    char *szPathRootIn;     /* The root pathname of the input sample set. */
-    char *szPathRootOut;    /* The root pathname of the output patterns. */
-    char *szPathPluginSlc;  /* The pathname of the plugin which is to be used for 
-                               file slicing. */
-    char *szPathPluginSim;  /* The pathname of the plugin which is to be used for 
-                               similarity computation. */
+    uint8_t ucCntThrd;        /* The number of threads used for parallel processing. */
+    uint8_t ucScoreSim;       /* The threshold to group similar binary slices. */
+    uint8_t ucCntBlk;         /* The number of hex byte blocks in pattern. */
+    uint8_t ucSizeBlk;        /* The size of the hex byte block. */
+    uint8_t ucSizeTruncGrp;   /* The threshold to truncate groups with size less than it. */
+    uint8_t ucRatNoise;       /* The ratio of meaningless bytes in one hex block. */
+    uint8_t ucRatWild;        /* The ratio of wildcard characters in one hex block. */
+    uint8_t ucIoBand;         /* The number of files a thread can simultaneously open. */
+    uint16_t usSizeSlc;       /* The size of the binary slice extracted from file
+                                 which is the basic unit of clustering process. */
+    char *szPathRootIn;       /* The root pathname of the input sample set. */
+    char *szPathRootOut;      /* The root pathname of the output patterns. */
+    char *szPathPluginSlc;    /* The pathname of the plugin which is to be used for 
+                                 file slicing. */
+    char *szPathPluginSim;    /* The pathname of the plugin which is to be used for 
+                                 similarity computation. */
 } CONFIG;
 
 
