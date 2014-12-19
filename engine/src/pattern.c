@@ -403,6 +403,10 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param)
     if (uiIdx < uiLen)
         g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
 
+    /* Early return if all the blocks are eliminated. */
+    if (a_BlkCand->len == 0)
+        return CLS_SUCCESS;
+
     /* Sort the blocks and retrieve the candidates with top quality. */
     g_ptr_array_sort(a_BlkCand, DsCompBlockCandWildCard);
     ucThld = p_Conf->ucSizeBlk * p_Conf->ucRatWild / THLD_DNMNTR;
