@@ -33,7 +33,8 @@ set(TARGET_RUN "run")
 set(BIN "engine/bin/debug/cluster")
 set(ARG_CONF_KEY "--conf")
 set(ARG_CONF_VAL "engine/cluster.conf")
+set(GLIB_HINT "G_DEBUG=gc-friendly G_SLICE=always-malloc")
 add_custom_target ( ${TARGET_RUN}
-    COMMAND valgrind ${BIN} ${ARG_CONF_KEY} ${ARG_CONF_VAL}
+    COMMAND ${GLIB_HINT} valgrind ${BIN} ${ARG_CONF_KEY} ${ARG_CONF_VAL}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
