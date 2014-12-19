@@ -603,16 +603,16 @@ _CrlGenerateGroup()
         } while (ulIdGrpTemp != ulIdGrpReal);
         p_SlcMbr->ulIdGrp = ulIdGrpReal;
 
-        bool bExist = g_hash_table_contains(p_Pot->h_Grp, &ulIdGrpReal);
+        bool bExist = g_hash_table_contains(p_Pot->h_Grp, &(p_SlcMbr->ulIdGrp));
         GROUP *p_Grp;
         if (!bExist) {
             int8_t cStat = DsNewGroup(&p_Grp);
             if (cStat != CLS_SUCCESS)
                 EXITQ(cStat, EXIT);
                 p_Grp->ulIdGrp = ulIdGrpReal;
-            g_hash_table_insert(p_Pot->h_Grp, &ulIdGrpReal, p_Grp);
+            g_hash_table_insert(p_Pot->h_Grp, &(p_SlcMbr->ulIdGrp), p_Grp);
         }
-        p_Grp = g_hash_table_lookup(p_Pot->h_Grp, &ulIdGrpReal);
+        p_Grp = g_hash_table_lookup(p_Pot->h_Grp, &(p_SlcMbr->ulIdGrp));
         g_array_append_val(p_Grp->a_Mbr, ulIdx);   
     }
 
