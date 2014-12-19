@@ -403,6 +403,14 @@ _CrlMapCompare(void *vp_Param)
         if ((ulIdSrc >= ulCntSlc) || (ulIdTge >= ulCntSlc))
             break;
 
+        /* Avoid to compare hashes belonged to the same file. */
+        SLICE *p_SlcSrc = g_ptr_array_index(p_Pot->a_Slc, ulIdSrc);
+        SLICE *p_SlcTge = g_ptr_array_index(p_Pot->a_Slc, ulIdTge);
+        char *szPathSrc = p_SlcSrc->szPathFile;
+        char *szPathTge = p_SlcTge->szPathFile;
+        if (szPathSrc == szPathTge)
+            continue;
+
         char *szSrc = g_ptr_array_index(p_Pot->a_Hash, ulIdSrc);
         char *szTge = g_ptr_array_index(p_Pot->a_Hash, ulIdTge);
         uint32_t uiLenSrc = strlen(szSrc);
