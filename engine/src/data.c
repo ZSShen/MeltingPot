@@ -30,12 +30,24 @@ DsDeleteBind(gpointer gp_Bind)
 
 
 void
+DsDeleteContentAddr(gpointer gp_CtnAddr)
+{
+    if (gp_CtnAddr)
+        free(gp_CtnAddr);
+
+    return;
+}
+
+
+void
 DsDeleteBlkCand(gpointer gp_BlkCand)
 {
     if (gp_BlkCand) {
         BLOCK_CAND *p_BlkCand = (BLOCK_CAND*)gp_BlkCand;    
         if (p_BlkCand->a_CtnAddr)
             g_array_free(p_BlkCand->a_CtnAddr, true);
+        if (p_BlkCand->t_CtnAddr)
+            g_tree_destroy(p_BlkCand->t_CtnAddr);    
         if (p_BlkCand->a_usCtn)
             free(p_BlkCand->a_usCtn);    
         free(p_BlkCand);
@@ -93,6 +105,11 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
     BLOCK_CAND *p_BlkCand = *pp_BlkCand;
     p_BlkCand->a_CtnAddr = g_array_new(false, false, sizeof(CONTENT_ADDR));
     if (!p_BlkCand->a_CtnAddr)
+        EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
+
+    p_BlkCand->t_CtnAddr = g_tree_new_full(DsCompContentAddrPlus, NULL, 
+                                           DsDeleteContentAddr, NULL);
+    if (!p_BlkCand->t_CtnAddr)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
     p_BlkCand->a_usCtn = (uint16_t*)malloc(sizeof(uint16_t) * usSizeCtn);
@@ -211,6 +228,17 @@ DsCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge)
 
 int
 DsCompContentAddr(const void *vp_Src, const void *vp_Tge)
+{
+    CONTENT_ADDR *p_Src = (CONTENT_ADDR*)vp_Src;
+    CONTENT_ADDR *p_Tge = (CONTENT_ADDR*)vp_Tge;
+    if (p_Src->iIdSec == p_Tge->iIdSec)
+        return (double)p_Src->ulOfstRel - (double)p_Tge->ulOfstRel;
+    return p_Src->iIdSec - p_Tge->iIdSec;
+}
+
+
+int
+DsCompContentAddrPlus(const void *vp_Src, const void *vp_Tge, void *vp_Data)
 {
     CONTENT_ADDR *p_Src = (CONTENT_ADDR*)vp_Src;
     CONTENT_ADDR *p_Tge = (CONTENT_ADDR*)vp_Tge;

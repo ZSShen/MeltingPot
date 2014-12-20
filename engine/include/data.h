@@ -31,6 +31,7 @@ typedef struct _BLOCK_CAND_T {
     uint8_t ucCntWild;      /* The number of wildcard characters. */
     uint16_t *a_usCtn;      /* The normalized byte sequence. */
     GArray *a_CtnAddr;      /* The list of addressing methods to locate this block. */
+    GTree *t_CtnAddr;       /* The map of addresses to locate this block. */
 } BLOCK_CAND;
 
 
@@ -83,6 +84,15 @@ DsDeleteString(gpointer gp_Str);
  */
 void
 DsDeleteBind(gpointer gp_Bind);
+
+
+/**
+ * The deinitialization function of CONTENT_ADDR structure.
+ * 
+ * @param gp_CtnAddr   The pointer to the target structure.
+ */
+void
+DsDeleteContentAddr(gpointer gp_CtnAddr);
 
 
 /**
@@ -157,7 +167,7 @@ DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc);
 
 
 /**
- * This function sorts the BlockCand structures with noise byte count.
+ * This function sorts the BLOCK_CAND structures with noise byte count.
  * 
  * @param vp_Src        The pointer to the pointer of source BlockCand structure.
  * @param vp_Tge        The pointer to the pointer of target one.
@@ -169,7 +179,7 @@ DsCompBlockCandNoise(const void *vp_Src, const void *vp_Tge);
 
 
 /**
- * This function sorts the BlockCand structures with wildcard character count.
+ * This function sorts the BLOCK_CAND structures with wildcard character count.
  * 
  * @param vp_Src        The pointer to the pointer of source BlockCand structure.
  * @param vp_Tge        The pointer to the pointer of target one.
@@ -191,6 +201,20 @@ DsCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge);
  */
 int
 DsCompContentAddr(const void *vp_Src, const void *vp_Tge);
+
+
+/**
+ * This function is specialized to compares the CONTENT_ADDR structures using 
+ * section id as the first criteria and section offset as the second criteria.
+ * 
+ * @param vp_Src        The pointer to the pointer of source CONTENT_ADDR structure.
+ * @param vp_Tge        The pointer to the pointer of target one.
+ * @param vp_Data       The dummy pointer to fit the GLIB function prototype.
+ * 
+ * @return comparison order
+ */
+int
+DsCompContentAddrPlus(const void *vp_Src, const void *vp_Tge, void *vp_Data);
 
 
 #endif
