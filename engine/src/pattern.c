@@ -349,6 +349,7 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
         /* Let the first slice be the comparison base. */
         uint16_t *a_usCtn = p_BlkCand->a_usCtn;
         GArray *a_CtnAddr = p_BlkCand->a_CtnAddr;
+        GTree *t_CtnAddr = p_BlkCand->t_CtnAddr;
         uint16_t usSrc, usTge;
         for (usSrc = usFront, usTge = 0 ; usSrc < usRear ; usSrc++, usTge++)
             a_usCtn[usTge] = a_szBin[0][usSrc];
@@ -359,6 +360,12 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
         addr.iIdSec = p_Slc->iIdSec;
         addr.ulOfstRel = p_Slc->ulOfstRel + usFront;
         g_array_append_val(a_CtnAddr, addr);
+        CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
+        if (!p_Addr)
+            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        p_Addr->iIdSec = p_Slc->iIdSec;
+        p_Addr->ulOfstRel = p_Slc->ulOfstRel + usFront;
+        g_tree_insert(t_CtnAddr, p_Addr, NULL);
 
         /* Iteratively compare the rest slices with the base. */
         uint64_t ulOfst, ulIdx;
@@ -373,6 +380,12 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
             addr.iIdSec = p_Slc->iIdSec;
             addr.ulOfstRel = p_Slc->ulOfstRel + usFront;
             g_array_append_val(a_CtnAddr, addr);
+            p_Addr = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
+            if (!p_Addr)
+                EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+            p_Addr->iIdSec = p_Slc->iIdSec;
+            p_Addr->ulOfstRel = p_Slc->ulOfstRel + usFront;
+            g_tree_insert(t_CtnAddr, p_Addr, NULL);    
         }
 
         g_ptr_array_add(p_Param->a_BlkCand, p_BlkCand);
@@ -446,12 +459,15 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
         BLOCK_CAND *p_BlkCandB = g_ptr_array_index(a_BlkCandB, usIdx);
         uint16_t *a_usCtnB = p_BlkCandB->a_usCtn;
         GArray *a_CtnAddrB = p_BlkCandB->a_CtnAddr;
+        GTree *t_CtnAddrB = p_BlkCandB->t_CtnAddr;
+
         for (ulIdx = 1 ; ulIdx < ulSize ; ulIdx++) {
             p_Param = a_Param + ulIdx;
             GPtrArray *a_BlkCandC = p_Param->a_BlkCand;
             BLOCK_CAND *p_BlkCandC = g_ptr_array_index(a_BlkCandC, usIdx);
             uint16_t *a_usCtnC = p_BlkCandC->a_usCtn;
             GArray *a_CtnAddrC = p_BlkCandC->a_CtnAddr;
+            GTree *t_CtnAddrC = p_BlkCandC->t_CtnAddr;
 
             uint8_t ucIdx;
             for (ucIdx = 0 ; ucIdx < p_Conf->ucSizeBlk ; ucIdx++) {
@@ -465,6 +481,7 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
                 CONTENT_ADDR addr = g_array_index(a_CtnAddrC, CONTENT_ADDR, uiIdx);
                 g_array_append_val(a_CtnAddrB, addr);
             }
+            g_tree_foreach(t_CtnAddrC, DsTravContentAddrCopy, t_CtnAddrB);
         }
 
         uint8_t ucIdx;
@@ -527,7 +544,7 @@ _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
         cStat = _PtnPrintConditionSection(szPtnCond, a_CtnAddr, &iLenCond, ucCntBlk, ucIdx);
         if (cStat != CLS_SUCCESS)
             EXITQ(cStat, CLOSE);
-        szPtnCond[iLenCond] = 0;    
+        szPtnCond[iLenCond] = 0;
     }
 
     /* Print the header section. */
@@ -549,7 +566,7 @@ _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
     sCntWrt = snprintf(szPivot, sRest, "%s%scondition:\n%s}\n", SPACE_SUBS_TAB,
                        SPACE_SUBS_TAB, szPtnCond);
     szPivot += sCntWrt;
-    
+
     size_t nWrtExpt = szPivot - szPtnFull;
     size_t nWrtReal = fwrite(szPtnFull, sizeof(char), nWrtExpt, fp);
     if (nWrtReal != nWrtExpt)

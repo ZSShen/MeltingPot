@@ -217,4 +217,18 @@ int
 DsCompContentAddrPlus(const void *vp_Src, const void *vp_Tge, void *vp_Data);
 
 
+/**
+ * This callback function will be applied for GTree traversal and will be
+ * used to copy the nodes of the caller tree to the target tree.
+ * 
+ * @param gp_Key        The pointer to the CONTENT_ADDR key.
+ * @param gp_Val        The NULL pointer since we do not really insert value.
+ * @param gp_Tge        The pointer to the target GTree.
+ * 
+ * @return working status
+ */
+gboolean
+DsTravContentAddrCopy(gpointer gp_Key, gpointer gp_Val, gpointer gp_Tge);
+
+
 #endif

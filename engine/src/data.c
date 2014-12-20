@@ -246,3 +246,20 @@ DsCompContentAddrPlus(const void *vp_Src, const void *vp_Tge, void *vp_Data)
         return (double)p_Src->ulOfstRel - (double)p_Tge->ulOfstRel;
     return p_Src->iIdSec - p_Tge->iIdSec;
 }
+
+
+gboolean
+DsTravContentAddrCopy(gpointer gp_Key, gpointer gp_Val, gpointer gp_Tge)
+{
+    GTree *t_CtnAddr = (GTree*)gp_Tge;
+    CONTENT_ADDR *p_AddrSrc = (CONTENT_ADDR*)gp_Key;
+    CONTENT_ADDR *p_AddrTge = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
+    if (!p_AddrTge) {
+        SPEW1("Error: %s.", strerror(errno));
+        return true;
+    }
+    p_AddrTge->iIdSec = p_AddrSrc->iIdSec;
+    p_AddrTge->ulOfstRel = p_AddrSrc->ulOfstRel;
+    g_tree_insert(t_CtnAddr, p_AddrTge, gp_Val);
+    return false;
+}
