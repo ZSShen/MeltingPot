@@ -30,6 +30,18 @@ DsDeleteBind(gpointer gp_Bind)
 
 
 void
+DsDeleteArrayString(gpointer gp_AStr)
+{
+    if (gp_AStr) {
+        GPtrArray *aStr = (GPtrArray*)gp_AStr;
+        g_ptr_array_free(aStr, true);
+    }
+
+    return;
+}
+
+
+void
 DsDeleteContentAddr(gpointer gp_CtnAddr)
 {
     if (gp_CtnAddr)
@@ -108,7 +120,7 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
     p_BlkCand->t_CtnAddr = g_tree_new_full(DsCompContentAddrPlus, NULL, 
-                                           DsDeleteContentAddr, NULL);
+                                           DsDeleteContentAddr, DsDeleteArrayString);
     if (!p_BlkCand->t_CtnAddr)
         EXIT1(CLS_FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
@@ -248,18 +260,52 @@ DsCompContentAddrPlus(const void *vp_Src, const void *vp_Tge, void *vp_Data)
 }
 
 
+int8_t
+DsInsertContentAddr(GTree *t_CtnAddr, CONTENT_ADDR *p_Addr, char *szPathFile)
+{
+    int8_t cRtnCode = CLS_SUCCESS;
+
+    GPtrArray *aStr = g_tree_lookup(t_CtnAddr, p_Addr);
+    if (!aStr) {
+        aStr = g_ptr_array_new();
+        if (!aStr)
+            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        g_tree_insert(t_CtnAddr, p_Addr, aStr);
+    }
+    g_ptr_array_add(aStr, szPathFile);
+
+EXIT:
+    return cRtnCode;
+}
+
+
 gboolean
 DsTravContentAddrCopy(gpointer gp_Key, gpointer gp_Val, gpointer gp_Tge)
 {
+    int8_t cRtnCode = CLS_SUCCESS;
+
     GTree *t_CtnAddr = (GTree*)gp_Tge;
     CONTENT_ADDR *p_AddrSrc = (CONTENT_ADDR*)gp_Key;
-    CONTENT_ADDR *p_AddrTge = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
-    if (!p_AddrTge) {
-        SPEW1("Error: %s.", strerror(errno));
-        return true;
+    GPtrArray *aStrTge = g_tree_lookup(t_CtnAddr, p_AddrSrc);
+    if (!aStrTge) {
+        CONTENT_ADDR *p_AddrTge = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
+        if (!p_AddrTge)
+            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        aStrTge = g_ptr_array_new();
+        if (!aStrTge)
+            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        p_AddrTge->iIdSec = p_AddrSrc->iIdSec;
+        p_AddrTge->ulOfstRel = p_AddrSrc->ulOfstRel;
+        g_tree_insert(t_CtnAddr, p_AddrTge, aStrTge);
     }
-    p_AddrTge->iIdSec = p_AddrSrc->iIdSec;
-    p_AddrTge->ulOfstRel = p_AddrSrc->ulOfstRel;
-    g_tree_insert(t_CtnAddr, p_AddrTge, gp_Val);
-    return false;
+
+    GPtrArray *aStrSrc = (GPtrArray*)gp_Val;
+    uint64_t ulIdx;
+    for (ulIdx = 0 ; ulIdx < aStrSrc->len ; ulIdx++) {
+        char *szPathFile = g_ptr_array_index(aStrSrc, ulIdx);
+        g_ptr_array_add(aStrTge, szPathFile);
+    }
+
+EXIT:
+    return (cRtnCode == CLS_SUCCESS)? false : true;
 }

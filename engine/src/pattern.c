@@ -342,7 +342,7 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
 
     while (usRear <= p_Param->usSizeMinSlc) {
         BLOCK_CAND *p_BlkCand;
-        uint8_t cStat = DsNewBlockCand(&p_BlkCand, ucSizeBlk);
+        int8_t cStat = DsNewBlockCand(&p_BlkCand, ucSizeBlk);
         if (cStat != CLS_SUCCESS)
             EXITQ(cStat, EXIT);
 
@@ -365,7 +365,9 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
             EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
         p_Addr->iIdSec = p_Slc->iIdSec;
         p_Addr->ulOfstRel = p_Slc->ulOfstRel + usFront;
-        g_tree_insert(t_CtnAddr, p_Addr, NULL);
+        cStat = DsInsertContentAddr(t_CtnAddr, p_Addr, p_Slc->szPathFile);
+        if (cStat != CLS_SUCCESS)
+            EXITQ(cStat, EXIT);
 
         /* Iteratively compare the rest slices with the base. */
         uint64_t ulOfst, ulIdx;
@@ -385,7 +387,9 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
                 EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
             p_Addr->iIdSec = p_Slc->iIdSec;
             p_Addr->ulOfstRel = p_Slc->ulOfstRel + usFront;
-            g_tree_insert(t_CtnAddr, p_Addr, NULL);    
+            cStat = DsInsertContentAddr(t_CtnAddr, p_Addr, p_Slc->szPathFile);
+            if (cStat != CLS_SUCCESS)
+                EXITQ(cStat, EXIT);
         }
 
         g_ptr_array_add(p_Param->a_BlkCand, p_BlkCand);

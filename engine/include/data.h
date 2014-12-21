@@ -87,7 +87,18 @@ DsDeleteBind(gpointer gp_Bind);
 
 
 /**
+ * The deinitialization function of an array of string pointer.
+ * Note that it serves as the value deletion function of GTree t_CtnAddr.
+ * 
+ * @param gp_AStr   The pointer to the target array.
+ */
+void
+DsDeleteArrayString(gpointer gp_AStr);
+
+
+/**
  * The deinitialization function of CONTENT_ADDR structure.
+ * Note that it serves as the key deletion function of GTree t_CtnAddr.
  * 
  * @param gp_CtnAddr   The pointer to the target structure.
  */
@@ -218,12 +229,26 @@ DsCompContentAddrPlus(const void *vp_Src, const void *vp_Tge, void *vp_Data);
 
 
 /**
+ * This function inserts a key value pair into GTree with CONTENT_ADDR as
+ * key and pathname as an element of the value array.
+ * 
+ * @param t_CtnAddr     The pointer to the to be inserted GTree structure.
+ * @param p_Addr        The pointer to the CONTENT_ADDR structure.
+ * @param szPathFile    The pointer to the pathname.
+ * 
+ * @return status code
+ */
+int8_t
+DsInsertContentAddr(GTree *t_CtnAddr, CONTENT_ADDR *p_Addr, char *szPathFile);
+
+
+/**
  * This callback function will be applied for GTree traversal and will be
  * used to copy the nodes of the caller tree to the target tree.
  * 
- * @param gp_Key        The pointer to the CONTENT_ADDR key.
- * @param gp_Val        The NULL pointer since we do not really insert value.
- * @param gp_Tge        The pointer to the target GTree.
+ * @param gp_Key        The pointer to the key: CONTENT_ADDR key.
+ * @param gp_Val        The pointer to the value: pathname array.
+ * @param gp_Tge        The pointer to the target GTree structure.
  * 
  * @return working status
  */
