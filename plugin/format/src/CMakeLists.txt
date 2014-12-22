@@ -23,14 +23,11 @@ set(NAME_LIB "lib")
 set(NAME_LIB_STATIC "lib/static")
 set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
 set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
-set(HEADER "${PATH_INC}/slice.h")
+set(HEADER "${PATH_INC}/format.h")
 set(SRC_SPEW "spew.c")
-set(SRC_NORMAL "slice_normal.c")
-set(TGE_NORMAL "SLICE_NORMAL")
-set(OUT_NORMAL "slc_normal")
-set(SRC_PE "slice_pe.c")
-set(TGE_PE "SLICE_PE")
-set(OUT_PE "slc_pe")
+set(SRC_PE "format_pe.c")
+set(TGE_PE "FORMAT_PE")
+set(OUT_PE "fmt_pe")
 
 
 # Parse the command options.
@@ -64,17 +61,9 @@ endif()
 # List the source building rules.
 include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS})
 
-add_library(${TGE_NORMAL} ${LIB_TYPE} ${SRC_NORMAL} ${SRC_SPEW})
-target_link_libraries(${TGE_NORMAL} ${GLIB2_LIBRARIES})
 add_library(${TGE_PE} ${LIB_TYPE} ${SRC_PE} ${SRC_SPEW})
 target_link_libraries(${TGE_PE} ${GLIB2_LIBRARIES})
 
-set_target_properties( ${TGE_NORMAL} PROPERTIES
-    PUBLIC_HEADER ${HEADER}
-    ARCHIVE_OUTPUT_DIRECTORY ${PATH_OUT}
-    LIBRARY_OUTPUT_DIRECTORY ${PATH_OUT}
-    OUTPUT_NAME ${OUT_NORMAL}
-)
 set_target_properties( ${TGE_PE} PROPERTIES
     PUBLIC_HEADER ${HEADER}
     ARCHIVE_OUTPUT_DIRECTORY ${PATH_OUT}
@@ -84,9 +73,8 @@ set_target_properties( ${TGE_PE} PROPERTIES
 
 
 # List the installation rules
-install(TARGETS ${TGE_NORMAL} ${TGE_PE}
+install(TARGETS ${TGE_PE}
     LIBRARY DESTINATION ${NAME_LIB}
     ARCHIVE DESTINATION ${NAME_LIB_STATIC}
     PUBLIC_HEADER DESTINATION ${NAME_INC}
 )
-

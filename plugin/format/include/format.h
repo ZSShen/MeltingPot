@@ -7,9 +7,9 @@
 
 
 enum {
-    FRM_SUCCESS = 0,
-    FRM_FAIL_FILE_IO = -1,
-    FRM_FAIL_MEM_ALLOC = -2
+    FMT_SUCCESS = 0,
+    FMT_FAIL_FILE_IO = -1,
+    FMT_FAIL_MEM_ALLOC = -2
 };
 
 
@@ -23,34 +23,34 @@ typedef struct _FORMAT_TEXT_T {
 
 /* The exported interface to interact with this plugin. */
 /* The function pointer type. */
-typedef int8_t (*func_FrmInit) ();
-typedef int8_t (*func_FrmDeinit) ();
-typedef int8_t (*func_FrmAllocText) (FORMAT_TEXT**);
-typedef int8_t (*func_FrmAppendSecStr) (FORMAT_TEXT, uint16_t*);
-typedef int8_t (*func_FrmAppendSecCond) (FORMAT_TEXT, int32_t, uint64_t);
-typedef int8_t (*func_FrmAppendComment) (FORMAT_TEXT, int32_t, uint64_t, GPtrArray*);
-typedef int8_t (*func_FrmFinalize) (FORMAT_TEXT, char*);
+typedef int8_t (*func_FmtInit) ();
+typedef int8_t (*func_FmtDeinit) ();
+typedef int8_t (*func_FmtAllocText) (FORMAT_TEXT**);
+typedef int8_t (*func_FmtAppendSecStr) (FORMAT_TEXT, uint16_t*);
+typedef int8_t (*func_FmtAppendSecCond) (FORMAT_TEXT, int32_t, uint64_t);
+typedef int8_t (*func_FmtAppendComment) (FORMAT_TEXT, int32_t, uint64_t, GPtrArray*);
+typedef int8_t (*func_FmtFinalize) (FORMAT_TEXT, char*);
 
 /* The integrated structure to store exported functions. */
 typedef struct _PLUGIN_FORMAT_T {
     void *hdle_Lib;
-    func_FrmInit Init;
-    func_FrmDeinit Deinit;
-    func_FrmAllocText AllocText;
-    func_FrmAppendSecStr AppendSecStr;
-    func_FrmAppendSecCond AppendSecCond;
-    func_FrmAppendComment AppendComment;
-    func_FrmFinalize Finalize;
+    func_FmtInit Init;
+    func_FmtDeinit Deinit;
+    func_FmtAllocText AllocText;
+    func_FmtAppendSecStr AppendSecStr;
+    func_FmtAppendSecCond AppendSecCond;
+    func_FmtAppendComment AppendComment;
+    func_FmtFinalize Finalize;
 } PLUGIN_FORMAT;
 
 /* The function name symbols. */
-#define SYM_FRM_INIT                "FrmInit"
-#define SYM_FRM_DEINIT              "FrmDeinit"
-#define SYM_FRM_ALLOC_TEXT          "FrmAllocText"
-#define SYM_FRM_APPEND_SEC_STR      "FrmAppendSecStr"
-#define SYM_FRM_APPEND_SEC_COND     "FrmAppendSecCond"
-#define SYM_FRM_APPEND_COMMENT      "FrmAppendComment"
-#define SYM_FRM_FINALIZE            "FrmFinalize"
+#define SYM_FMT_INIT                "FmtInit"
+#define SYM_FMT_DEINIT              "FmtDeinit"
+#define SYM_FMT_ALLOC_TEXT          "FmtAllocText"
+#define SYM_FMT_APPEND_SEC_STR      "FmtAppendSecStr"
+#define SYM_FMT_APPEND_SEC_COND     "FmtAppendSecCond"
+#define SYM_FMT_APPEND_COMMENT      "FmtAppendComment"
+#define SYM_FMT_FINALIZE            "FmtFinalize"
 
 
 /**
@@ -59,7 +59,7 @@ typedef struct _PLUGIN_FORMAT_T {
  * @return status code
  */
 int8_t
-FrmInit();
+FmtInit();
 
 
 /**
@@ -68,7 +68,7 @@ FrmInit();
  * @return status code
  */
 int8_t
-FrmDeinit();
+FmtDeinit();
 
 
 /**
@@ -79,7 +79,7 @@ FrmDeinit();
  * @return status code
  */
 int8_t
-FrmAllocText(FORMAT_TEXT **pp_Text);
+FmtAllocText(FORMAT_TEXT **pp_Text);
 
 
 /**
@@ -91,7 +91,7 @@ FrmAllocText(FORMAT_TEXT **pp_Text);
  * @return status code
  */
 int8_t
-FrmAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn);
+FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn);
 
 
 /**
@@ -104,7 +104,7 @@ FrmAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn);
  * @return status code
  */
 int8_t
-FrmAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel);
+FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel);
 
 
 /**
@@ -118,7 +118,7 @@ FrmAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel);
  * @return status code
  */
 int8_t
-FrmAppendComment(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
+FmtAppendComment(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
                  GPtrArray *a_Str);
 
 
@@ -131,7 +131,7 @@ FrmAppendComment(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
  * @return status code
  */
 int8_t
-FrmFinalize(FORMAT_TEXT *p_Text, char *szPathOut);
+FmtFinalize(FORMAT_TEXT *p_Text, char *szPathOut);
 
 
 #endif
