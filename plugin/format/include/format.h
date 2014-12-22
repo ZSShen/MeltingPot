@@ -6,6 +6,18 @@
 #include <glib.h>
 
 
+/* The constants helping for YARA pattern creation. */
+#define WILD_CARD_MARK          (0x100) /* The marker for wildcard character. */
+#define EXTENSION_MASK          (0xff)  /* The mask used to extend char type to short. */
+#define HEX_CHUNK_SIZE          (16)    /* The maximum number of bytes in a single line. */
+#define PREFIX_PATTERN          "AUTO"  /* The prefix for pattern name. */
+#define PREFIX_HEX_STRING       "SEQ"   /* The prefix for hex string name. */
+#define SPACE_SUBS_TAB          "    "  /* The spaces substituting a tab. */
+#define DIGIT_COUNT_ULONG       (20)    /* The maximum number of digits to
+                                           form an unsigned long variable. */
+#define BUF_SIZE_INDENT         (64)    /* The maxumum indentation length. */
+
+
 enum {
     FMT_SUCCESS = 0,
     FMT_FAIL_FILE_IO = -1,
@@ -15,10 +27,12 @@ enum {
 
 /* This ds records the section text which fits the YARA format. */
 typedef struct _FORMAT_TEXT_T {
-    uint8_t ucCntBlk;
+    uint8_t ucIdStr;
+    uint8_t ucIdCond;
     GString *gszSecStr;
     GString *gszSecCond;
     GString *gszComment;
+    GString *gszFullPtn;
 } FORMAT_TEXT;
 
 
@@ -28,7 +42,7 @@ typedef int8_t (*func_FmtInit) ();
 typedef int8_t (*func_FmtDeinit) ();
 typedef int8_t (*func_FmtAllocText) (FORMAT_TEXT**);
 typedef int8_t (*func_FmtDeallocText) (FORMAT_TEXT*);
-typedef int8_t (*func_FmtAppendSecStr) (FORMAT_TEXT, uint16_t*);
+typedef int8_t (*func_FmtAppendSecStr) (FORMAT_TEXT, uint16_t*, uint8_t);
 typedef int8_t (*func_FmtAppendSecCond) (FORMAT_TEXT, int32_t, uint64_t);
 typedef int8_t (*func_FmtAppendComment) (FORMAT_TEXT, int32_t, uint64_t, GPtrArray*);
 typedef int8_t (*func_FmtFinalize) (FORMAT_TEXT, char*);
@@ -102,11 +116,12 @@ FmtDeallocText(FORMAT_TEXT *p_Text);
  *
  * @param p_Text    The pointer to the to be updated FORMAT_TEXT.
  * @param a_usCtn   The normalized byte array.
- *
+ * @param ucSize    The array size
+ * 
  * @return status code
  */
 int8_t
-FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn);
+FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize);
 
 
 /**
