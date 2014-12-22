@@ -2,6 +2,7 @@
 #define _FORMAT_H_
 
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <glib.h>
 
@@ -12,6 +13,7 @@
 #define HEX_CHUNK_SIZE          (16)    /* The maximum number of bytes in a single line. */
 #define PREFIX_PATTERN          "AUTO"  /* The prefix for pattern name. */
 #define PREFIX_HEX_STRING       "SEQ"   /* The prefix for hex string name. */
+#define CONJUNCTOR_OR           "or"    /* The logic "OR" conjunctor. */
 #define SPACE_SUBS_TAB          "    "  /* The spaces substituting a tab. */
 #define DIGIT_COUNT_ULONG       (20)    /* The maximum number of digits to
                                            form an unsigned long variable. */
@@ -36,6 +38,12 @@ typedef struct _FORMAT_TEXT_T {
 } FORMAT_TEXT;
 
 
+typedef struct _HINT_CONJUNCT_T {
+    bool bOrBlk;
+    bool bOrSec;
+} HINT_CONJUNCT;
+
+
 /* The exported interface to interact with this plugin. */
 /* The function pointer type. */
 typedef int8_t (*func_FmtInit) ();
@@ -43,7 +51,7 @@ typedef int8_t (*func_FmtDeinit) ();
 typedef int8_t (*func_FmtAllocText) (FORMAT_TEXT**);
 typedef int8_t (*func_FmtDeallocText) (FORMAT_TEXT*);
 typedef int8_t (*func_FmtAppendSecStr) (FORMAT_TEXT, uint16_t*, uint8_t);
-typedef int8_t (*func_FmtAppendSecCond) (FORMAT_TEXT, int32_t, uint64_t);
+typedef int8_t (*func_FmtAppendSecCond) (FORMAT_TEXT, int32_t, uint64_t, HINT_CONJUNCT);
 typedef int8_t (*func_FmtAppendComment) (FORMAT_TEXT, int32_t, uint64_t, GPtrArray*);
 typedef int8_t (*func_FmtFinalize) (FORMAT_TEXT, char*);
 
@@ -130,11 +138,13 @@ FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize);
  * @param p_Text    The pointer to the to be updated FORMAT_TEXT.
  * @param iIdSec    The section id of the host file.
  * @param ulOfstRel The relative offset to the section starting address.
- *
+ * @param flagConj  The flags to guide the concatenation of "OR" conjunctor
+ * 
  * @return status code
  */
 int8_t
-FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel);
+FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
+                 HINT_CONJUNCT flagConj);
 
 
 /**

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <errno.h>
 #include "spew.h"
 #include "format.h"
@@ -118,6 +117,31 @@ FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
 
     g_string_append(gszSecStr, "}\n\n");
     p_Text->ucIdStr++;
+
+    return FMT_SUCCESS;
+}
+
+
+int8_t
+FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
+                 HINT_CONJUNCT flagConj)
+{
+    GString *gszSecCond = p_Text->gszSecCond;
+
+    g_string_append_printf(gszSecCond, "%s%s$%s_%d at %s.%s[%d].%s + 0x%lx",
+                           SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING,
+                           p_Text->ucIdCond, IMPORT_MODULE_PE, TAG_SECTION,
+                           iIdSec, TAG_RAW_DATA_OFFSET, ulOfstRel);
+
+    if (flagConj.bOrBlk)
+        g_string_append_printf(gszSecCond, " %s\n", CONJUNCTOR_OR);
+    else
+        g_string_append(gszSecCond, "\n");
+
+    if (flagConj.bOrSec)
+        g_string_append_printf(gszSecCond, "%s%s%s\n", SPACE_SUBS_TAB,
+                               SPACE_SUBS_TAB, CONJUNCTOR_OR);
+    p_Text->ucIdCond++;
 
     return FMT_SUCCESS;
 }
