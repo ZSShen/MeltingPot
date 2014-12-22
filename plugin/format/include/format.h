@@ -15,6 +15,7 @@ enum {
 
 /* This ds records the section text which fits the YARA format. */
 typedef struct _FORMAT_TEXT_T {
+    uint8_t ucCntBlk;
     GString *gszSecStr;
     GString *gszSecCond;
     GString *gszComment;
@@ -80,6 +81,17 @@ FmtDeinit();
  */
 int8_t
 FmtAllocText(FORMAT_TEXT **pp_Text);
+
+
+/**
+ * This function dealloctes the FORMAT_TEXT structure.
+ * 
+ * @param p_Text    The pointer to the to be deallocated FORMAT_TEXT.
+ * 
+ * @return (currently unused)
+ */
+int8_t
+FmtDeallocText(FORMAT_TEXT *p_Text);
 
 
 /**
