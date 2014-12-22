@@ -27,6 +27,7 @@ typedef struct _FORMAT_TEXT_T {
 typedef int8_t (*func_FmtInit) ();
 typedef int8_t (*func_FmtDeinit) ();
 typedef int8_t (*func_FmtAllocText) (FORMAT_TEXT**);
+typedef int8_t (*func_FmtDeallocText) (FORMAT_TEXT*);
 typedef int8_t (*func_FmtAppendSecStr) (FORMAT_TEXT, uint16_t*);
 typedef int8_t (*func_FmtAppendSecCond) (FORMAT_TEXT, int32_t, uint64_t);
 typedef int8_t (*func_FmtAppendComment) (FORMAT_TEXT, int32_t, uint64_t, GPtrArray*);
@@ -38,6 +39,7 @@ typedef struct _PLUGIN_FORMAT_T {
     func_FmtInit Init;
     func_FmtDeinit Deinit;
     func_FmtAllocText AllocText;
+    func_FmtDeallocText DeallocText;
     func_FmtAppendSecStr AppendSecStr;
     func_FmtAppendSecCond AppendSecCond;
     func_FmtAppendComment AppendComment;
@@ -48,6 +50,7 @@ typedef struct _PLUGIN_FORMAT_T {
 #define SYM_FMT_INIT                "FmtInit"
 #define SYM_FMT_DEINIT              "FmtDeinit"
 #define SYM_FMT_ALLOC_TEXT          "FmtAllocText"
+#define SYM_FMT_DEALLOC_TEXT        "FmtDeallocText"
 #define SYM_FMT_APPEND_SEC_STR      "FmtAppendSecStr"
 #define SYM_FMT_APPEND_SEC_COND     "FmtAppendSecCond"
 #define SYM_FMT_APPEND_COMMENT      "FmtAppendComment"
