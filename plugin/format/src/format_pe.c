@@ -33,7 +33,7 @@ FmtAllocText(FORMAT_TEXT **pp_Text)
     FORMAT_TEXT *p_Text = *pp_Text;
     p_Text->gszSecStr = NULL;
     p_Text->gszSecCond = NULL;
-    p_Text->gszComment = NULL;
+    p_Text->gszComt = NULL;
     p_Text->gszFullPtn = NULL;
 
     p_Text->gszSecStr = g_string_new(NULL);
@@ -42,20 +42,19 @@ FmtAllocText(FORMAT_TEXT **pp_Text)
     p_Text->gszSecCond = g_string_new(NULL);
     if (!p_Text->gszSecCond)
         EXIT1(FMT_FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
-    p_Text->gszComment = g_string_new(NULL);
-    if (!p_Text->gszComment)
+    p_Text->gszComt = g_string_new(NULL);
+    if (!p_Text->gszComt)
         EXIT1(FMT_FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));   
     p_Text->gszFullPtn = g_string_new(NULL);
     if (!p_Text->gszFullPtn)
         EXIT1(FMT_FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
 
     p_Text->ucIdStr = 0;
-    p_Text->ucIdCond = 0;
     goto EXIT;
 
 FREEGSTR:
-    if (p_Text->gszComment)
-        g_string_free(p_Text->gszComment, true);
+    if (p_Text->gszComt)
+        g_string_free(p_Text->gszComt, true);
     if (p_Text->gszSecCond)
         g_string_free(p_Text->gszSecCond, true);
     if (p_Text->gszSecStr)
@@ -75,8 +74,8 @@ FmtDeallocText(FORMAT_TEXT *p_Text)
         g_string_free(p_Text->gszSecStr, true);
     if (p_Text->gszSecCond)
         g_string_free(p_Text->gszSecCond, true);
-    if (p_Text->gszComment)
-        g_string_free(p_Text->gszComment, true);
+    if (p_Text->gszComt)
+        g_string_free(p_Text->gszComt, true);
     if (p_Text->gszFullPtn)
         g_string_free(p_Text->gszFullPtn, true);    
     if (p_Text)
@@ -97,8 +96,8 @@ FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
     uint64_t ulLenAfter = gszSecStr->len;
 
     /* Prepare the indentation. */
-    char szIndent[BUF_SIZE_INDENT];
-    memset(szIndent, 0, sizeof(char) * BUF_SIZE_INDENT);
+    char szIndent[SIZE_INDENT_MAX];
+    memset(szIndent, 0, sizeof(char) * SIZE_INDENT_MAX);
     uint8_t ucIdx;
     for (ucIdx = 0 ; ucIdx < (ulLenAfter - ulLenBefore) ; ucIdx++)
         szIndent[ucIdx] = ' ';
@@ -111,7 +110,7 @@ FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
             g_string_append(gszSecStr, "?? ");
 
         /* Newline if the number of writtern bytes exceeding the line boundary. */
-        if ((ucIdx % HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) && (ucIdx != ucSize - 1))
+        if ((ucIdx % SIZE_HEX_LINE == SIZE_HEX_LINE - 1) && (ucIdx != ucSize - 1))
             g_string_append_printf(gszSecStr, "\n%s", szIndent);
     }
 
@@ -127,10 +126,11 @@ FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
                  HINT_CONJUNCT flagConj)
 {
     GString *gszSecCond = p_Text->gszSecCond;
+    uint8_t ucIdStr = p_Text->ucIdStr - 1;
 
     g_string_append_printf(gszSecCond, "%s%s$%s_%d at %s.%s[%d].%s + 0x%lx",
                            SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING,
-                           p_Text->ucIdCond, IMPORT_MODULE_PE, TAG_SECTION,
+                           ucIdStr, IMPORT_MODULE_PE, TAG_SECTION,
                            iIdSec, TAG_RAW_DATA_OFFSET, ulOfstRel);
 
     if (flagConj.bOrBlk)
@@ -141,7 +141,17 @@ FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
     if (flagConj.bOrSec)
         g_string_append_printf(gszSecCond, "%s%s%s\n", SPACE_SUBS_TAB,
                                SPACE_SUBS_TAB, CONJUNCTOR_OR);
-    p_Text->ucIdCond++;
+
+    return FMT_SUCCESS;
+}
+
+
+int8_t
+FmtAppendComment(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
+                 GPtrArray *a_Str)
+{
+    GString *gszComt = p_Text->gszComt;
+    uint8_t ucIdStr = p_Text->ucIdStr - 1;
 
     return FMT_SUCCESS;
 }

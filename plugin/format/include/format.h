@@ -10,14 +10,14 @@
 /* The constants helping for YARA pattern creation. */
 #define WILD_CARD_MARK          (0x100) /* The marker for wildcard character. */
 #define EXTENSION_MASK          (0xff)  /* The mask used to extend char type to short. */
-#define HEX_CHUNK_SIZE          (16)    /* The maximum number of bytes in a single line. */
+
+#define SIZE_INDENT_MAX         (64)    /* The maxumum indentation length. */
+#define SIZE_HEX_LINE           (16)    /* The maximum number of bytes in a single line. */
+
 #define PREFIX_PATTERN          "AUTO"  /* The prefix for pattern name. */
 #define PREFIX_HEX_STRING       "SEQ"   /* The prefix for hex string name. */
 #define CONJUNCTOR_OR           "or"    /* The logic "OR" conjunctor. */
 #define SPACE_SUBS_TAB          "    "  /* The spaces substituting a tab. */
-#define DIGIT_COUNT_ULONG       (20)    /* The maximum number of digits to
-                                           form an unsigned long variable. */
-#define BUF_SIZE_INDENT         (64)    /* The maxumum indentation length. */
 
 
 enum {
@@ -30,10 +30,9 @@ enum {
 /* This ds records the section text which fits the YARA format. */
 typedef struct _FORMAT_TEXT_T {
     uint8_t ucIdStr;
-    uint8_t ucIdCond;
     GString *gszSecStr;
     GString *gszSecCond;
-    GString *gszComment;
+    GString *gszComt;
     GString *gszFullPtn;
 } FORMAT_TEXT;
 
@@ -134,7 +133,8 @@ FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize);
 
 /**
  * This function appends the string matching rule to the condition section.
- *
+ * Note that this function should be called after FmtAppendSecStr().
+ * 
  * @param p_Text    The pointer to the to be updated FORMAT_TEXT.
  * @param iIdSec    The section id of the host file.
  * @param ulOfstRel The relative offset to the section starting address.
@@ -149,7 +149,8 @@ FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
 
 /**
  * This function comments the details of candidate composition.
- *
+ * Note that this function should be called after FmtAppendSecStr().
+ * 
  * @param p_Text    The pointer to the to be updated FORMAT_TEXT.
  * @param iIdSec    The section id of the host file.
  * @param ulOfstRel The relative offset to the section starting address.
