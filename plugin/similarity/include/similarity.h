@@ -8,14 +8,6 @@
 #define FAIL_EXTERNAL_LIBRARY_CALL "Fail to call external library"
 
 
-enum {
-    SIM_SUCCESS = 0,
-    SIM_FAIL_FILE_IO = -1,
-    SIM_FAIL_MEM_ALLOC = -2,
-    SIM_FAIL_LIBRARY_CALL = -3
-};
-
-
 /* The exported interface to interact with this plugin. */
 /* The function pointer types. */
 typedef int8_t (*func_SimInit) ();

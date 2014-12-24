@@ -25,7 +25,7 @@ set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
 set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
 set(HEADER "${PATH_INC}/similarity.h")
 set(SRC_SSDEEP "similarity_ssdeep.c")
-set(TGE_SSDEEP "SSDEEP")
+set(TGE_SSDEEP "SIM_SSDEEP")
 set(OUT_SSDEEP "sim_ssdeep")
 set(IMPORT_FUZZY "-lfuzzy")
 
