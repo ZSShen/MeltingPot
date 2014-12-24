@@ -195,14 +195,14 @@ PtnSetContext(CONTEXT *p_Ctx)
     p_Conf = p_Ctx->p_Conf;
     p_Pot = p_Ctx->p_Pot;
     
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 PtnCraftPattern()
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     /*-----------------------------------------------------------------------*
      * Spawn multipe threads each of which:                                  *
@@ -212,7 +212,7 @@ PtnCraftPattern()
     THREAD_CRAFT *a_Param;
     uint64_t ulCntGrp = g_hash_table_size(p_Pot->h_Grp);
     int8_t cStat = _PtnInitArrayThrdCrt(&a_Param, ulCntGrp);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     sem_init(&synSem, 0, p_Conf->ucCntThrd);
@@ -239,8 +239,8 @@ PtnCraftPattern()
     for (ulIdx = 0 ; ulIdx < ulCntFork ; ulIdx++) {
         pthread_join(a_Param[ulIdx].tId, NULL);
         _PtnReduceCraft(&(a_Param[ulIdx]));
-        if (a_Param[ulIdx].cRtnCode != CLS_SUCCESS)
-            cRtnCode = CLS_FAIL_PROCESS;
+        if (a_Param[ulIdx].cRtnCode != SUCCESS)
+            cRtnCode = FAIL_PROCESS;
     }
     sem_destroy(&synSem);
 
@@ -254,7 +254,7 @@ EXIT:
 int8_t
 PtnOutputResult()
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     /* Create the YARA format pattern for each group. */
     GHashTableIter iterHash;
@@ -269,7 +269,7 @@ PtnOutputResult()
         if (a_BlkCand->len == 0)
             continue;
         int8_t cStat = _PtnPrintf(ulIdxGrp, ulSizeGrp, a_BlkCand);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             EXITQ(cStat, EXIT);
         ulIdxGrp++;    
     }
@@ -285,7 +285,7 @@ EXIT:
 void*
 _PtnMapCraft(void *vp_Param)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
     
     THREAD_CRAFT *p_Param = (THREAD_CRAFT*)vp_Param;
     GROUP *p_Grp = p_Param->p_Grp;
@@ -300,7 +300,7 @@ _PtnMapCraft(void *vp_Param)
     uint64_t ulCntSlot = (uint64_t)ceil((double)ulCntMbr / p_Conf->ucIoBand);
     THREAD_SLOT *a_Param;
     int8_t cStat = _PtnInitArrayThrdSlt(&a_Param, ulCntSlot);    
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     uint64_t ulIdxSlot, ulIdxBgn, ulIdxEnd = 0;
@@ -308,10 +308,10 @@ _PtnMapCraft(void *vp_Param)
         ulIdxBgn = ulIdxEnd;
         ulIdxEnd = MIN(ulIdxBgn + p_Conf->ucIoBand, ulCntMbr);
         cStat = _PtnSetParamThrdSlt(&(a_Param[ulIdxSlot]), p_Grp, ulIdxBgn, ulIdxEnd);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             break;
         cStat = _PtnMapSlot(&(a_Param[ulIdxSlot]));
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             break;
     }
 
@@ -329,7 +329,7 @@ EXIT:
 int8_t
 _PtnMapSlot(THREAD_SLOT *p_Param)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     uint8_t ucSizeBlk = p_Conf->ucSizeBlk;
     char **a_szBin = p_Param->a_szBin;
@@ -343,7 +343,7 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
     while (usRear <= p_Param->usSizeMinSlc) {
         BLOCK_CAND *p_BlkCand;
         int8_t cStat = DsNewBlockCand(&p_BlkCand, ucSizeBlk);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             EXITQ(cStat, EXIT);
 
         /* Let the first slice be the comparison base. */
@@ -362,11 +362,11 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
         g_array_append_val(a_CtnAddr, addr);
         CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
         if (!p_Addr)
-            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
         p_Addr->iIdSec = p_Slc->iIdSec;
         p_Addr->ulOfstRel = p_Slc->ulOfstRel + usFront;
         cStat = DsInsertContentAddr(t_CtnAddr, p_Addr, p_Slc->szPathFile);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             EXITQ(cStat, EXIT);
 
         /* Iteratively compare the rest slices with the base. */
@@ -384,11 +384,11 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
             g_array_append_val(a_CtnAddr, addr);
             p_Addr = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
             if (!p_Addr)
-                EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+                EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
             p_Addr->iIdSec = p_Slc->iIdSec;
             p_Addr->ulOfstRel = p_Slc->ulOfstRel + usFront;
             cStat = DsInsertContentAddr(t_CtnAddr, p_Addr, p_Slc->szPathFile);
-            if (cStat != CLS_SUCCESS)
+            if (cStat != SUCCESS)
                 EXITQ(cStat, EXIT);
         }
 
@@ -422,7 +422,7 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param)
 
     /* Early return if all the blocks are eliminated. */
     if (a_BlkCand->len == 0)
-        return CLS_SUCCESS;
+        return SUCCESS;
 
     /* Sort the blocks and retrieve the candidates with top quality. */
     g_ptr_array_sort(a_BlkCand, DsCompBlockCandWildCard);
@@ -437,14 +437,14 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param)
     }
     g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
 
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     uint16_t usCntMin = USHRT_MAX;
     uint64_t ulIdx;
@@ -506,29 +506,29 @@ EXIT:
 int8_t
 _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     int32_t iLen = strlen(p_Conf->szPathRootOut) + DIGIT_COUNT_ULONG + 2;
     char *szPath = (char*)malloc(sizeof(char) * iLen);
     if (!szPath)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     snprintf(szPath, iLen, "%s/%lu_%lu.yara", p_Conf->szPathRootOut, ulSizeGrp, ulIdxGrp);
     
     char *szPtnFull = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_FILE);
     if (!szPtnFull)
-        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPATH, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, FREEPATH, "Error: %s.", strerror(errno));
 
     char *szPtnStr = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
     if (!szPtnStr)
-        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPTN_FULL, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, FREEPTN_FULL, "Error: %s.", strerror(errno));
 
     char *szPtnCond = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
     if (!szPtnCond)
-        EXIT1(CLS_FAIL_MEM_ALLOC, FREEPTN_STR, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, FREEPTN_STR, "Error: %s.", strerror(errno));
 
     FILE *fp = fopen(szPath, "w");
     if (!fp)
-        EXIT1(CLS_FAIL_FILE_IO, FREEPTN_COND, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, FREEPTN_COND, "Error: %s.", strerror(errno));
 
     /* Print the string and condition section. */
     int16_t iLenStr = 0;
@@ -540,13 +540,13 @@ _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
 
         uint16_t *a_usCtn = p_BlkCand->a_usCtn;
         int8_t cStat = _PtnPrintStringSection(szPtnStr, a_usCtn, &iLenStr, ucIdx);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             EXITQ(cStat, CLOSE);
         szPtnStr[iLenStr] = 0;
 
         GArray *a_CtnAddr = p_BlkCand->a_CtnAddr;
         cStat = _PtnPrintConditionSection(szPtnCond, a_CtnAddr, &iLenCond, ucCntBlk, ucIdx);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             EXITQ(cStat, CLOSE);
         szPtnCond[iLenCond] = 0;
     }
@@ -574,7 +574,7 @@ _PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
     size_t nWrtExpt = szPivot - szPtnFull;
     size_t nWrtReal = fwrite(szPtnFull, sizeof(char), nWrtExpt, fp);
     if (nWrtReal != nWrtExpt)
-        EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
 
 CLOSE:
     if (fp)
@@ -600,19 +600,19 @@ int8_t
 _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen, 
                        uint8_t ucIdxBlk)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     char *szPivot = szPtnStr + *p_sLen;
     int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
     if (sRest <= 0)
-        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
     
     int8_t cCntWrt = snprintf(szPivot, sRest, "%s%s$%s_%d = { ", SPACE_SUBS_TAB,
                               SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxBlk);
     szPivot += cCntWrt;
     sRest -= cCntWrt;
     if (sRest <= 0)
-        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
 
     /* Prepare the indentation. */
     uint8_t ucIndent = cCntWrt;
@@ -631,7 +631,7 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
         szPivot += cCntWrt;
         sRest -= cCntWrt;
         if (sRest <= 0)
-            EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);    
+            EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);    
 
         /* Newline if the number of writtern bytes exceeding the line boundary.*/
         if ((ucIdx % HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) && 
@@ -640,7 +640,7 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
             szPivot += cCntWrt;
             sRest -= cCntWrt;
             if (sRest <= 0)
-                EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+                EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
         }
     }
 
@@ -648,7 +648,7 @@ _PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen,
     szPivot += cCntWrt;
     sRest -= cCntWrt;
     if (sRest <= 0)
-        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
     *p_sLen = szPivot - szPtnStr;
 
 EXIT:
@@ -660,12 +660,12 @@ int8_t
 _PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
                           uint8_t ucCntBlk, uint8_t ucIdxBlk)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     char *szPivot = szPtnCond + *p_sLen;
     int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
     if (sRest <= 0)
-        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
 
     g_array_sort(a_CtnAddr, DsCompContentAddr);
     int8_t cCntWrt;
@@ -685,21 +685,21 @@ _PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
         szPivot += cCntWrt;
         sRest -= cCntWrt;
         if (sRest <= 0)
-            EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+            EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
 
         if (ulIdx < (ulCntAddr - 1)) {
             cCntWrt = snprintf(szPivot, sRest, " or");
             szPivot += cCntWrt;
             sRest -= cCntWrt;
             if (sRest <= 0)
-                EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+                EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
         }
 
         cCntWrt = snprintf(szPivot, sRest, "\n");
         szPivot += cCntWrt;
         sRest -= cCntWrt;
         if (sRest <= 0)
-            EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+            EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
 
         addrPred = addrCurr;
     }
@@ -711,7 +711,7 @@ _PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
     szPivot += cCntWrt;
     sRest -= cCntWrt;
     if (sRest <= 0)
-        EXIT1(CLS_FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
+        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
     *p_sLen = szPivot - szPtnCond;
 
 EXIT:
@@ -723,14 +723,14 @@ int8_t
 _PtnSetParamThrdCrt(THREAD_CRAFT *p_Param, GROUP *p_Grp)
 {
     p_Param->p_Grp = p_Grp;
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 _PtnSetParamThrdSlt(THREAD_SLOT *p_Param, GROUP *p_Grp, uint64_t ulIdxBgn, uint64_t ulIdxEnd)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     p_Param->ulIdxBgn = ulIdxBgn;
     p_Param->ulIdxEnd = ulIdxEnd;
@@ -742,13 +742,13 @@ _PtnSetParamThrdSlt(THREAD_SLOT *p_Param, GROUP *p_Grp, uint64_t ulIdxBgn, uint6
     else {
         p_Param->a_BlkCand = g_ptr_array_new_with_free_func(DsDeleteBlkCand);
         if (!p_Param->a_BlkCand)
-            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
     }
 
     uint64_t ulRange = ulIdxEnd - ulIdxBgn;
     p_Param->a_szBin = (char**)malloc(sizeof(char*) * ulRange);
     if (!p_Param->a_szBin)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     uint64_t ulOfst;
     for (ulOfst = 0 ; ulOfst < ulRange ; ulOfst++)
@@ -761,21 +761,21 @@ _PtnSetParamThrdSlt(THREAD_SLOT *p_Param, GROUP *p_Grp, uint64_t ulIdxBgn, uint6
 
         p_Param->a_szBin[ulOfst] = (char*)malloc(sizeof(char) * p_Slc->usSize);
         if (!(p_Param->a_szBin[ulOfst]))
-            EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
         FILE *fp = fopen(p_Slc->szPathFile, "rb");
         if (!fp)
-            EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
 
         int8_t cStat = fseek(fp, p_Slc->ulOfstAbs, SEEK_SET);
         if (cStat != 0) {
-            EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
         }
 
         size_t nReadExpt = p_Slc->usSize;
         size_t nReadReal = fread(p_Param->a_szBin[ulOfst], sizeof(char), nReadExpt, fp);
         if (nReadExpt != nReadReal)
-            EXIT1(CLS_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
         
         if (p_Slc->usSize < p_Param->usSizeMinSlc)
             p_Param->usSizeMinSlc = p_Slc->usSize;
@@ -783,7 +783,7 @@ _PtnSetParamThrdSlt(THREAD_SLOT *p_Param, GROUP *p_Grp, uint64_t ulIdxBgn, uint6
     CLOSE:
         if (fp)
             fclose(fp);
-        if (cRtnCode != CLS_SUCCESS)    
+        if (cRtnCode != SUCCESS)    
             break;
     }
 
@@ -795,11 +795,11 @@ EXIT:
 int8_t
 _PtnInitArrayThrdCrt(THREAD_CRAFT **p_aParam, uint64_t ulSize)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     *p_aParam = (THREAD_CRAFT*)malloc(sizeof(THREAD_CRAFT) * ulSize);
     if (!(*p_aParam))
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     THREAD_CRAFT *a_Param = *p_aParam;
     uint32_t ulIdx;
@@ -815,11 +815,11 @@ EXIT:
 int8_t
 _PtnInitArrayThrdSlt(THREAD_SLOT **p_aParam, uint64_t ulSize)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     *p_aParam = (THREAD_SLOT*)malloc(sizeof(THREAD_SLOT) * ulSize);
     if (!(*p_aParam))
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     THREAD_SLOT *a_Param = *p_aParam;
     uint64_t ulIdx;
@@ -841,7 +841,7 @@ _PtnDeinitArrayThrdCrt(THREAD_CRAFT *a_Param, uint64_t ulSize)
     if (a_Param)
         free(a_Param);
     
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
@@ -849,7 +849,7 @@ int8_t
 _PtnDeinitArrayThrdSlt(THREAD_SLOT *a_Param, uint64_t ulSize)
 {
     if (!a_Param)
-        return CLS_SUCCESS;
+        return SUCCESS;
 
     uint64_t ulIdx;
     for (ulIdx = 0 ; ulIdx < ulSize ; ulIdx++) {
@@ -872,5 +872,5 @@ _PtnDeinitArrayThrdSlt(THREAD_SLOT *a_Param, uint64_t ulSize)
     }
 
     free(a_Param);
-    return CLS_SUCCESS;
+    return SUCCESS;
 }

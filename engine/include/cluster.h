@@ -7,21 +7,21 @@
 
 
 /* The messages for debugging. */
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define COLOR_RED     "\x1b[31m"
+#define COLOR_GREEN   "\x1b[32m"
+#define COLOR_RESET   "\x1b[0m"
 
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
 #define FAIL_NO_SAMPLE           "No samples in the given folder"
 #define FAIL_PTN_CREATE          "Insufficient pattern buffer size"
-#define SLC_GEN_FAIL    ANSI_COLOR_RED"[Step 1/4] Slice Generation  **FAIL"ANSI_COLOR_RESET
-#define SLC_GEN_SUCC    ANSI_COLOR_GREEN"[Step 1/4] Slice Generation  **SUCC"ANSI_COLOR_RESET
-#define SLC_CRL_FAIL    ANSI_COLOR_RED"[Step 2/4] Slice Correlation  **FAIL"ANSI_COLOR_RESET
-#define SLC_CRL_SUCC    ANSI_COLOR_GREEN"[Step 2/4] Slice Correlation  **SUCC"ANSI_COLOR_RESET
-#define PTN_GEN_FAIL    ANSI_COLOR_RED"[Step 3/4] Pattern Crafting  **FAIL"ANSI_COLOR_RESET
-#define PTN_GEN_SUCC    ANSI_COLOR_GREEN"[Step 3/4] Pattern Crafting  **SUCC"ANSI_COLOR_RESET
-#define PTN_OUT_FAIL    ANSI_COLOR_RED"[Step 4/4] Pattern Output  **FAIL"ANSI_COLOR_RESET
-#define PTN_OUT_SUCC    ANSI_COLOR_GREEN"[Step 4/4] Pattern Output  **SUCC"ANSI_COLOR_RESET
+#define SLC_GEN_FAIL    COLOR_RED"[Step 1/4] Slice Generation  **FAIL"COLOR_RESET
+#define SLC_GEN_SUCC    COLOR_GREEN"[Step 1/4] Slice Generation  **SUCC"COLOR_RESET
+#define SLC_CRL_FAIL    COLOR_RED"[Step 2/4] Slice Correlation  **FAIL"COLOR_RESET
+#define SLC_CRL_SUCC    COLOR_GREEN"[Step 2/4] Slice Correlation  **SUCC"COLOR_RESET
+#define PTN_GEN_FAIL    COLOR_RED"[Step 3/4] Pattern Crafting  **FAIL"COLOR_RESET
+#define PTN_GEN_SUCC    COLOR_GREEN"[Step 3/4] Pattern Crafting  **SUCC"COLOR_RESET
+#define PTN_OUT_FAIL    COLOR_RED"[Step 4/4] Pattern Output  **FAIL"COLOR_RESET
+#define PTN_OUT_SUCC    COLOR_GREEN"[Step 4/4] Pattern Output  **SUCC"COLOR_RESET
 
 
 /* The constants for command option parsing. */
@@ -48,22 +48,7 @@
 #define C_PATH_PLUGIN_SIMILARITY    "PATH_PLUGIN_SIMILARITY"
 
 
-enum {
-    CLS_SUCCESS = 0,
-    CLS_FAIL_FILE_IO = -1,
-    CLS_FAIL_MEM_ALLOC = -2,
-    CLS_FAIL_OPT_PARSE = -3,
-    CLS_FAIL_CONF_PARSE = -4,
-    CLS_FAIL_PLUGIN_RESOLVE = -5,
-    CLS_FAIL_PLUGIN_INTERACT = -6,
-    CLS_FAIL_PROCESS = -7,
-    CLS_FAIL_PTN_CREATE = -8,
-};
-
-
-/* This ds records the paramters to control the clustering process.
-   Note the reason that we do not follow the definition of standard integer 
-   is due to the type definition of libconfig. */
+/* The structure lists down the process control parameters. */
 typedef struct _CONFIG_T {
     uint8_t ucCntThrd;        /* The number of threads used for parallel processing. */
     uint8_t ucScoreSim;       /* The threshold to group similar binary slices. */
@@ -114,7 +99,7 @@ ClsDeinit();
 
 
 /**
- * This function launches the major clustering workflow.
+ * This function launches the main clustering workflow.
  *
  * @return status code
  */

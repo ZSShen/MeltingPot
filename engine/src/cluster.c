@@ -7,6 +7,7 @@
 #include <getopt.h>
 #include <libconfig.h>
 #include <dlfcn.h>
+#include "except.h"
 #include "spew.h"
 #include "data.h"
 #include "cluster.h"
@@ -104,11 +105,11 @@ _ClsCheckFolderExistence(CONFIG *p_Conf);
 int8_t
 ClsInit(char *szPathCfg)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
     
     p_Ctx = (CONTEXT*)malloc(sizeof(CONTEXT));
     if (!p_Ctx)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     p_Ctx->p_Conf = NULL;
     p_Ctx->p_Pot = NULL;
@@ -117,22 +118,22 @@ ClsInit(char *szPathCfg)
 
     /* Resolve the user specified configuration. */
     int8_t cStat = _ClsInitConfig(&(p_Ctx->p_Conf), szPathCfg);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     /* Check the existence of the input and output folder. */
     cStat = _ClsCheckFolderExistence(p_Ctx->p_Conf);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     /* Load the file slicing and similarity computation plugins. */
     CONFIG *p_Conf = p_Ctx->p_Conf;
     cStat = _ClsInitPluginSlice(&(p_Ctx->plg_Slc), p_Conf->szPathPluginSlc);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     cStat = _ClsInitPluginSimilarity(&(p_Ctx->plg_Sim), p_Conf->szPathPluginSim);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     /* Allocate the MELT_POT structure to record the clustering progress. */
@@ -147,7 +148,7 @@ int8_t
 ClsDeinit()
 {
     if (!p_Ctx)
-        return CLS_SUCCESS;
+        return SUCCESS;
 
     DsDeleteMeltPot(p_Ctx->p_Pot);
     _ClsDeinitConfig(p_Ctx->p_Conf);
@@ -155,34 +156,34 @@ ClsDeinit()
     _ClsDeinitPluginSimilarity(p_Ctx->plg_Sim);
 
     free(p_Ctx);
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 ClsRunTask()
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     CrlSetContext(p_Ctx);
     int8_t cStat = CrlPrepareSlice();
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXIT1(cStat, EXIT, "%s\n", SLC_GEN_FAIL);
     SPEW1("%s\n", SLC_GEN_SUCC);
 
     cStat = CrlCorrelateSlice();
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXIT1(cStat, EXIT, "%s\n", SLC_CRL_FAIL);
     SPEW1("%s\n", SLC_CRL_SUCC);
 
     PtnSetContext(p_Ctx);
     cStat = PtnCraftPattern();
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXIT1(cStat, EXIT, "%s\n", PTN_GEN_FAIL);
     SPEW1("%s\n", PTN_GEN_SUCC);    
 
     cStat = PtnOutputResult();
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXIT1(cStat, EXIT, "%s\n", PTN_OUT_FAIL);
     SPEW1("%s\n", PTN_OUT_SUCC);
 
@@ -194,7 +195,7 @@ EXIT:
 int8_t
 main(int argc, char **argv, char **envp)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     static struct option options[] = {
         {OPT_LONG_HELP, no_argument, 0, OPT_HELP},
@@ -218,10 +219,10 @@ main(int argc, char **argv, char **envp)
         }
     }
     if (!szPathCfg)
-        EXIT1(CLS_FAIL_OPT_PARSE, EXIT, "Error: %s.", FAIL_OPT_PARSE_CONF);
+        EXIT1(FAIL_OPT_PARSE, EXIT, "Error: %s.", FAIL_OPT_PARSE_CONF);
 
     int8_t cStat = ClsInit(szPathCfg);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         goto DEINIT;
 
     cStat = ClsRunTask();
@@ -239,83 +240,83 @@ EXIT:
 int8_t
 _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     config_init(&cfg);
     int8_t cStat = config_read_file(&cfg, szPath);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", config_error_text(&cfg));
+        EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", config_error_text(&cfg));
 
     *pp_Conf = (CONFIG*)malloc(sizeof(CONFIG));
     if (!(*pp_Conf))
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     CONFIG *p_Conf = *pp_Conf;
     int iVal;
     cStat = config_lookup_int(&cfg, C_COUNT_THREAD, &iVal);    
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);
     p_Conf->ucCntThrd = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_THRESHOLD_SIMILARITY, &iVal);    
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_THRESHOLD_SIMILARITY);        
     p_Conf->ucScoreSim = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_COUNT_HEX_BLOCK, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_HEX_BLOCK);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_HEX_BLOCK);
     p_Conf->ucCntBlk = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_SIZE_HEX_BLOCK, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_HEX_BLOCK);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_HEX_BLOCK);
     p_Conf->ucSizeBlk = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_SIZE_SLICE, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_SLICE);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_SLICE);
     p_Conf->usSizeSlc = (uint16_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_RATIO_NOISE, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_RATIO_NOISE);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_RATIO_NOISE);
     p_Conf->ucRatNoise = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_RATIO_WILDCARD, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_RATIO_WILDCARD);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_RATIO_WILDCARD);
     p_Conf->ucRatWild = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_IO_BANDWIDTH, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_IO_BANDWIDTH);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_IO_BANDWIDTH);
     p_Conf->ucIoBand = (uint8_t)iVal;
 
     cStat = config_lookup_int(&cfg, C_SIZE_TRUNCATE_GROUP, &iVal);
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_TRUNCATE_GROUP);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_SIZE_TRUNCATE_GROUP);
     p_Conf->ucSizeTruncGrp = (uint8_t)iVal;
 
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_INPUT,
                                 (const char**)&(p_Conf->szPathRootIn));
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_ROOT_INPUT);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_ROOT_INPUT);
 
     cStat = config_lookup_string(&cfg, C_PATH_ROOT_OUTPUT,
                                 (const char**)&(p_Conf->szPathRootOut));
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_ROOT_OUTPUT);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_ROOT_OUTPUT);
 
     cStat = config_lookup_string(&cfg, C_PATH_PLUGIN_SLICE,
                                 (const char**)&(p_Conf->szPathPluginSlc));
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SLICE);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SLICE);
 
     cStat = config_lookup_string(&cfg, C_PATH_PLUGIN_SIMILARITY,
                                 (const char**)&(p_Conf->szPathPluginSim));
     if (cStat == CONFIG_FALSE)
-        EXIT1(CLS_FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
 
 EXIT:
     return cRtnCode;
@@ -325,36 +326,36 @@ EXIT:
 int8_t
 _ClsInitPluginSlice(PLUGIN_SLICE **p_plg_Slc, char *szPath)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     *p_plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
     if (!(*p_plg_Slc))
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     PLUGIN_SLICE *plg_Slc = *p_plg_Slc;
     plg_Slc->hdle_Lib = dlopen(szPath, RTLD_LAZY);
     if (!plg_Slc->hdle_Lib)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Slc->Init = dlsym(plg_Slc->hdle_Lib, SYM_SLC_INIT);
     if (!plg_Slc->Init)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Slc->Deinit = dlsym(plg_Slc->hdle_Lib, SYM_SLC_DEINIT);
     if (!plg_Slc->Deinit)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Slc->GetFileSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_GET_FILE_SLICE);
     if (!plg_Slc->GetFileSlice)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Slc->DeleteSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_FREE_SLICE_ARRAY);
     if (!plg_Slc->DeleteSlice)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     int8_t cStat = plg_Slc->Init();
     if (cStat != SLC_SUCCESS)
-        EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+        EXITQ(FAIL_PLUGIN_INTERACT, EXIT);
 
 EXIT:
     return cRtnCode;
@@ -364,36 +365,36 @@ EXIT:
 int8_t
 _ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plg_Sim, char *szPath)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     *p_plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
     if (!(*p_plg_Sim))
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
 
     PLUGIN_SIMILARITY *plg_Sim = *p_plg_Sim;
     plg_Sim->hdle_Lib = dlopen(szPath, RTLD_LAZY);
     if (!plg_Sim->hdle_Lib)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Sim->Init = dlsym(plg_Sim->hdle_Lib, SYM_SIM_INIT);
     if (!plg_Sim->Init)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Sim->Deinit = dlsym(plg_Sim->hdle_Lib, SYM_SIM_DEINIT);
     if (!plg_Sim->Deinit)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Sim->GetHash = dlsym(plg_Sim->hdle_Lib, SYM_SIM_GET_HASH);
     if (!plg_Sim->GetHash)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     plg_Sim->CompareHashPair = dlsym(plg_Sim->hdle_Lib, SYM_SIM_COMPARE_HASH_PAIR);
     if (!plg_Sim->CompareHashPair)
-        EXIT1(CLS_FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
     int8_t cStat = plg_Sim->Init();
     if (cStat != SIM_SUCCESS)
-        EXITQ(CLS_FAIL_PLUGIN_INTERACT, EXIT);
+        EXITQ(FAIL_PLUGIN_INTERACT, EXIT);
 
 EXIT:
     return cRtnCode;
@@ -444,20 +445,20 @@ _ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim)
 int8_t
 _ClsCheckFolderExistence(CONFIG *p_Conf)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     /* Check if the input folder exists. */
     struct stat stDir;
     int8_t cStat = stat(p_Conf->szPathRootIn, &stDir);
     if (cStat != 0)
-        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
 
     /* Create the output folder if it does not exist. */
     cStat = stat(p_Conf->szPathRootOut, &stDir);
     if (cStat != 0) {
         cStat = mkdir(p_Conf->szPathRootOut, 0700);
         if (cStat != 0)
-            EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
     }
 
 EXIT:

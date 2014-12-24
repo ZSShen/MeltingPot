@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include "except.h"
 #include "spew.h"
 #include "data.h"
 #include "cluster.h"
@@ -181,19 +182,19 @@ CrlSetContext(CONTEXT *p_Ctx)
     plg_Slc = p_Ctx->plg_Slc;
     plg_Sim = p_Ctx->plg_Sim;
 
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 CrlPrepareSlice()
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     /* Collect the pathnames for all the samples. */
     uint32_t uiCntFile;
     int8_t cStat = _CrlCollectSamplePath(&uiCntFile);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     /*-----------------------------------------------------------------------*
@@ -203,7 +204,7 @@ CrlPrepareSlice()
      *-----------------------------------------------------------------------*/
     THREAD_SLICE *a_Param;
     cStat = _CrlInitArrayThrdSlc(&a_Param, uiCntFile);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     sem_init(&synSem, 0, p_Conf->ucCntThrd);
@@ -211,7 +212,7 @@ CrlPrepareSlice()
     while (uiIdx < uiCntFile) {
         sem_wait(&synSem);
         cStat = _CrlSetParamThrdSlc(&(a_Param[uiIdx]), g_ptr_array_index(p_Pot->a_Path, uiIdx));
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             break;        
         pthread_create(&(a_Param[uiIdx].tId), NULL, _CrlMapSlice, (void*)&(a_Param[uiIdx]));
         uiIdx++;
@@ -227,8 +228,8 @@ CrlPrepareSlice()
     for (uiIdx = 0 ; uiIdx < uiCntFork ; uiIdx++) {
         pthread_join(a_Param[uiIdx].tId, NULL);
         _CrlReduceSlice(&(a_Param[uiIdx]), &ulIdSlc);
-        if (a_Param[uiIdx].cRtnCode != CLS_SUCCESS)
-            cRtnCode = CLS_FAIL_PROCESS;
+        if (a_Param[uiIdx].cRtnCode != SUCCESS)
+            cRtnCode = FAIL_PROCESS;
     }
     sem_destroy(&synSem);
 
@@ -242,7 +243,7 @@ EXIT:
 int8_t
 CrlCorrelateSlice()
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     /*-----------------------------------------------------------------------*
      * Spawn multipe threads each of which:                                  *
@@ -251,13 +252,13 @@ CrlCorrelateSlice()
      *-----------------------------------------------------------------------*/
     THREAD_COMPARE *a_Param;
     int8_t cStat = _CrlInitArrayThrdCmp(&a_Param, p_Conf->ucCntThrd);
-    if (cStat != CLS_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     uint8_t ucIdx, ucCntFork = 0;
     for (ucIdx = 0 ; ucIdx < p_Conf->ucCntThrd ; ucIdx++) {
         cStat = _CrlSetParamThrdCmp(&(a_Param[ucIdx]), ucIdx + 1);
-        if (cStat != CLS_SUCCESS)
+        if (cStat != SUCCESS)
             break;
         pthread_create(&(a_Param[ucIdx].tId), NULL, _CrlMapCompare, (void*)&(a_Param[ucIdx]));
         ucCntFork++;
@@ -271,8 +272,8 @@ CrlCorrelateSlice()
     for (ucIdx = 0 ; ucIdx < ucCntFork ; ucIdx++) {
         pthread_join(a_Param[ucIdx].tId, NULL);
         _CrlReduceCompare(&(a_Param[ucIdx]));
-        if (a_Param[ucIdx].cRtnCode != CLS_SUCCESS)
-            cRtnCode = CLS_FAIL_PROCESS;
+        if (a_Param[ucIdx].cRtnCode != SUCCESS)
+            cRtnCode = FAIL_PROCESS;
     }
     cRtnCode = _CrlGenerateGroup();
 
@@ -289,12 +290,12 @@ EXIT:
 int8_t
 _CrlCollectSamplePath(uint32_t *p_uiCntFile)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     uint32_t uiCntFile = 0;
     DIR *dirRoot = opendir(p_Conf->szPathRootIn);
     if (!dirRoot)
-        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
 
     /* Record the filenames and accumulate the file count. */
     struct dirent *entFile;
@@ -305,7 +306,7 @@ _CrlCollectSamplePath(uint32_t *p_uiCntFile)
         int32_t iLen = strlen(p_Conf->szPathRootIn) + strlen(entFile->d_name) + 2;
         char *szPath = (char*)malloc(sizeof(char) * iLen);
         if (!szPath)
-            EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEDIR, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_MEM_ALLOC, CLOSEDIR, "Error: %s.", strerror(errno));
 
         snprintf(szPath, iLen, "%s/%s", p_Conf->szPathRootIn, entFile->d_name);
         g_ptr_array_add(p_Pot->a_Path, szPath);
@@ -313,7 +314,7 @@ _CrlCollectSamplePath(uint32_t *p_uiCntFile)
     }
 
     if (uiCntFile == 0)
-        EXIT1(CLS_FAIL_FILE_IO, CLOSEDIR, "Error: %s.", FAIL_NO_SAMPLE);
+        EXIT1(FAIL_FILE_IO, CLOSEDIR, "Error: %s.", FAIL_NO_SAMPLE);
 
 CLOSEDIR:
     if (dirRoot)
@@ -327,7 +328,7 @@ EXIT:
 void*
 _CrlMapSlice(void *vp_Param)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
     THREAD_SLICE *p_Param = (THREAD_SLICE*)vp_Param;
 
     /* Extract the file slices. */
@@ -339,11 +340,11 @@ _CrlMapSlice(void *vp_Param)
     /* Generate the hashes for all file slices. */
     FILE *fp = fopen(p_Param->szPath, "rb");
     if (!fp)
-        EXIT1(CLS_FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
     
     char *szBin = (char*)malloc(sizeof(char) * p_Conf->usSizeSlc);
     if (!szBin)
-        EXIT1(CLS_FAIL_MEM_ALLOC, CLOSEFILE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, CLOSEFILE, "Error: %s.", strerror(errno));
     
     uint64_t ulCntSlc = p_Param->a_Slc->len;
     uint64_t ulIdx;
@@ -351,12 +352,12 @@ _CrlMapSlice(void *vp_Param)
         SLICE *p_Slc = g_ptr_array_index(p_Param->a_Slc, ulIdx);
         cStat = fseek(fp, p_Slc->ulOfstAbs, SEEK_SET);
         if (cStat != 0)
-            EXIT1(CLS_FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
 
         size_t nReadExpt = p_Slc->usSize;
         size_t nReadReal = fread(szBin, sizeof(char), nReadExpt, fp);
         if (nReadExpt != nReadReal)
-            EXIT1(CLS_FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
 
         char *szHash;
         cStat = plg_Sim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
@@ -381,7 +382,7 @@ EXIT:
 void*
 _CrlMapCompare(void *vp_Param)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     THREAD_COMPARE *p_Param = (THREAD_COMPARE*)vp_Param;
     uint8_t ucIdThrd = p_Param->ucIdThrd;
@@ -454,7 +455,7 @@ _CrlReduceSlice(THREAD_SLICE *p_Param, uint64_t *p_ulIdSlc)
     }
 
     *p_ulIdSlc += ulLen;
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
@@ -476,19 +477,19 @@ _CrlReduceCompare(THREAD_COMPARE *p_Param)
         p_SlcTge->ulIdGrp = ulIdGrp;
     }
 
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 _CrlSetParamThrdSlc(THREAD_SLICE *p_Param, char *szPath)
 {
-    int8_t cRtnCode = CLS_SUCCESS;    
+    int8_t cRtnCode = SUCCESS;    
     
     p_Param->szPath = szPath;
     p_Param->a_Hash = g_ptr_array_new();
     if (!p_Param->a_Hash)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
 EXIT:    
     return cRtnCode;
@@ -498,12 +499,12 @@ EXIT:
 int8_t
 _CrlSetParamThrdCmp(THREAD_COMPARE *p_Param, uint8_t ucIdThrd)
 {
-    int8_t cRtnCode = CLS_SUCCESS;    
+    int8_t cRtnCode = SUCCESS;    
 
     p_Param->ucIdThrd = ucIdThrd;    
     p_Param->a_Bind = g_ptr_array_new_with_free_func(DsDeleteBind);
     if (!p_Param->a_Bind)
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
 EXIT:
     return cRtnCode;
@@ -513,11 +514,11 @@ EXIT:
 int8_t
 _CrlInitArrayThrdSlc(THREAD_SLICE **p_aParam, uint32_t uiSize)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     *p_aParam = (THREAD_SLICE*)malloc(sizeof(THREAD_SLICE) * uiSize);
     if (!(*p_aParam))
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     THREAD_SLICE *a_Param = *p_aParam;
     uint32_t uiIdx;
@@ -535,11 +536,11 @@ EXIT:
 int8_t
 _CrlInitArrayThrdCmp(THREAD_COMPARE **p_aParam, uint32_t uiSize)
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     *p_aParam = (THREAD_COMPARE*)malloc(sizeof(THREAD_COMPARE) * uiSize);
     if (!(*p_aParam))
-        EXIT1(CLS_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     THREAD_COMPARE *a_Param = *p_aParam;
     uint32_t uiIdx;
@@ -555,7 +556,7 @@ int8_t
 _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize)
 {
     if (!a_Param)
-        return CLS_SUCCESS;
+        return SUCCESS;
 
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
@@ -566,7 +567,7 @@ _CrlDeinitArrayThrdSlc(THREAD_SLICE *a_Param, uint32_t uiSize)
     }
 
     free(a_Param);
-    return CLS_SUCCESS;
+    return SUCCESS;
 }
 
 
@@ -574,7 +575,7 @@ int8_t
 _CrlDeinitArrayThrdCmp(THREAD_COMPARE *a_Param, uint32_t uiSize)
 {
     if (!a_Param)
-        return CLS_SUCCESS;
+        return SUCCESS;
 
     uint32_t uiIdx;
     for (uiIdx = 0 ; uiIdx < uiSize ; uiIdx++) {
@@ -583,14 +584,14 @@ _CrlDeinitArrayThrdCmp(THREAD_COMPARE *a_Param, uint32_t uiSize)
     }
 
     free(a_Param);
-    return CLS_SUCCESS;        
+    return SUCCESS;        
 }
 
 
 int8_t
 _CrlGenerateGroup()
 {
-    int8_t cRtnCode = CLS_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     /*-----------------------------------------------------------------------*
      * Comprehensive group construction                                      *
@@ -615,7 +616,7 @@ _CrlGenerateGroup()
         GROUP *p_Grp;
         if (!bExist) {
             int8_t cStat = DsNewGroup(&p_Grp);
-            if (cStat != CLS_SUCCESS)
+            if (cStat != SUCCESS)
                 EXITQ(cStat, EXIT);
                 p_Grp->ulIdGrp = ulIdGrpReal;
             g_hash_table_insert(p_Pot->h_Grp, &(p_SlcMbr->ulIdGrp), p_Grp);
