@@ -4,29 +4,7 @@
 
 #include <stdint.h>
 #include <glib.h>
-
-
-enum {
-    SLC_SUCCESS = 0,
-    SLC_FAIL_FILE_IO = -1,
-    SLC_FAIL_MEM_ALLOC = -2,
-    SLC_INVALID_FILE_FORMAT = -3
-};
-
-
-/* Slice is a file block containing designated number of bytes. */
-/* This ds records information to locate a slice. */
-typedef struct _SLICE_T {
-    int32_t iIdSec;         /* The section id of the host file. (For certain file type) */
-    uint64_t ulOfstAbs;     /* The absolate offset of the host file. */
-    uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
-    uint16_t usSize;        /* The slice size. */
-    union {
-        uint64_t ulIdSlc;   /* The logic id for memorization. */
-        uint64_t ulIdGrp;   /* The group id (after correlation) this slice belonging to.*/
-    };
-    char *szPathFile;       /* The aboslute path of the host file. */
-} SLICE;
+#include "data.h"
 
 
 /* The exported interface to interact with this plugin. */
@@ -34,7 +12,6 @@ typedef struct _SLICE_T {
 typedef int8_t (*func_SlcInit) ();
 typedef int8_t (*func_SlcDeinit) ();
 typedef int8_t (*func_SlcGetFileSlice) (char*, uint16_t, GPtrArray**);
-typedef void (*func_SlcDeleteSlice) (gpointer);
 
 /* The integrated structure to store exported functions. */
 typedef struct _PLUGIN_SLICE_T {
@@ -42,14 +19,12 @@ typedef struct _PLUGIN_SLICE_T {
     func_SlcInit Init;
     func_SlcDeinit Deinit;
     func_SlcGetFileSlice GetFileSlice;
-    func_SlcDeleteSlice DeleteSlice;
 } PLUGIN_SLICE;
 
 /* The function name symbols. */
 #define SYM_SLC_INIT                "SlcInit"
 #define SYM_SLC_DEINIT              "SlcDeinit"
 #define SYM_SLC_GET_FILE_SLICE      "SlcGetFileSlice"
-#define SYM_SLC_FREE_SLICE_ARRAY    "SlcDeleteSlice"
 
 
 /**
@@ -72,26 +47,17 @@ SlcDeinit();
 
 /**
  * This function splits the given file into slices and returns an array
- * of addressing information to locate these slices.
+ * of SLICE structures to locate these slices.
  * 
  * @param szPathFile    The absoluate pathname of the given file.
  * @param usSizeSlc     The size of the to be created slice.
- * @param p_aSlc        The pointer to a array which is to be filled
- *                      with file slice addressing information.
+ * @param p_aSlc        The pointer to the GPtrArray which is to be filled
+ *                      with SLICE structures.
  *
  * @return status code
  */
 int8_t
 SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc);
-
-
-/**
- * This function hints the Glib to deallocate array elements.
- *
- * @param gp_Slc       The pointer to the to be deallocated element.
- */
-void
-SlcDeleteSlice(gpointer gp_Slc);
 
 
 #endif

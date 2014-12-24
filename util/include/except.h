@@ -12,7 +12,8 @@ enum {
     FAIL_PLUGIN_INTERACT = -6,
     FAIL_PROCESS = -7,
     FAIL_PTN_CREATE = -8,
-    FAIL_LIBRARY_CALL = -9
+    FAIL_LIBRARY_CALL = -9,
+    INVALID_FILE_FORMAT = -10
 };
 
 

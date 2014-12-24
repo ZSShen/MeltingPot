@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include "except.h"
 #include "spew.h"
 #include "slice.h"
 #include "slice_pe.h"
@@ -11,45 +12,45 @@
 int8_t
 SlcInit()
 {
-    return SLC_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 SlcDeinit()
 {
-    return SLC_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
 {
-    int8_t cRtnCode = SLC_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
     char *szBin = (char*)malloc(sizeof(char) * usSizeSlc);
     if (!szBin)
-        EXIT1(SLC_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     *p_aSlc = NULL;
     *p_aSlc = g_ptr_array_new();
     if (!*p_aSlc)
-        EXIT1(SLC_FAIL_MEM_ALLOC, FREE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, FREE, "Error: %s.", strerror(errno));
 
     FILE *fp = fopen(szPathFile, "r");
     if (!fp) {
         g_ptr_array_free(*p_aSlc, true);
         *p_aSlc = NULL;
-        EXIT1(SLC_FAIL_FILE_IO, FREE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, FREE, "Error: %s.", strerror(errno));
     }
 
     /* Check the MZ header. */
     size_t nReadExpt = MZ_HEADER_SIZE;
     size_t nReadReal = fread(szBin, sizeof(char), nReadExpt, fp);    
     if (nReadExpt != nReadReal) {
-        EXIT1(SLC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
     } else if ((szBin[0] != 'M') || (szBin[1] != 'Z')) {
-        EXIT1(SLC_INVALID_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_MZ_HEADER);
+        EXIT1(INVALID_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_MZ_HEADER);
     }
 
     /* Resolve the starting address of PE header and move to it. */
@@ -62,15 +63,15 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     uint32_t uiOfstPEHeader = uiReg;
     int8_t cStat = fseek(fp, uiOfstPEHeader, SEEK_SET);
     if (cStat != 0)
-        EXIT1(SLC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
 
     /* Check the PE header. */
     nReadExpt = PE_HEADER_SIZE;
     nReadReal = fread(szBin, sizeof(char), nReadExpt, fp);
     if (nReadExpt != nReadReal) {
-        EXIT1(SLC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
     } else if ((szBin[0] != 'P') || (szBin[1] != 'E')) {
-        EXIT1(SLC_INVALID_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_PE_HEADER);
+        EXIT1(INVALID_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_PE_HEADER);
     }
 
     /* Resolve the number of sections. */
@@ -96,12 +97,12 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
         uint32_t uiOfstEntry = uiOfstSecHeader + usIterFst * SECTION_HEADER_PER_ENTRY_SIZE;
         cStat = fseek(fp, uiOfstEntry, SEEK_SET);
         if (cStat != 0)
-            EXIT1(SLC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
 
         nReadExpt = SECTION_HEADER_PER_ENTRY_SIZE;
         nReadReal = fread(szBin, sizeof(char), nReadExpt, fp);
         if (nReadExpt != nReadReal)
-            EXIT1(SLC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+            EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
 
         uiReg = 0;
         uint16_t usIterSnd;
@@ -130,12 +131,12 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
                 if (cStat == 0)
                     bLoop = false;
                 else
-                    EXIT1(SLC_FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));    
+                    EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));    
             }
 
             SLICE *p_Slc = (SLICE*)malloc(sizeof(SLICE));
             if (!p_Slc)
-                EXIT1(SLC_FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
+                EXIT1(FAIL_MEM_ALLOC, CLOSE, "Error: %s.", strerror(errno));
 
             p_Slc->iIdSec = usIterFst;
             p_Slc->ulOfstAbs = uiOfstSec;
@@ -160,15 +161,4 @@ FREE:
         free(szBin);
 EXIT:
     return cRtnCode;    
-}
-
-
-void
-SlcDeleteSlice(gpointer gp_Slc)
-{
-    SLICE *p_Slc = (SLICE*)gp_Slc;
-    if (p_Slc)
-        free(p_Slc);
-
-    return;
 }
