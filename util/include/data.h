@@ -6,8 +6,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <glib.h>
-#include "except.h"
-#include "spew.h"
 
 
 /* Useful number comparison macros. */
