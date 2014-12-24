@@ -83,6 +83,14 @@ typedef struct _CONFIG_T {
                                  similarity computation. */
 } CONFIG;
 
+/* The structure recording the entire process context. */
+typedef struct _CONTEXT_T {
+    CONFIG *p_Conf;
+    MELT_POT *p_Pot;
+    PLUGIN_SLICE *plg_Slc;
+    PLUGIN_SIMILARITY *plg_Sim;
+} CONTEXT;
+
 
 /**
  * This function initializes the clustering engine with the configuration

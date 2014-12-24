@@ -70,10 +70,20 @@ DsDeleteBlkCand(gpointer gp_BlkCand)
 
 
 void
-DsDeleteGroup(gpointer gp_Val)
+DsDeleteSlice(gpointer gp_Slc)
 {
-    if (gp_Val) {
-        GROUP *p_Grp = (GROUP*)gp_Val;
+    if (gp_Slc)
+        free(gp_Slc);
+
+    return;
+}
+
+
+void
+DsDeleteGroup(gpointer gp_Grp)
+{
+    if (gp_Grp) {
+        GROUP *p_Grp = (GROUP*)gp_Grp;
         if (p_Grp->a_Mbr)
             g_array_free(p_Grp->a_Mbr, true);
         if (p_Grp->a_BlkCand)

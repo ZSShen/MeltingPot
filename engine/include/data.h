@@ -7,9 +7,6 @@
 #include <stdbool.h>
 #include <glib.h>
 #include "spew.h"
-#include "cluster.h"
-#include "slice.h"
-#include "similarity.h"
 
 
 /* Useful number comparison macros. */
@@ -24,8 +21,8 @@ typedef struct _CONTENT_ADDR_T {
 } CONTENT_ADDR;
 
 
-/* The distilled binary block which shows parts of the common features shared by the members 
-   belonged to certain group. */
+/* The distilled binary block which shows parts of the common byte sequences shared by
+   the members belonged to certain group. */
 typedef struct _BLOCK_CAND_T {
     uint8_t ucCntNoise;     /* The number of noise bytes. */
     uint8_t ucCntWild;      /* The number of wildcard characters. */
@@ -33,6 +30,21 @@ typedef struct _BLOCK_CAND_T {
     GArray *a_CtnAddr;      /* The list of addressing methods to locate this block. */
     GTree *t_CtnAddr;       /* The map of addresses to locate this block. */
 } BLOCK_CAND;
+
+
+/* Slice is a file block containing designated number of bytes. This structure records 
+   information to locate a slice. */
+typedef struct _SLICE_T {
+    int32_t iIdSec;         /* The section id of the host file. (For certain file type) */
+    uint64_t ulOfstAbs;     /* The absolute offset of the host file. */
+    uint64_t ulOfstRel;     /* The relative offset to the section starting address.*/
+    uint16_t usSize;        /* The slice size. */
+    union {
+        uint64_t ulIdSlc;   /* The logic id for memorization. */
+        uint64_t ulIdGrp;   /* The group id (after correlation) this slice belonging to.*/
+    };
+    char *szPathFile;       /* The aboslute path of the host file. */
+} SLICE;
 
 
 /* The structure recording the information shared by the members belonged to certain group. */
@@ -52,15 +64,6 @@ typedef struct _MELT_POT_T {
 } MELT_POT;
 
 
-/* The structure recording the entire process context. */
-typedef struct _CONTEXT_T {
-    CONFIG *p_Conf;
-    MELT_POT *p_Pot;
-    PLUGIN_SLICE *plg_Slc;
-    PLUGIN_SIMILARITY *plg_Sim;
-} CONTEXT;
-
-
 /* The structure recording the slice pair with score fitting the threshold. */
 typedef struct _BIND_T {
     uint64_t ulIdSlcSrc;
@@ -70,7 +73,8 @@ typedef struct _BIND_T {
 
 /**
  * The deinitialization function of c-string.
- *
+ * Note: It is the element deletion function of GPtrArray: a_Path, a_Hash.
+ * 
  * @param gp_Str       The pointer to the target string.
  */
 void
@@ -79,6 +83,7 @@ DsDeleteString(gpointer gp_Str);
 
 /**
  * The deinitialization function of BIND structure.
+ * Note: It is the element deletion function of GPtrArray: a_Bind.
  * 
  * @param gp_Bind      The pointer to the target structure.
  */
@@ -88,7 +93,7 @@ DsDeleteBind(gpointer gp_Bind);
 
 /**
  * The deinitialization function of an array of string pointer.
- * Note that it serves as the value deletion function of GTree t_CtnAddr.
+ * Note: It is the value deletion function of GTree: t_CtnAddr.
  * 
  * @param gp_AStr   The pointer to the target array.
  */
@@ -98,7 +103,7 @@ DsDeleteArrayString(gpointer gp_AStr);
 
 /**
  * The deinitialization function of CONTENT_ADDR structure.
- * Note that it serves as the key deletion function of GTree t_CtnAddr.
+ * Note: It is the key deletion function of GTree: t_CtnAddr.
  * 
  * @param gp_CtnAddr   The pointer to the target structure.
  */
@@ -107,9 +112,10 @@ DsDeleteContentAddr(gpointer gp_CtnAddr);
 
 
 /**
- * This deinitialization function of BLOCK_CAND structure.
+ * The deinitialization function of BLOCK_CAND structure.
+ * Note: It is the element deletion function of GPtrArray: a_BlkCand.
  * 
- * @param gp_BlkCand    The pointer to the to be deallocated element.
+ * @param gp_BlkCand    The pointer to the target structure.
  */
 void
 DsDeleteBlkCand(gpointer gp_BlkCand);
@@ -117,6 +123,7 @@ DsDeleteBlkCand(gpointer gp_BlkCand);
 
 /**
  * The deinitialization function of hash key.
+ * Note: It is the key deletion function of GHashTable: h_Grp.
  * 
  * @param gp_Key        The pointer to the target key.
  */
@@ -125,12 +132,23 @@ DsDeleteHashKey(gpointer gp_Key);
 
 
 /**
- * The deinitialization function of GROUP structure.
+ * The deinitialization function of SLICE structure.
+ * Note: It is the element deletion function of GPtrArray: a_Slc.
  * 
- * @param gp_Val        The pointer to the target structure.
+ * @param gp_Slc        The pointer to the target structure.
  */
 void
-DsDeleteGroup(gpointer gp_Val);
+DsDeleteSlice(gpointer gp_Slc);
+
+
+/**
+ * The deinitialization function of GROUP structure.
+ * Note: It is the value deletion function of GHashTable: h_Grp.
+ * 
+ * @param gp_Grp        The pointer to the target structure.
+ */
+void
+DsDeleteGroup(gpointer gp_Grp);
 
 
 /**
@@ -178,9 +196,9 @@ DsNewMeltPot(MELT_POT **pp_Pot, PLUGIN_SLICE *plg_Slc);
 
 
 /**
- * This function sorts the BLOCK_CAND structures with noise byte count.
+ * This function sorts the BLOCK_CAND structures via noise byte count.
  * 
- * @param vp_Src        The pointer to the pointer of source BlockCand structure.
+ * @param vp_Src        The pointer to the pointer of source BLOCK_CAND structure.
  * @param vp_Tge        The pointer to the pointer of target one.
  * 
  * @return comparison order
@@ -190,9 +208,9 @@ DsCompBlockCandNoise(const void *vp_Src, const void *vp_Tge);
 
 
 /**
- * This function sorts the BLOCK_CAND structures with wildcard character count.
+ * This function sorts the BLOCK_CAND structures via wildcard character count.
  * 
- * @param vp_Src        The pointer to the pointer of source BlockCand structure.
+ * @param vp_Src        The pointer to the pointer of source BLOCK_CAND structure.
  * @param vp_Tge        The pointer to the pointer of target one.
  * 
  * @return comparison order
@@ -202,7 +220,7 @@ DsCompBlockCandWildCard(const void *vp_Src, const void *vp_Tge);
 
 
 /**
- * This function sorts the CONTENT_ADDR structures using section id as the
+ * This function sorts the CONTENT_ADDR structures with section id as the
  * first criteria and section offset as the second criteria.
  * 
  * @param vp_Src        The pointer to the pointer of source CONTENT_ADDR structure.
@@ -215,12 +233,12 @@ DsCompContentAddr(const void *vp_Src, const void *vp_Tge);
 
 
 /**
- * This function is specialized to compares the CONTENT_ADDR structures using 
- * section id as the first criteria and section offset as the second criteria.
+ * This function is the same as DsCompContentAddr() but with parameter list
+ * specialiezed for GTree.
  * 
  * @param vp_Src        The pointer to the pointer of source CONTENT_ADDR structure.
  * @param vp_Tge        The pointer to the pointer of target one.
- * @param vp_Data       The dummy pointer to fit the GLIB function prototype.
+ * @param vp_Data       The dummy pointer to fit the GTree function prototype.
  * 
  * @return comparison order
  */
