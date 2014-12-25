@@ -283,7 +283,8 @@ DsInsertContentAddr(GTree *t_CtnAddr, CONTENT_ADDR *p_Addr, char *szPathFile)
         if (!aStr)
             EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
         g_tree_insert(t_CtnAddr, p_Addr, aStr);
-    }
+    } else
+        free(p_Addr);
     g_ptr_array_add(aStr, szPathFile);
 
 EXIT:
