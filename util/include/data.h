@@ -297,7 +297,7 @@ DsInsertContentAddr(GTree *t_CtnAddr, CONTENT_ADDR *p_Addr, char *szPathFile);
  * @param gp_Val        The pointer to the value: pathname array.
  * @param gp_Tge        The pointer to the target GTree structure.
  * 
- * @return working status
+ * @return traversal control flag
  */
 gboolean
 DsTravContentAddrCopy(gpointer gp_Key, gpointer gp_Val, gpointer gp_Tge);

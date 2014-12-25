@@ -25,6 +25,7 @@ set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
 set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
 set(HEADER "${PATH_INC}/format.h")
 set(SRC_SPEW "spew.c")
+set(SRC_DATA "data.c")
 set(SRC_PE "format_pe.c")
 set(TGE_PE "FORMAT_PE")
 set(OUT_PE "fmt_pe")
@@ -61,7 +62,7 @@ endif()
 # List the source building rules.
 include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS})
 
-add_library(${TGE_PE} ${LIB_TYPE} ${SRC_PE} ${SRC_SPEW})
+add_library(${TGE_PE} ${LIB_TYPE} ${SRC_PE} ${SRC_SPEW} ${SRC_DATA})
 target_link_libraries(${TGE_PE} ${GLIB2_LIBRARIES})
 
 set_target_properties( ${TGE_PE} PROPERTIES

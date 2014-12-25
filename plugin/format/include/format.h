@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <glib.h>
+#include "data.h"
 
 
 /* The constants helping for YARA pattern creation. */
@@ -38,6 +39,15 @@ typedef struct _PLUGIN_FORMAT_T {
 #define SYM_FMT_INIT                "FmtInit"
 #define SYM_FMT_DEINIT              "FmtDeinit"
 #define SYM_FMT_PRINT               "FmtPrint"
+
+
+/* The structure helping to generate condition section and comment block. */
+typedef struct _TRAV_T {
+    uint8_t ucIdxBlk;
+    uint8_t ucCntBlk;
+    uint64_t ulIdxAddr;
+    uint64_t ulCntAddr;
+} TRAV;
 
 
 /**
