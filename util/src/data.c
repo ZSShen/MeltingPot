@@ -386,3 +386,13 @@ DsTravContentAddrCopy(gpointer gp_Key, gpointer gp_Val, gpointer gp_Tge)
 EXIT:
     return (cRtnCode == SUCCESS)? false : true;
 }
+
+
+gboolean
+DsTravContentAddrSize(gpointer gp_Key, gpointer gp_Val, gpointer gp_ulSize)
+{
+    uint64_t *p_ulSize = (uint64_t*)gp_ulSize;
+    p_ulSize++;
+
+    return false;
+}

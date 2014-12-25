@@ -303,4 +303,18 @@ gboolean
 DsTravContentAddrCopy(gpointer gp_Key, gpointer gp_Val, gpointer gp_Tge);
 
 
+/**
+ * This callback function will be applied for GTree traversal and will be
+ * used to count the tree size.
+ * 
+ * @param gp_Key        The pointer to the key: CONTENT_ADDR key.
+ * @param gp_Val        The pointer to the value: pathname array.
+ * @param gp_ulSize     The pointer to the to be updated size variable.
+ * 
+ * @return traversal control flag
+ */
+gboolean
+DsTravContentAddrSize(gpointer gp_Key, gpointer gp_Val, gpointer gp_ulSize);
+
+
 #endif
