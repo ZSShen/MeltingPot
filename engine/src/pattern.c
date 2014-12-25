@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include "except.h"
 #include "spew.h"
 #include "data.h"
 #include "cluster.h"

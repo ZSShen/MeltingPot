@@ -32,7 +32,7 @@ typedef struct THREAD_COMPARE_T {
 /**
  * This function sets the context which:
  *     1. Provides the user specified configuration and plugins.
- *     2. Should be updated with the correlation result.
+ *     2. Will be updated with the correlation result.
  *
  * @param p_Ctx     The pointer to the CONTEXT structure.
  * 
@@ -44,7 +44,7 @@ CrlSetContext(CONTEXT *p_Ctx);
 
 /**
  * This function processes the given set of files, each of which:
- *     1. Will be divided into slices.
+ *     1. Will be dissected into slices.
  *     2. Each slice will be hashed into a string for similarity comparison.
  * 
  * @return status code

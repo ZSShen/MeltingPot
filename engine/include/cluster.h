@@ -4,6 +4,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "slice.h"
+#include "similarity.h"
 
 
 /* The messages for debugging. */
@@ -72,8 +74,8 @@ typedef struct _CONFIG_T {
 typedef struct _CONTEXT_T {
     CONFIG *p_Conf;
     MELT_POT *p_Pot;
-    PLUGIN_SLICE *plg_Slc;
-    PLUGIN_SIMILARITY *plg_Sim;
+    PLUGIN_SLICE *plgSlc;
+    PLUGIN_SIMILARITY *plgSim;
 } CONTEXT;
 
 
@@ -81,7 +83,7 @@ typedef struct _CONTEXT_T {
  * This function initializes the clustering engine with the configuration
  * specified by user.
  *
- * @param szPathCfg     The pathname of the task configuration.
+ * @param szPathCfg     The pathname of the configuration file.
  *
  * @return status code
  */

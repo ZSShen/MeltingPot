@@ -19,8 +19,8 @@
 static sem_t synSem;
 static CONFIG *p_Conf;
 static MELT_POT *p_Pot;
-static PLUGIN_SLICE *plg_Slc;
-static PLUGIN_SIMILARITY *plg_Sim;
+static PLUGIN_SLICE *plgSlc;
+static PLUGIN_SIMILARITY *plgSim;
 
 
 /*======================================================================*
@@ -51,8 +51,8 @@ _CrlMapSlice(void *vp_Param);
 
 
 /**
- * This function compares the slices within the designated range and records
- * the slice pair with similarity score fitting the threshold.
+ * This function compares the designated pairs of slices and records
+ * the pairs with similarity score fitting the threshold.
  * 
  * @param vp_Param      The THREAD_COMPARE type parameter.
  * 
@@ -179,8 +179,8 @@ CrlSetContext(CONTEXT *p_Ctx)
 {
     p_Conf = p_Ctx->p_Conf;
     p_Pot = p_Ctx->p_Pot;
-    plg_Slc = p_Ctx->plg_Slc;
-    plg_Sim = p_Ctx->plg_Sim;
+    plgSlc = p_Ctx->plgSlc;
+    plgSim = p_Ctx->plgSim;
 
     return SUCCESS;
 }
@@ -332,9 +332,9 @@ _CrlMapSlice(void *vp_Param)
     THREAD_SLICE *p_Param = (THREAD_SLICE*)vp_Param;
 
     /* Extract the file slices. */
-    int8_t cStat = plg_Slc->GetFileSlice(p_Param->szPath, p_Conf->usSizeSlc, 
+    int8_t cStat = plgSlc->GetFileSlice(p_Param->szPath, p_Conf->usSizeSlc, 
                                          &(p_Param->a_Slc));
-    if (cStat != SLC_SUCCESS)
+    if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     /* Generate the hashes for all file slices. */
@@ -360,8 +360,8 @@ _CrlMapSlice(void *vp_Param)
             EXIT1(FAIL_FILE_IO, FREEBIN, "Error: %s.", strerror(errno));
 
         char *szHash;
-        cStat = plg_Sim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
-        if (cStat != SLC_SUCCESS)
+        cStat = plgSim->GetHash(szBin, p_Slc->usSize, &szHash, NULL);
+        if (cStat != SUCCESS)
             EXITQ(cStat, EXIT);
         g_ptr_array_add(p_Param->a_Hash, (gpointer)szHash);
     }
@@ -417,9 +417,9 @@ _CrlMapCompare(void *vp_Param)
         uint32_t uiLenSrc = strlen(szSrc);
         uint32_t uiLenTge = strlen(szTge);
         uint8_t ucSim;
-        int8_t cStat = plg_Sim->CompareHashPair(szSrc, uiLenSrc,
+        int8_t cStat = plgSim->CompareHashPair(szSrc, uiLenSrc,
                                                 szTge, uiLenTge, &ucSim);
-        if (cStat != SIM_SUCCESS)
+        if (cStat != SUCCESS)
             EXITQ(cStat, EXIT);
 
         if (ucSim >= p_Conf->ucScoreSim) {

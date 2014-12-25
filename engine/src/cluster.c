@@ -39,25 +39,25 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath);
 /**
  * The initialization function of the file slicing plugin.
  * 
- * @param p_plg_Slc     The pointer to the plugin handle.
+ * @param p_plgSlc     The pointer to the plugin handle.
  * @param szPath        The pathname of the plugin.
  * 
  * @return status code
  */
 int8_t
-_ClsInitPluginSlice(PLUGIN_SLICE **p_plg_Slc, char *szPath);
+_ClsInitPluginSlice(PLUGIN_SLICE **p_plgSlc, char *szPath);
 
 
 /**
  * The initialization function of the similarity computation plugin.
  * 
- * @param p_plg_Sim     The pointer to the plugin handle.
+ * @param p_plgSim     The pointer to the plugin handle.
  * @param szPath        The pathname of the plugin.
  * 
  * @return status code
  */
 int8_t
-_ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plg_Sim, char *szPath);
+_ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plgSim, char *szPath);
 
 
 /**
@@ -72,19 +72,19 @@ _ClsDeinitConfig(CONFIG *p_Conf);
 /**
  * The deinitialization function of the file slicing plugin.
  * 
- * @param plg_Slc       The plugin handle.
+ * @param plgSlc       The plugin handle.
  */
 void
-_ClsDeinitPluginSlice(PLUGIN_SLICE *plg_Slc);
+_ClsDeinitPluginSlice(PLUGIN_SLICE *plgSlc);
 
 
 /**
  * The deinitialization function of the similarity computation plugin.
  * 
- * @param plg_Sim       The plugin handle.
+ * @param plgSim       The plugin handle.
  */
 void
-_ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim);
+_ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plgSim);
 
 
 /**
@@ -113,8 +113,8 @@ ClsInit(char *szPathCfg)
 
     p_Ctx->p_Conf = NULL;
     p_Ctx->p_Pot = NULL;
-    p_Ctx->plg_Slc = NULL;
-    p_Ctx->plg_Sim = NULL;
+    p_Ctx->plgSlc = NULL;
+    p_Ctx->plgSim = NULL;
 
     /* Resolve the user specified configuration. */
     int8_t cStat = _ClsInitConfig(&(p_Ctx->p_Conf), szPathCfg);
@@ -128,16 +128,16 @@ ClsInit(char *szPathCfg)
 
     /* Load the file slicing and similarity computation plugins. */
     CONFIG *p_Conf = p_Ctx->p_Conf;
-    cStat = _ClsInitPluginSlice(&(p_Ctx->plg_Slc), p_Conf->szPathPluginSlc);
+    cStat = _ClsInitPluginSlice(&(p_Ctx->plgSlc), p_Conf->szPathPluginSlc);
     if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
-    cStat = _ClsInitPluginSimilarity(&(p_Ctx->plg_Sim), p_Conf->szPathPluginSim);
+    cStat = _ClsInitPluginSimilarity(&(p_Ctx->plgSim), p_Conf->szPathPluginSim);
     if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     /* Allocate the MELT_POT structure to record the clustering progress. */
-    cStat = DsNewMeltPot(&(p_Ctx->p_Pot), p_Ctx->plg_Slc);
+    cStat = DsNewMeltPot(&(p_Ctx->p_Pot));
 
 EXIT:
     return cRtnCode;    
@@ -152,8 +152,8 @@ ClsDeinit()
 
     DsDeleteMeltPot(p_Ctx->p_Pot);
     _ClsDeinitConfig(p_Ctx->p_Conf);
-    _ClsDeinitPluginSlice(p_Ctx->plg_Slc);
-    _ClsDeinitPluginSimilarity(p_Ctx->plg_Sim);
+    _ClsDeinitPluginSlice(p_Ctx->plgSlc);
+    _ClsDeinitPluginSimilarity(p_Ctx->plgSim);
 
     free(p_Ctx);
     return SUCCESS;
@@ -324,37 +324,33 @@ EXIT:
 
 
 int8_t
-_ClsInitPluginSlice(PLUGIN_SLICE **p_plg_Slc, char *szPath)
+_ClsInitPluginSlice(PLUGIN_SLICE **p_plgSlc, char *szPath)
 {
     int8_t cRtnCode = SUCCESS;
 
-    *p_plg_Slc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
-    if (!(*p_plg_Slc))
+    *p_plgSlc = (PLUGIN_SLICE*)malloc(sizeof(PLUGIN_SLICE));
+    if (!(*p_plgSlc))
         EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
-    PLUGIN_SLICE *plg_Slc = *p_plg_Slc;
-    plg_Slc->hdle_Lib = dlopen(szPath, RTLD_LAZY);
-    if (!plg_Slc->hdle_Lib)
+    PLUGIN_SLICE *plgSlc = *p_plgSlc;
+    plgSlc->hdle_Lib = dlopen(szPath, RTLD_LAZY);
+    if (!plgSlc->hdle_Lib)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Slc->Init = dlsym(plg_Slc->hdle_Lib, SYM_SLC_INIT);
-    if (!plg_Slc->Init)
+    plgSlc->Init = dlsym(plgSlc->hdle_Lib, SYM_SLC_INIT);
+    if (!plgSlc->Init)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Slc->Deinit = dlsym(plg_Slc->hdle_Lib, SYM_SLC_DEINIT);
-    if (!plg_Slc->Deinit)
+    plgSlc->Deinit = dlsym(plgSlc->hdle_Lib, SYM_SLC_DEINIT);
+    if (!plgSlc->Deinit)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Slc->GetFileSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_GET_FILE_SLICE);
-    if (!plg_Slc->GetFileSlice)
+    plgSlc->GetFileSlice = dlsym(plgSlc->hdle_Lib, SYM_SLC_GET_FILE_SLICE);
+    if (!plgSlc->GetFileSlice)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Slc->DeleteSlice = dlsym(plg_Slc->hdle_Lib, SYM_SLC_FREE_SLICE_ARRAY);
-    if (!plg_Slc->DeleteSlice)
-        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
-
-    int8_t cStat = plg_Slc->Init();
-    if (cStat != SLC_SUCCESS)
+    int8_t cStat = plgSlc->Init();
+    if (cStat != SUCCESS)
         EXITQ(FAIL_PLUGIN_INTERACT, EXIT);
 
 EXIT:
@@ -363,37 +359,37 @@ EXIT:
 
 
 int8_t
-_ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plg_Sim, char *szPath)
+_ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plgSim, char *szPath)
 {
     int8_t cRtnCode = SUCCESS;
 
-    *p_plg_Sim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
-    if (!(*p_plg_Sim))
+    *p_plgSim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
+    if (!(*p_plgSim))
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
 
-    PLUGIN_SIMILARITY *plg_Sim = *p_plg_Sim;
-    plg_Sim->hdle_Lib = dlopen(szPath, RTLD_LAZY);
-    if (!plg_Sim->hdle_Lib)
+    PLUGIN_SIMILARITY *plgSim = *p_plgSim;
+    plgSim->hdle_Lib = dlopen(szPath, RTLD_LAZY);
+    if (!plgSim->hdle_Lib)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Sim->Init = dlsym(plg_Sim->hdle_Lib, SYM_SIM_INIT);
-    if (!plg_Sim->Init)
+    plgSim->Init = dlsym(plgSim->hdle_Lib, SYM_SIM_INIT);
+    if (!plgSim->Init)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Sim->Deinit = dlsym(plg_Sim->hdle_Lib, SYM_SIM_DEINIT);
-    if (!plg_Sim->Deinit)
+    plgSim->Deinit = dlsym(plgSim->hdle_Lib, SYM_SIM_DEINIT);
+    if (!plgSim->Deinit)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Sim->GetHash = dlsym(plg_Sim->hdle_Lib, SYM_SIM_GET_HASH);
-    if (!plg_Sim->GetHash)
+    plgSim->GetHash = dlsym(plgSim->hdle_Lib, SYM_SIM_GET_HASH);
+    if (!plgSim->GetHash)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    plg_Sim->CompareHashPair = dlsym(plg_Sim->hdle_Lib, SYM_SIM_COMPARE_HASH_PAIR);
-    if (!plg_Sim->CompareHashPair)
+    plgSim->CompareHashPair = dlsym(plgSim->hdle_Lib, SYM_SIM_COMPARE_HASH_PAIR);
+    if (!plgSim->CompareHashPair)
         EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
 
-    int8_t cStat = plg_Sim->Init();
-    if (cStat != SIM_SUCCESS)
+    int8_t cStat = plgSim->Init();
+    if (cStat != SUCCESS)
         EXITQ(FAIL_PLUGIN_INTERACT, EXIT);
 
 EXIT:
@@ -413,14 +409,14 @@ _ClsDeinitConfig(CONFIG *p_Conf)
 
 
 void
-_ClsDeinitPluginSlice(PLUGIN_SLICE *plg_Slc)
+_ClsDeinitPluginSlice(PLUGIN_SLICE *plgSlc)
 {
-    if (plg_Slc) {
-        if (plg_Slc->hdle_Lib) {
-            plg_Slc->Deinit();
-            dlclose(plg_Slc->hdle_Lib);
+    if (plgSlc) {
+        if (plgSlc->hdle_Lib) {
+            plgSlc->Deinit();
+            dlclose(plgSlc->hdle_Lib);
         }
-        free(plg_Slc);
+        free(plgSlc);
     }
 
     return;
@@ -428,14 +424,14 @@ _ClsDeinitPluginSlice(PLUGIN_SLICE *plg_Slc)
 
 
 void
-_ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plg_Sim)
+_ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plgSim)
 {
-    if (plg_Sim) {
-        if (plg_Sim->hdle_Lib) {
-            plg_Sim->Deinit();
-            dlclose(plg_Sim->hdle_Lib);
+    if (plgSim) {
+        if (plgSim->hdle_Lib) {
+            plgSim->Deinit();
+            dlclose(plgSim->hdle_Lib);
         }
-        free(plg_Sim);
+        free(plgSim);
     }
 
     return;
