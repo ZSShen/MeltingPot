@@ -70,6 +70,16 @@ typedef struct _BIND_T {
 } BIND;
 
 
+/* This structure recording the section texts which fits the YARA format. */
+typedef struct _PATTERN_TEXT_T {
+    uint8_t ucIdStr;
+    GString *gszSecStr;
+    GString *gszSecCond;
+    GString *gszComt;
+    GString *gszFullPtn;
+} PATTERN_TEXT;
+
+
 /**
  * The deinitialization function of c-string.
  * Note: It is the element deletion function of GPtrArray: a_Path, a_Hash.
@@ -160,6 +170,16 @@ DsDeleteMeltPot(gpointer gp_Pot);
 
 
 /**
+ * The deinitialization function of PATTERN_TEXT structure.
+ * 
+ * @param p_Text        The pointer to the target structure.
+ * 
+ */
+void
+DsDeletePatternText(PATTERN_TEXT *p_Text);
+
+
+/**
  * The initialization function of BLOCK_CAND structure.
  * 
  * @param pp_BlkCand    The pointer to the pointer of target structure.
@@ -191,6 +211,17 @@ DsNewGroup(GROUP **pp_Grp);
  */
 int8_t
 DsNewMeltPot(MELT_POT **pp_Pot);
+
+
+/**
+ * The initialization function of PATTERN_TEXT structure.
+ *
+ * @param pp_Text       The pointer to the pointer of target structure.
+ *
+ * @return status code
+ */
+int8_t
+DsNewPatternText(PATTERN_TEXT **pp_Text);
 
 
 /**

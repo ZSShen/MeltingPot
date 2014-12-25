@@ -7,86 +7,97 @@
 #include "format_pe.h"
 
 
+/*======================================================================*
+ *                 Declaration for Internal Functions                   *
+ *======================================================================*/
+/**
+ * This function appends the normalized byte array to the string section.
+ *
+ * @param p_Text    The pointer to the to be updated PATTERN_TEXT.
+ * @param a_usCtn   The normalized byte array.
+ * @param ucSize    The array size
+ * 
+ * @return status code
+ */
+int8_t
+FmtAppendSecStr(PATTERN_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize);
+
+
+/**
+ * This function appends the string matching rule to the condition section.
+ * Note that this function should be called after FmtAppendSecStr().
+ * 
+ * @param p_Text    The pointer to the to be updated PATTERN_TEXT.
+ * @param iIdSec    The section id of the host file.
+ * @param ulOfstRel The relative offset to the section starting address.
+ * @param flagConj  The flags to guide the concatenation of "OR" conjunctor
+ * 
+ * @return status code
+ */
+int8_t
+FmtAppendSecCond(PATTERN_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
+                 HINT_CONJUNCT flagConj);
+
+
+/**
+ * This function comments the details of candidate composition.
+ * Note that this function should be called after FmtAppendSecStr().
+ * 
+ * @param p_Text    The pointer to the to be updated PATTERN_TEXT.
+ * @param iIdSec    The section id of the host file.
+ * @param ulOfstRel The relative offset to the section starting address.
+ * @param a_Str     The array of pathnames.
+ *
+ * @return status code
+ */
+int8_t
+FmtAppendComment(PATTERN_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
+                 GPtrArray *a_Str);
+
+
+/**
+ * This function produces the full text and outputs it to the designated path.
+ *
+ * @param p_Text    The pointer to the to be finalized PATTERN_TEXT.
+ * @param szPathOut The output pathname.
+ *
+ * @return status code
+ */
+int8_t
+FmtFinalize(PATTERN_TEXT *p_Text, char *szPathOut);
+
+
+/*======================================================================*
+ *                Implementation for Exported Functions                 *
+ *======================================================================*/
 int8_t
 FmtInit()
 {
-    return FMT_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
 FmtDeinit()
 {
-    return FMT_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
-FmtAllocText(FORMAT_TEXT **pp_Text)
+FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp)
 {
-    int cRtnCode = FMT_SUCCESS;
+    int8_t cRtnCode = SUCCESS;
 
-    *pp_Text = (FORMAT_TEXT*)malloc(sizeof(FORMAT_TEXT));
-    if (!(*pp_Text))
-        EXIT1(FMT_FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-
-    FORMAT_TEXT *p_Text = *pp_Text;
-    p_Text->gszSecStr = NULL;
-    p_Text->gszSecCond = NULL;
-    p_Text->gszComt = NULL;
-    p_Text->gszFullPtn = NULL;
-
-    p_Text->gszSecStr = g_string_new(NULL);
-    if (!p_Text->gszSecStr)
-        EXIT1(FMT_FAIL_MEM_ALLOC, FREETEXT, "Error: %s.", strerror(errno));
-    p_Text->gszSecCond = g_string_new(NULL);
-    if (!p_Text->gszSecCond)
-        EXIT1(FMT_FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
-    p_Text->gszComt = g_string_new(NULL);
-    if (!p_Text->gszComt)
-        EXIT1(FMT_FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));   
-    p_Text->gszFullPtn = g_string_new(NULL);
-    if (!p_Text->gszFullPtn)
-        EXIT1(FMT_FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
-
-    p_Text->ucIdStr = 0;
-    goto EXIT;
-
-FREEGSTR:
-    if (p_Text->gszComt)
-        g_string_free(p_Text->gszComt, true);
-    if (p_Text->gszSecCond)
-        g_string_free(p_Text->gszSecCond, true);
-    if (p_Text->gszSecStr)
-        g_string_free(p_Text->gszSecStr, true);
-FREETEXT:
-    if (*pp_Text)
-        free(*pp_Text);
-EXIT:
     return cRtnCode;
 }
 
 
+/*======================================================================*
+ *                Implementation for Internal Functions                 *
+ *======================================================================*/
 int8_t
-FmtDeallocText(FORMAT_TEXT *p_Text)
-{
-    if (p_Text->gszSecStr)
-        g_string_free(p_Text->gszSecStr, true);
-    if (p_Text->gszSecCond)
-        g_string_free(p_Text->gszSecCond, true);
-    if (p_Text->gszComt)
-        g_string_free(p_Text->gszComt, true);
-    if (p_Text->gszFullPtn)
-        g_string_free(p_Text->gszFullPtn, true);    
-    if (p_Text)
-        free(p_Text);
-
-    return FMT_SUCCESS;
-}
-
-
-int8_t
-FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
+FmtAppendSecStr(PATTERN_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
 {
     GString *gszSecStr = p_Text->gszSecStr;
 
@@ -117,12 +128,12 @@ FmtAppendSecStr(FORMAT_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
     g_string_append(gszSecStr, "}\n\n");
     p_Text->ucIdStr++;
 
-    return FMT_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
-FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
+FmtAppendSecCond(PATTERN_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
                  HINT_CONJUNCT flagConj)
 {
     GString *gszSecCond = p_Text->gszSecCond;
@@ -142,16 +153,16 @@ FmtAppendSecCond(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
         g_string_append_printf(gszSecCond, "%s%s%s\n", SPACE_SUBS_TAB,
                                SPACE_SUBS_TAB, CONJUNCTOR_OR);
 
-    return FMT_SUCCESS;
+    return SUCCESS;
 }
 
 
 int8_t
-FmtAppendComment(FORMAT_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
+FmtAppendComment(PATTERN_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
                  GPtrArray *a_Str)
 {
     GString *gszComt = p_Text->gszComt;
     uint8_t ucIdStr = p_Text->ucIdStr - 1;
 
-    return FMT_SUCCESS;
+    return SUCCESS;
 }

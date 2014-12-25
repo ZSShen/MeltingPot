@@ -117,6 +117,24 @@ DsDeleteMeltPot(gpointer gp_Pot)
 }
 
 
+void
+DsDeletePatternText(PATTERN_TEXT *p_Text)
+{
+    if (p_Text->gszSecStr)
+        g_string_free(p_Text->gszSecStr, true);
+    if (p_Text->gszSecCond)
+        g_string_free(p_Text->gszSecCond, true);
+    if (p_Text->gszComt)
+        g_string_free(p_Text->gszComt, true);
+    if (p_Text->gszFullPtn)
+        g_string_free(p_Text->gszFullPtn, true);    
+    if (p_Text)
+        free(p_Text);
+
+    return;
+}
+
+
 int8_t
 DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
 {
@@ -227,6 +245,52 @@ FREEPOT:
         free(*pp_Pot);
 EXIT:
     return cRtnCode;    
+}
+
+
+int8_t
+DsNewPatternText(PATTERN_TEXT **pp_Text)
+{
+    int8_t cRtnCode = SUCCESS;
+
+    *pp_Text = (PATTERN_TEXT*)malloc(sizeof(PATTERN_TEXT));
+    if (!(*pp_Text))
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    PATTERN_TEXT *p_Text = *pp_Text;
+    p_Text->gszSecStr = NULL;
+    p_Text->gszSecCond = NULL;
+    p_Text->gszComt = NULL;
+    p_Text->gszFullPtn = NULL;
+
+    p_Text->gszSecStr = g_string_new(NULL);
+    if (!p_Text->gszSecStr)
+        EXIT1(FAIL_MEM_ALLOC, FREETEXT, "Error: %s.", strerror(errno));
+    p_Text->gszSecCond = g_string_new(NULL);
+    if (!p_Text->gszSecCond)
+        EXIT1(FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
+    p_Text->gszComt = g_string_new(NULL);
+    if (!p_Text->gszComt)
+        EXIT1(FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));   
+    p_Text->gszFullPtn = g_string_new(NULL);
+    if (!p_Text->gszFullPtn)
+        EXIT1(FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
+
+    p_Text->ucIdStr = 0;
+    goto EXIT;
+
+FREEGSTR:
+    if (p_Text->gszComt)
+        g_string_free(p_Text->gszComt, true);
+    if (p_Text->gszSecCond)
+        g_string_free(p_Text->gszSecCond, true);
+    if (p_Text->gszSecStr)
+        g_string_free(p_Text->gszSecStr, true);
+FREETEXT:
+    if (*pp_Text)
+        free(*pp_Text);
+EXIT:
+    return cRtnCode;
 }
 
 
