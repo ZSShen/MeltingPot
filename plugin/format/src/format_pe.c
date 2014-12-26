@@ -47,7 +47,7 @@ _FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav);
  * @return traversal control flag
  */
 gboolean
-_FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav);
+_FmtAppendComment(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav);
 
 
 /**
@@ -98,7 +98,7 @@ _FmtAppendSecStr(PATTERN_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
 
     uint64_t ulLenBefore = gszSecStr->len;
     g_string_append_printf(gszSecStr, "%s%s$%s_%d = { ", SPACE_SUBS_TAB,
-                           SPACE_SUBS_TAB, PREFIX_HEX_STRING, p_Text->ucIdStr);
+    SPACE_SUBS_TAB, PREFIX_HEX_STRING, p_Text->ucIdxStr);
     uint64_t ulLenAfter = gszSecStr->len;
 
     /* Prepare the indentation. */
@@ -125,45 +125,28 @@ _FmtAppendSecStr(PATTERN_TEXT *p_Text, uint16_t *a_usCtn, uint8_t ucSize)
 }
 
 
-/*
-int8_t
-_FmtAppendSecCond(PATTERN_TEXT *p_Text, GTree *t_CtnAddr)
+gboolean
+_FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav)
 {
-    
-}
-
-
-int8_t
-_FmtAppendSecCond(PATTERN_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel,
-                 HINT_CONJUNCT flagConj)
-{
+    PATTERN_TEXT *p_Text = p_Trav->p_Text;
     GString *gszSecCond = p_Text->gszSecCond;
-    uint8_t ucIdStr = p_Text->ucIdStr - 1;
+    CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)gp_Key;
+    uint8_t ucIdxStr = p_Text->ucIdxStr;
+    int32_t iIdSec = p_Addr->iIdSec;
+    uint64_t ulOfstRel = p_Addr->ulOfstRel;
 
     g_string_append_printf(gszSecCond, "%s%s$%s_%d at %s.%s[%d].%s + 0x%lx",
-                           SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING,
-                           ucIdStr, IMPORT_MODULE_PE, TAG_SECTION,
-                           iIdSec, TAG_RAW_DATA_OFFSET, ulOfstRel);
+    SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxStr, IMPORT_MODULE_PE,
+    TAG_SECTION, iIdSec, TAG_RAW_DATA_OFFSET, ulOfstRel);
 
-    if (flagConj.bOrBlk)
+    if ((p_Trav->ulIdxCond != p_Trav->ulCntCond) && (p_Trav->ulIdxCond != 1))
         g_string_append_printf(gszSecCond, " %s\n", CONJUNCTOR_OR);
     else
         g_string_append(gszSecCond, "\n");
 
-    if (flagConj.bOrSec)
+    if (p_Trav->ucIdxBlk != p_Trav->ucCntBlk)
         g_string_append_printf(gszSecCond, "%s%s%s\n", SPACE_SUBS_TAB,
-                               SPACE_SUBS_TAB, CONJUNCTOR_OR);
+        SPACE_SUBS_TAB, CONJUNCTOR_OR);
 
-    return SUCCESS;
+    return false;
 }
-
-
-int8_t
-_FmtAppendComment(PATTERN_TEXT *p_Text, int32_t iIdSec, uint64_t ulOfstRel, 
-                 GPtrArray *a_Str)
-{
-    GString *gszComt = p_Text->gszComt;
-
-    return SUCCESS;
-}
-*/

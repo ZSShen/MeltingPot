@@ -276,7 +276,7 @@ DsNewPatternText(PATTERN_TEXT **pp_Text)
     if (!p_Text->gszFullPtn)
         EXIT1(FAIL_MEM_ALLOC, FREEGSTR, "Error: %s.", strerror(errno));
 
-    p_Text->ucIdStr = 0;
+    p_Text->ucIdxStr = 0;
     goto EXIT;
 
 FREEGSTR:

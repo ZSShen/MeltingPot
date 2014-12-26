@@ -45,8 +45,9 @@ typedef struct _PLUGIN_FORMAT_T {
 typedef struct _TRAV_T {
     uint8_t ucIdxBlk;
     uint8_t ucCntBlk;
-    uint64_t ulIdxAddr;
-    uint64_t ulCntAddr;
+    uint64_t ulIdxCond;
+    uint64_t ulCntCond;
+    PATTERN_TEXT *p_Text;
 } TRAV;
 
 
