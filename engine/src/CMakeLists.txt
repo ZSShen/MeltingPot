@@ -27,6 +27,7 @@ set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
 set(PATH_BIN "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_BIN}")
 set(PATH_INC_SLICE "${PROJECT_SOURCE_DIR}/../plugin/slice/${NAME_INC}")
 set(PATH_INC_SIMILARITY "${PROJECT_SOURCE_DIR}/../plugin/similarity/${NAME_INC}")
+set(PATH_INC_FORMAT "${PROJECT_SOURCE_DIR}/../plugin/format/${NAME_INC}")
 set(HEADER "${PATH_INC}/cluster.h")
 set(SRC_CLUSTER "cluster.c")
 set(SRC_CORRELATE "correlate.c")
@@ -61,7 +62,8 @@ endif()
 
 
 # List the source building rules.
-include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS} ${PATH_INC_SLICE} ${PATH_INC_SIMILARITY})
+include_directories(${PATH_INC} ${GLIB2_INCLUDE_DIRS} ${PATH_INC_SLICE} 
+                    ${PATH_INC_SIMILARITY} ${PATH_INC_FORMAT})
 
 add_executable( ${TGE_CLUSTER}
     ${SRC_CLUSTER} ${SRC_CORRELATE} ${SRC_PATTERN} ${SRC_SPEW} ${SRC_DATA}

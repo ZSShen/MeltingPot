@@ -39,7 +39,7 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath);
 /**
  * The initialization function of the file slicing plugin.
  * 
- * @param p_plgSlc     The pointer to the plugin handle.
+ * @param p_plgSlc      The pointer to the plugin handle.
  * @param szPath        The pathname of the plugin.
  * 
  * @return status code
@@ -51,13 +51,25 @@ _ClsInitPluginSlice(PLUGIN_SLICE **p_plgSlc, char *szPath);
 /**
  * The initialization function of the similarity computation plugin.
  * 
- * @param p_plgSim     The pointer to the plugin handle.
+ * @param p_plgSim      The pointer to the plugin handle.
  * @param szPath        The pathname of the plugin.
  * 
  * @return status code
  */
 int8_t
 _ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plgSim, char *szPath);
+
+
+/**
+ * The initialization function of the pattern formatter plugin.
+ * 
+ * @param p_plgFmt      The pointer to the plugin handle.
+ * @param szPath        The pathname of the plugin.
+ * 
+ * @return status code
+ */
+int8_t
+_ClsInitPluginFormat(PLUGIN_FORMAT **p_plgFmt, char *szPath);
 
 
 /**
@@ -88,6 +100,15 @@ _ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plgSim);
 
 
 /**
+ * The deinitialization function of the pattern formatter plugin.
+ * 
+ * @param plgFmt       The plugin handle. 
+ */
+void
+_ClsDeinitPluginFormat(PLUGIN_FORMAT *plgFmt);
+
+
+/**
  * This function ensures that the input and output folder is ready. Note
  * the clustering process won't be started if the testing fails.
  * 
@@ -115,6 +136,7 @@ ClsInit(char *szPathCfg)
     p_Ctx->p_Pot = NULL;
     p_Ctx->plgSlc = NULL;
     p_Ctx->plgSim = NULL;
+    p_Ctx->plgFmt = NULL;
 
     /* Resolve the user specified configuration. */
     int8_t cStat = _ClsInitConfig(&(p_Ctx->p_Conf), szPathCfg);
@@ -351,7 +373,7 @@ _ClsInitPluginSlice(PLUGIN_SLICE **p_plgSlc, char *szPath)
 
     int8_t cStat = plgSlc->Init();
     if (cStat != SUCCESS)
-        EXITQ(FAIL_PLUGIN_INTERACT, EXIT);
+        EXITQ(cStat, EXIT);
 
 EXIT:
     return cRtnCode;
@@ -365,7 +387,7 @@ _ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plgSim, char *szPath)
 
     *p_plgSim = (PLUGIN_SIMILARITY*)malloc(sizeof(PLUGIN_SIMILARITY));
     if (!(*p_plgSim))
-        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", strerror(errno));
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     PLUGIN_SIMILARITY *plgSim = *p_plgSim;
     plgSim->hdle_Lib = dlopen(szPath, RTLD_LAZY);
@@ -390,7 +412,42 @@ _ClsInitPluginSimilarity(PLUGIN_SIMILARITY **p_plgSim, char *szPath)
 
     int8_t cStat = plgSim->Init();
     if (cStat != SUCCESS)
-        EXITQ(FAIL_PLUGIN_INTERACT, EXIT);
+        EXITQ(cStat, EXIT);
+
+EXIT:
+    return cRtnCode;
+}
+
+
+int8_t
+_ClsInitPluginFormat(PLUGIN_FORMAT **p_plgFmt, char *szPath)
+{
+    int8_t cRtnCode = SUCCESS;
+
+    *p_plgFmt = (PLUGIN_FORMAT*)malloc(sizeof(PLUGIN_FORMAT));
+    if (!(*p_plgFmt))
+        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
+
+    PLUGIN_FORMAT *plgFmt = *p_plgFmt;
+    plgFmt->hdle_Lib = dlopen(szPath, RTLD_LAZY);
+    if (!plgFmt->hdle_Lib)
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+
+    plgFmt->Init = dlsym(plgFmt->hdle_Lib, SYM_FMT_INIT);
+    if (!plgFmt->Init)
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+
+    plgFmt->Deinit = dlsym(plgFmt->hdle_Lib, SYM_FMT_DEINIT);
+    if (!plgFmt->Deinit)
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+
+    plgFmt->Print = dlsym(plgFmt->hdle_Lib, SYM_FMT_PRINT);
+    if (!plgFmt->Print)
+        EXIT1(FAIL_PLUGIN_RESOLVE, EXIT, "Error: %s.", dlerror());
+
+    int8_t cStat = plgFmt->Init();
+    if (cStat != SUCCESS)
+        EXITQ(cStat, EXIT);
 
 EXIT:
     return cRtnCode;
@@ -432,6 +489,21 @@ _ClsDeinitPluginSimilarity(PLUGIN_SIMILARITY *plgSim)
             dlclose(plgSim->hdle_Lib);
         }
         free(plgSim);
+    }
+
+    return;
+}
+
+
+void
+_ClsDeinitPluginFormat(PLUGIN_FORMAT *plgFmt)
+{
+    if (plgFmt) {
+        if (plgFmt->hdle_Lib) {
+            plgFmt->Deinit();
+            dlclose(plgFmt->hdle_Lib);
+        }
+        free(plgFmt);
     }
 
     return;

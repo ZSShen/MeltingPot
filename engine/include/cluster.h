@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include "slice.h"
 #include "similarity.h"
+#include "format.h"
 
 
 /* The messages for debugging. */
@@ -76,6 +77,7 @@ typedef struct _CONTEXT_T {
     MELT_POT *p_Pot;
     PLUGIN_SLICE *plgSlc;
     PLUGIN_SIMILARITY *plgSim;
+    PLUGIN_FORMAT *plgFmt;
 } CONTEXT;
 
 
