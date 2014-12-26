@@ -72,7 +72,6 @@ typedef struct _BIND_T {
 
 /* This structure recording the section texts which fits the YARA format. */
 typedef struct _PATTERN_TEXT_T {
-    uint8_t ucIdxStr;
     GString *gszSecStr;
     GString *gszSecCond;
     GString *gszComt;
