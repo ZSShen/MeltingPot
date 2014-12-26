@@ -104,10 +104,10 @@ DsDeleteBind(gpointer gp_Bind);
  * The deinitialization function of an array of string pointer.
  * Note: It is the value deletion function of GTree: t_CtnAddr.
  * 
- * @param gp_AStr   The pointer to the target array.
+ * @param gp_APath   The pointer to the target array.
  */
 void
-DsDeleteArrayString(gpointer gp_AStr);
+DsDeleteArrayPath(gpointer gp_APath);
 
 
 /**

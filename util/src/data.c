@@ -32,11 +32,11 @@ DsDeleteBind(gpointer gp_Bind)
 
 
 void
-DsDeleteArrayString(gpointer gp_AStr)
+DsDeleteArrayPath(gpointer gp_APath)
 {
-    if (gp_AStr) {
-        GPtrArray *aStr = (GPtrArray*)gp_AStr;
-        g_ptr_array_free(aStr, true);
+    if (gp_APath) {
+        GPtrArray *a_Path = (GPtrArray*)gp_APath;
+        g_ptr_array_free(a_Path, true);
     }
 
     return;
@@ -150,7 +150,7 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
         EXIT1(FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
     p_BlkCand->t_CtnAddr = g_tree_new_full(DsCompContentAddrPlus, NULL, 
-                                           DsDeleteContentAddr, DsDeleteArrayString);
+                                           DsDeleteContentAddr, DsDeleteArrayPath);
     if (!p_BlkCand->t_CtnAddr)
         EXIT1(FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
@@ -341,15 +341,15 @@ DsInsertContentAddr(GTree *t_CtnAddr, CONTENT_ADDR *p_Addr, char *szPathFile)
 {
     int8_t cRtnCode = SUCCESS;
 
-    GPtrArray *aStr = g_tree_lookup(t_CtnAddr, p_Addr);
-    if (!aStr) {
-        aStr = g_ptr_array_new();
-        if (!aStr)
+    GPtrArray *a_Path = g_tree_lookup(t_CtnAddr, p_Addr);
+    if (!a_Path) {
+        a_Path = g_ptr_array_new();
+        if (!a_Path)
             EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-        g_tree_insert(t_CtnAddr, p_Addr, aStr);
+        g_tree_insert(t_CtnAddr, p_Addr, a_Path);
     } else
         free(p_Addr);
-    g_ptr_array_add(aStr, szPathFile);
+    g_ptr_array_add(a_Path, szPathFile);
 
 EXIT:
     return cRtnCode;

@@ -19,6 +19,8 @@
 #define PREFIX_HEX_STRING       "SEQ"   /* The prefix for hex string name. */
 #define CONJUNCTOR_OR           "or"    /* The logic "OR" conjunctor. */
 #define SPACE_SUBS_TAB          "    "  /* The spaces substituting a tab. */
+#define COMMENT_CONTRIBUTE      "Contributed By"
+#define COMMENT_RELATIVE_OFFSET "Relative Offset"
 
 
 /* The exported interface to interact with this plugin. */
@@ -43,6 +45,7 @@ typedef struct _PLUGIN_FORMAT_T {
 
 /* The structure helping to generate condition section and comment block. */
 typedef struct _TRAV_T {
+    bool bDeclare;
     uint8_t ucIdxBlk;
     uint8_t ucCntBlk;
     uint64_t ulIdxCond;

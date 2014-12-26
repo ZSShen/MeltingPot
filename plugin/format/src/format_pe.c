@@ -150,3 +150,38 @@ _FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav)
 
     return false;
 }
+
+
+gboolean
+_FmtAppendComment(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav)
+{
+    PATTERN_TEXT *p_Text = p_Trav->p_Text;
+    GString *gszComt = p_Text->gszComt;
+    CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)gp_Key;
+    GPtrArray *a_Path = (GPtrArray*)gp_Val;
+    uint8_t ucIdxStr = p_Text->ucIdxStr;
+    int32_t iIdSec = p_Addr->iIdSec;
+    uint64_t ulOfstRel = p_Addr->ulOfstRel;
+
+    if (!p_Trav->bDeclare) {
+        g_string_append_printf(gszComt, "$%s_%d %s:\n", PREFIX_HEX_STRING,
+        ucIdxStr, COMMENT_CONTRIBUTE);
+        p_Trav->bDeclare = true;
+    }
+
+    g_string_append_printf(gszComt, "%s%s[%d] %s 0x%lx:", SPACE_SUBS_TAB,
+    TAG_SECTION, iIdSec, COMMENT_RELATIVE_OFFSET, ulOfstRel);
+
+    uint64_t ulLen = a_Path->len;
+    uint64_t ulIdx;
+    for (ulIdx = 0 ; ulIdx < ulLen ; ulIdx++) {
+        char *szPath = g_ptr_array_index(a_Path, ulIdx);
+        g_string_append_printf(gszComt, "%s%s%s\n", SPACE_SUBS_TAB,
+        SPACE_SUBS_TAB, szPath);
+    }
+
+    if (p_Trav->ulIdxCond == p_Trav->ulCntCond)
+        g_string_append(gszComt, "\n");
+
+    return false;
+}
