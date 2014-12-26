@@ -27,7 +27,7 @@
 /* The function pointer type. */
 typedef int8_t (*func_FmtInit) ();
 typedef int8_t (*func_FmtDeinit) ();
-typedef int8_t (*func_FmtPrint) (char*, uint64_t, GROUP*);
+typedef int8_t (*func_FmtPrint) (char*, uint64_t, GROUP*, bool);
 
 /* The integrated structure to store exported functions. */
 typedef struct _PLUGIN_FORMAT_T {
@@ -79,11 +79,12 @@ FmtDeinit();
  * @param szPathRoot        The root pathname of the output pattern folder.
  * @param ulIdxGrp          The group index.
  * @param p_Grp             The pointer to the GROUP structure.
+ * @param bComt             The control flag for pattern comment.
  * 
  * @return status code.
  */
 int8_t
-FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp);
+FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp, bool bComt);
 
 
 #endif

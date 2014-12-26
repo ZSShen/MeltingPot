@@ -70,50 +70,6 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize);
 
 
 /**
- * This function prints the pattern file for the designated group.
- * 
- * @param ulIdxGrp      The group index.
- * @param ulSizeGrp     The group size.
- * @param a_BlkCand     The array of BLOCK_CAND structures.
- * 
- * @return status code
- */
-int8_t
-_PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand);
-
-
-/**
- * This function prints the string section of the pattern.
- * 
- * @param szPtnStr      The string showing the content of string section.
- * @param a_usCtn       The buffer storing the block hex bytes.
- * @param p_sLen        The pointer to the to be updated section length.
- * @param ucIdxBlk      The index of the hex block.
- * 
- * @return status code
- */
-int8_t
-_PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen, 
-                       uint8_t ucIdxBlk);
-
-
-/**
- * This function prints the condition section of the pattern.
- * 
- * @param szPtnCond     The string showing the content of condition section.
- * @param a_CtnAddr     The array of CONTENT_ADDR structures.
- * @param p_sLen        The pointer to the to be updated section length.
- * @param ucCntBlk      The total number of hex blocks.
- * @param ucIdxBlk      The index of the hex block.
- * 
- * @return status code
- */
-int8_t
-_PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
-                          uint8_t ucCntBlk, uint8_t ucIdxBlk);
-
-
-/**
  * This function initializes the THREAD_CRAFT structure.
  * 
  * @param p_Param       The pointer to the to be initialized structure.
@@ -269,9 +225,7 @@ PtnOutputResult()
         uint64_t ulSizeGrp = a_Mbr->len;
         if (a_BlkCand->len == 0)
             continue;
-        int8_t cStat = _PtnPrintf(ulIdxGrp, ulSizeGrp, a_BlkCand);
-        if (cStat != SUCCESS)
-            EXITQ(cStat, EXIT);
+
         ulIdxGrp++;    
     }
 
@@ -349,7 +303,6 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
 
         /* Let the first slice be the comparison base. */
         uint16_t *a_usCtn = p_BlkCand->a_usCtn;
-        GArray *a_CtnAddr = p_BlkCand->a_CtnAddr;
         GTree *t_CtnAddr = p_BlkCand->t_CtnAddr;
         uint16_t usSrc, usTge;
         for (usSrc = usFront, usTge = 0 ; usSrc < usRear ; usSrc++, usTge++)
@@ -357,10 +310,6 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
 
         uint64_t ulIdSlc = g_array_index(a_Mbr, uint64_t, ulIdxBgn);
         SLICE *p_Slc = g_ptr_array_index(p_Pot->a_Slc, ulIdSlc);
-        CONTENT_ADDR addr;
-        addr.iIdSec = p_Slc->iIdSec;
-        addr.ulOfstRel = p_Slc->ulOfstRel + usFront;
-        g_array_append_val(a_CtnAddr, addr);
         CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
         if (!p_Addr)
             EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
@@ -380,9 +329,6 @@ _PtnMapSlot(THREAD_SLOT *p_Param)
 
             ulIdSlc = g_array_index(a_Mbr, uint64_t, ulIdx);
             p_Slc = g_ptr_array_index(p_Pot->a_Slc, ulIdSlc);
-            addr.iIdSec = p_Slc->iIdSec;
-            addr.ulOfstRel = p_Slc->ulOfstRel + usFront;
-            g_array_append_val(a_CtnAddr, addr);
             p_Addr = (CONTENT_ADDR*)malloc(sizeof(CONTENT_ADDR));
             if (!p_Addr)
                 EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
@@ -463,7 +409,6 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
     for (usIdx = 0 ; usIdx < usCntMin ; usIdx++) {
         BLOCK_CAND *p_BlkCandB = g_ptr_array_index(a_BlkCandB, usIdx);
         uint16_t *a_usCtnB = p_BlkCandB->a_usCtn;
-        GArray *a_CtnAddrB = p_BlkCandB->a_CtnAddr;
         GTree *t_CtnAddrB = p_BlkCandB->t_CtnAddr;
 
         for (ulIdx = 1 ; ulIdx < ulSize ; ulIdx++) {
@@ -471,7 +416,6 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
             GPtrArray *a_BlkCandC = p_Param->a_BlkCand;
             BLOCK_CAND *p_BlkCandC = g_ptr_array_index(a_BlkCandC, usIdx);
             uint16_t *a_usCtnC = p_BlkCandC->a_usCtn;
-            GArray *a_CtnAddrC = p_BlkCandC->a_CtnAddr;
             GTree *t_CtnAddrC = p_BlkCandC->t_CtnAddr;
 
             uint8_t ucIdx;
@@ -480,12 +424,6 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
                     a_usCtnB[ucIdx] = WILD_CARD_MARK;
             }
 
-            uint32_t uiLen = a_CtnAddrC->len;
-            uint32_t uiIdx;
-            for (uiIdx = 0 ; uiIdx < uiLen ; uiIdx++) {
-                CONTENT_ADDR addr = g_array_index(a_CtnAddrC, CONTENT_ADDR, uiIdx);
-                g_array_append_val(a_CtnAddrB, addr);
-            }
             g_tree_foreach(t_CtnAddrC, DsTravContentAddrCopy, t_CtnAddrB);
         }
 
@@ -498,222 +436,6 @@ _PtnReduceSlot(THREAD_SLOT *a_Param, uint64_t ulSize)
                 p_BlkCandB->ucCntWild++;
         }
     }
-
-EXIT:
-    return cRtnCode;
-}
-
-
-int8_t
-_PtnPrintf(uint64_t ulIdxGrp, uint64_t ulSizeGrp, GPtrArray *a_BlkCand)
-{
-    int8_t cRtnCode = SUCCESS;
-
-    int32_t iLen = strlen(p_Conf->szPathRootOut) + DIGIT_COUNT_ULONG + 2;
-    char *szPath = (char*)malloc(sizeof(char) * iLen);
-    if (!szPath)
-        EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
-    snprintf(szPath, iLen, "%s/%lu_%lu.yara", p_Conf->szPathRootOut, ulSizeGrp, ulIdxGrp);
-    
-    char *szPtnFull = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_FILE);
-    if (!szPtnFull)
-        EXIT1(FAIL_MEM_ALLOC, FREEPATH, "Error: %s.", strerror(errno));
-
-    char *szPtnStr = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
-    if (!szPtnStr)
-        EXIT1(FAIL_MEM_ALLOC, FREEPTN_FULL, "Error: %s.", strerror(errno));
-
-    char *szPtnCond = (char*)malloc(sizeof(char) * BUF_SIZE_PTN_SECTION);
-    if (!szPtnCond)
-        EXIT1(FAIL_MEM_ALLOC, FREEPTN_STR, "Error: %s.", strerror(errno));
-
-    FILE *fp = fopen(szPath, "w");
-    if (!fp)
-        EXIT1(FAIL_FILE_IO, FREEPTN_COND, "Error: %s.", strerror(errno));
-
-    /* Print the string and condition section. */
-    int16_t iLenStr = 0;
-    int16_t iLenCond = 0;
-    uint8_t ucCntBlk = a_BlkCand->len;
-    uint8_t ucIdx;
-    for (ucIdx = 0 ; ucIdx < ucCntBlk ; ucIdx++) {
-        BLOCK_CAND *p_BlkCand = g_ptr_array_index(a_BlkCand, ucIdx);
-
-        uint16_t *a_usCtn = p_BlkCand->a_usCtn;
-        int8_t cStat = _PtnPrintStringSection(szPtnStr, a_usCtn, &iLenStr, ucIdx);
-        if (cStat != SUCCESS)
-            EXITQ(cStat, CLOSE);
-        szPtnStr[iLenStr] = 0;
-
-        GArray *a_CtnAddr = p_BlkCand->a_CtnAddr;
-        cStat = _PtnPrintConditionSection(szPtnCond, a_CtnAddr, &iLenCond, ucCntBlk, ucIdx);
-        if (cStat != SUCCESS)
-            EXITQ(cStat, CLOSE);
-        szPtnCond[iLenCond] = 0;
-    }
-
-    /* Print the header section. */
-    char *szPivot = szPtnFull;
-    int16_t sRest = BUF_SIZE_PTN_FILE;
-    int16_t sCntWrt = snprintf(szPivot, sRest, "import \"%s\"\n\n", MODULE_PE);
-    szPivot += sCntWrt;
-    sRest -= sCntWrt;
-
-    sCntWrt = snprintf(szPivot, sRest, "rule %s_%ld\n{\n", PREFIX_PATTERN, ulIdxGrp);
-    szPivot += sCntWrt;
-    sRest -= sCntWrt;
-
-    sCntWrt = snprintf(szPivot, sRest, "%s%sstrings:\n%s\n", SPACE_SUBS_TAB, 
-                       SPACE_SUBS_TAB, szPtnStr);
-    szPivot += sCntWrt;
-    sRest -= sCntWrt;
-
-    sCntWrt = snprintf(szPivot, sRest, "%s%scondition:\n%s}\n", SPACE_SUBS_TAB,
-                       SPACE_SUBS_TAB, szPtnCond);
-    szPivot += sCntWrt;
-
-    size_t nWrtExpt = szPivot - szPtnFull;
-    size_t nWrtReal = fwrite(szPtnFull, sizeof(char), nWrtExpt, fp);
-    if (nWrtReal != nWrtExpt)
-        EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
-
-CLOSE:
-    if (fp)
-        fclose(fp);
-FREEPTN_COND:
-    if (szPtnCond)
-        free(szPtnCond);
-FREEPTN_STR:
-    if (szPtnStr)
-        free(szPtnStr);
-FREEPTN_FULL:
-    if (szPtnFull)
-        free(szPtnFull);
-FREEPATH:
-    if (szPath)
-        free(szPath);
-EXIT:
-    return cRtnCode;
-}
-
-
-int8_t
-_PtnPrintStringSection(char *szPtnStr, uint16_t *a_usCtn, int16_t *p_sLen, 
-                       uint8_t ucIdxBlk)
-{
-    int8_t cRtnCode = SUCCESS;
-
-    char *szPivot = szPtnStr + *p_sLen;
-    int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
-    if (sRest <= 0)
-        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-    
-    int8_t cCntWrt = snprintf(szPivot, sRest, "%s%s$%s_%d = { ", SPACE_SUBS_TAB,
-                              SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxBlk);
-    szPivot += cCntWrt;
-    sRest -= cCntWrt;
-    if (sRest <= 0)
-        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-
-    /* Prepare the indentation. */
-    uint8_t ucIndent = cCntWrt;
-    char szIndent[BUF_SIZE_INDENT];
-    memset(szIndent, 0, sizeof(char) * BUF_SIZE_INDENT);
-    uint8_t ucIdx;
-    for (ucIdx = 0 ; ucIdx < ucIndent ; ucIdx++)
-        szIndent[ucIdx] = ' ';
-
-    /* Print the hex byte block as plaintext string. */
-    for (ucIdx = 0 ; ucIdx < p_Conf->ucSizeBlk ; ucIdx++) {
-        if (a_usCtn[ucIdx] != WILD_CARD_MARK)
-            cCntWrt = snprintf(szPivot, sRest, "%02x ", a_usCtn[ucIdx] & EXTENSION_MASK);
-        else
-            cCntWrt = snprintf(szPivot, sRest, "?? ");
-        szPivot += cCntWrt;
-        sRest -= cCntWrt;
-        if (sRest <= 0)
-            EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);    
-
-        /* Newline if the number of writtern bytes exceeding the line boundary.*/
-        if ((ucIdx % HEX_CHUNK_SIZE == HEX_CHUNK_SIZE - 1) && 
-            (ucIdx != p_Conf->ucSizeBlk - 1)) {
-            cCntWrt = snprintf(szPivot, sRest, "\n%s", szIndent);
-            szPivot += cCntWrt;
-            sRest -= cCntWrt;
-            if (sRest <= 0)
-                EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-        }
-    }
-
-    cCntWrt = snprintf(szPivot, sRest, "}\n\n");
-    szPivot += cCntWrt;
-    sRest -= cCntWrt;
-    if (sRest <= 0)
-        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-    *p_sLen = szPivot - szPtnStr;
-
-EXIT:
-    return cRtnCode;
-}
-
-
-int8_t
-_PtnPrintConditionSection(char *szPtnCond, GArray *a_CtnAddr, int16_t *p_sLen,
-                          uint8_t ucCntBlk, uint8_t ucIdxBlk)
-{
-    int8_t cRtnCode = SUCCESS;
-
-    char *szPivot = szPtnCond + *p_sLen;
-    int16_t sRest = BUF_SIZE_PTN_SECTION - *p_sLen;
-    if (sRest <= 0)
-        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-
-    g_array_sort(a_CtnAddr, DsCompContentAddr);
-    int8_t cCntWrt;
-    uint64_t ulCntAddr = a_CtnAddr->len;
-    uint64_t ulIdx;
-    CONTENT_ADDR addrPred = {0};
-    for (ulIdx = 0 ; ulIdx < ulCntAddr ; ulIdx++) {
-        CONTENT_ADDR addrCurr = g_array_index(a_CtnAddr, CONTENT_ADDR, ulIdx);
-        if ((addrCurr.iIdSec == addrPred.iIdSec) && 
-            (addrCurr.ulOfstRel == addrPred.ulOfstRel))
-                continue;
-
-        cCntWrt = snprintf(szPivot, sRest,
-                           "%s%s$%s_%d at pe.sections[%d].raw_data_offset + 0x%lx",
-                           SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING,
-                           ucIdxBlk, addrCurr.iIdSec, addrCurr.ulOfstRel);
-        szPivot += cCntWrt;
-        sRest -= cCntWrt;
-        if (sRest <= 0)
-            EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-
-        if (ulIdx < (ulCntAddr - 1)) {
-            cCntWrt = snprintf(szPivot, sRest, " or");
-            szPivot += cCntWrt;
-            sRest -= cCntWrt;
-            if (sRest <= 0)
-                EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-        }
-
-        cCntWrt = snprintf(szPivot, sRest, "\n");
-        szPivot += cCntWrt;
-        sRest -= cCntWrt;
-        if (sRest <= 0)
-            EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-
-        addrPred = addrCurr;
-    }
-
-    if (ucIdxBlk < (ucCntBlk - 1))
-        cCntWrt = snprintf(szPivot, sRest, "%s%sor\n", SPACE_SUBS_TAB, SPACE_SUBS_TAB);
-    else
-        cCntWrt = snprintf(szPivot, sRest, "\n");
-    szPivot += cCntWrt;
-    sRest -= cCntWrt;
-    if (sRest <= 0)
-        EXIT1(FAIL_PTN_CREATE, EXIT, "Error: %s.", FAIL_PTN_CREATE);
-    *p_sLen = szPivot - szPtnCond;
 
 EXIT:
     return cRtnCode;

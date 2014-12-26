@@ -58,8 +58,6 @@ DsDeleteBlkCand(gpointer gp_BlkCand)
 {
     if (gp_BlkCand) {
         BLOCK_CAND *p_BlkCand = (BLOCK_CAND*)gp_BlkCand;    
-        if (p_BlkCand->a_CtnAddr)
-            g_array_free(p_BlkCand->a_CtnAddr, true);
         if (p_BlkCand->t_CtnAddr)
             g_tree_destroy(p_BlkCand->t_CtnAddr);    
         if (p_BlkCand->a_usCtn)
@@ -145,10 +143,6 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
         EXIT1(FAIL_MEM_ALLOC, EXIT, "Error: %s.", strerror(errno));
 
     BLOCK_CAND *p_BlkCand = *pp_BlkCand;
-    p_BlkCand->a_CtnAddr = g_array_new(false, false, sizeof(CONTENT_ADDR));
-    if (!p_BlkCand->a_CtnAddr)
-        EXIT1(FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
-
     p_BlkCand->t_CtnAddr = g_tree_new_full(DsCompContentAddrPlus, NULL, 
                                            DsDeleteContentAddr, DsDeleteArrayPath);
     if (!p_BlkCand->t_CtnAddr)
@@ -163,8 +157,8 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
     goto EXIT;
 
 FREEADDR:
-    if (p_BlkCand->a_CtnAddr)
-        g_array_free(p_BlkCand->a_CtnAddr, true);
+    if (p_BlkCand->t_CtnAddr)
+        g_tree_destroy(p_BlkCand->t_CtnAddr);
 FREEBLK:
     if (*pp_BlkCand)
         free(*pp_BlkCand);

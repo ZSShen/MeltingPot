@@ -29,12 +29,12 @@ _FmtAppendSecStr(TRAV *p_Trav, uint16_t *a_usCtn, uint8_t ucSize);
  * 
  * @param gp_Key        The pointer to the key: CONTENT_ADDR key.
  * @param gp_Val        The pointer to the value: pathname array.
- * @param p_Trav        The pointer to the TRAV structure.
+ * @param gp_Trav        The pointer to the TRAV structure.
  * 
  * @return traversal control flag
  */
 gboolean
-_FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav);
+_FmtAppendSecCond(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav);
 
 
 /**
@@ -42,12 +42,12 @@ _FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav);
  * 
  * @param gp_Key        The pointer to the key: CONTENT_ADDR key.
  * @param gp_Val        The pointer to the value: pathname array.
- * @param p_Trav        The pointer to the TRAV structure.
+ * @param gp_Trav        The pointer to the TRAV structure.
  * 
  * @return traversal control flag
  */
 gboolean
-_FmtAppendComment(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav);
+_FmtAppendComment(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav);
 
 
 /**
@@ -80,7 +80,7 @@ FmtDeinit()
 
 
 int8_t
-FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp)
+FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp, bool bComt)
 {
     int8_t cRtnCode = SUCCESS;
 
@@ -121,8 +121,11 @@ FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp)
         
         paraTrav.ulIdxCond = 0;
         g_tree_foreach(t_CtnAddr, _FmtAppendSecCond, &paraTrav);
-        paraTrav.ulIdxCond = 0;
-        g_tree_foreach(t_CtnAddr, _FmtAppendComment, &paraTrav);
+        
+        if (bComt) {
+            paraTrav.ulIdxCond = 0;
+            g_tree_foreach(t_CtnAddr, _FmtAppendComment, &paraTrav);
+        }
     }
 
 CLOSE:
@@ -179,8 +182,9 @@ _FmtAppendSecStr(TRAV *p_Trav, uint16_t *a_usCtn, uint8_t ucSize)
 
 
 gboolean
-_FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav)
+_FmtAppendSecCond(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav)
 {
+    TRAV *p_Trav = (TRAV*)gp_Trav;
     PATTERN_TEXT *p_Text = p_Trav->p_Text;
     GString *gszSecCond = p_Text->gszSecCond;
     CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)gp_Key;
@@ -207,8 +211,9 @@ _FmtAppendSecCond(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav)
 
 
 gboolean
-_FmtAppendComment(gpointer *gp_Key, gpointer *gp_Val, TRAV *p_Trav)
+_FmtAppendComment(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav)
 {
+    TRAV *p_Trav = (TRAV*)gp_Trav;
     PATTERN_TEXT *p_Text = p_Trav->p_Text;
     GString *gszComt = p_Text->gszComt;
     CONTENT_ADDR *p_Addr = (CONTENT_ADDR*)gp_Key;
