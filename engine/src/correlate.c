@@ -229,7 +229,7 @@ CrlPrepareSlice()
         pthread_join(a_Param[uiIdx].tId, NULL);
         _CrlReduceSlice(&(a_Param[uiIdx]), &ulIdSlc);
         if (a_Param[uiIdx].cRtnCode != SUCCESS)
-            cRtnCode = FAIL_PROCESS;
+            cRtnCode = a_Param[uiIdx].cRtnCode;
     }
     sem_destroy(&synSem);
 
@@ -273,7 +273,7 @@ CrlCorrelateSlice()
         pthread_join(a_Param[ucIdx].tId, NULL);
         _CrlReduceCompare(&(a_Param[ucIdx]));
         if (a_Param[ucIdx].cRtnCode != SUCCESS)
-            cRtnCode = FAIL_PROCESS;
+            cRtnCode = a_Param[ucIdx].cRtnCode;
     }
     cRtnCode = _CrlGenerateGroup();
 

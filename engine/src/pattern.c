@@ -18,6 +18,7 @@
 static sem_t synSem;
 static CONFIG *p_Conf;
 static MELT_POT *p_Pot;
+static PLUGIN_FORMAT *plgFmt;
 
 
 /*======================================================================*
@@ -151,7 +152,8 @@ PtnSetContext(CONTEXT *p_Ctx)
 {
     p_Conf = p_Ctx->p_Conf;
     p_Pot = p_Ctx->p_Pot;
-    
+    plgFmt = p_Ctx->plgFmt;
+
     return SUCCESS;
 }
 
@@ -197,7 +199,7 @@ PtnCraftPattern()
         pthread_join(a_Param[ulIdx].tId, NULL);
         _PtnReduceCraft(&(a_Param[ulIdx]));
         if (a_Param[ulIdx].cRtnCode != SUCCESS)
-            cRtnCode = FAIL_PROCESS;
+            cRtnCode = a_Param[ulIdx].cRtnCode;
     }
     sem_destroy(&synSem);
 
@@ -213,20 +215,18 @@ PtnOutputResult()
 {
     int8_t cRtnCode = SUCCESS;
 
-    /* Create the YARA format pattern for each group. */
     GHashTableIter iterHash;
     gpointer gpKey, gpValue;
     g_hash_table_iter_init(&iterHash, p_Pot->h_Grp);
     uint64_t ulIdxGrp = 0;
     while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
         GROUP *p_Grp = (GROUP*)gpValue;
-        GArray *a_Mbr = p_Grp->a_Mbr;
-        GPtrArray *a_BlkCand = p_Grp->a_BlkCand;
-        uint64_t ulSizeGrp = a_Mbr->len;
-        if (a_BlkCand->len == 0)
-            continue;
-
-        ulIdxGrp++;    
+        char *szPathRootOut = p_Conf->szPathRootOut;
+        bool bComt = p_Conf->bComt;
+        int8_t cStat = plgFmt->Print(szPathRootOut, ulIdxGrp, p_Grp, bComt);
+        if (cStat != SUCCESS)
+            EXITQ(cStat, EXIT);
+        ulIdxGrp++;
     }
 
 EXIT:

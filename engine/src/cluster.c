@@ -280,6 +280,11 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
 
     CONFIG *p_Conf = *pp_Conf;
     int iVal;
+    cStat = config_lookup_bool(&cfg, C_FLAG_COMMENT, &iVal);
+    if (cStat == CONFIG_FALSE)
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_FLAG_COMMENT);
+    p_Conf->bComt = (bool)iVal;
+    
     cStat = config_lookup_int(&cfg, C_COUNT_THREAD, &iVal);    
     if (cStat == CONFIG_FALSE)
         EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_COUNT_THREAD);

@@ -50,7 +50,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     if (nReadExpt != nReadReal) {
         EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
     } else if ((szBin[0] != 'M') || (szBin[1] != 'Z')) {
-        EXIT1(INVALID_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_MZ_HEADER);
+        EXIT1(FAIL_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_MZ_HEADER);
     }
 
     /* Resolve the starting address of PE header and move to it. */
@@ -71,7 +71,7 @@ SlcGetFileSlice(char *szPathFile, uint16_t usSizeSlc, GPtrArray **p_aSlc)
     if (nReadExpt != nReadReal) {
         EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
     } else if ((szBin[0] != 'P') || (szBin[1] != 'E')) {
-        EXIT1(INVALID_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_PE_HEADER);
+        EXIT1(FAIL_FILE_FORMAT, CLOSE, "Error: %s.", INVALID_PE_HEADER);
     }
 
     /* Resolve the number of sections. */

@@ -16,7 +16,6 @@
 
 #define FAIL_OPT_PARSE_CONF      "Fail to parse \"conf\" option"
 #define FAIL_NO_SAMPLE           "No samples in the given folder"
-#define FAIL_PTN_CREATE          "Insufficient pattern buffer size"
 #define SLC_GEN_FAIL    COLOR_RED"[Step 1/4] Slice Generation  **FAIL"COLOR_RESET
 #define SLC_GEN_SUCC    COLOR_GREEN"[Step 1/4] Slice Generation  **SUCC"COLOR_RESET
 #define SLC_CRL_FAIL    COLOR_RED"[Step 2/4] Slice Correlation  **FAIL"COLOR_RESET
@@ -50,10 +49,12 @@
 #define C_PATH_PLUGIN_SLICE         "PATH_PLUGIN_SLICE"
 #define C_PATH_PLUGIN_SIMILARITY    "PATH_PLUGIN_SIMILARITY"
 #define C_PATH_PLUGIN_FORMAT        "PATH_PLUGIN_FORMAT"
+#define C_FLAG_COMMENT              "FLAG_COMMENT"
 
 
 /* The structure lists down the process control parameters. */
 typedef struct _CONFIG_T {
+    bool bComt;               /* The control flag for pattern comment. */
     uint8_t ucCntThrd;        /* The number of threads used for parallel processing. */
     uint8_t ucScoreSim;       /* The threshold to group similar binary slices. */
     uint8_t ucCntBlk;         /* The number of hex byte blocks in pattern. */

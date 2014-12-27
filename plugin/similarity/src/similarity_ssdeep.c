@@ -37,7 +37,7 @@ SimGetHash(char *szBin, uint32_t uiLenBuf, char **p_szHash, uint32_t *p_uiLenHas
     if (iStat != 0) {
         free(p_szHash);
         p_szHash = NULL;
-        EXIT1(FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
+        EXIT1(FAIL_EXT_LIB_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
     }
 
     if (p_uiLenHash)
@@ -58,7 +58,7 @@ SimCompareHashPair(char *szHashSrc, uint32_t uiLenSrc,
        hash strings. */
     int32_t iStat = fuzzy_compare(szHashSrc, szHashTge);
     if (iStat == -1)
-        EXIT1(FAIL_LIBRARY_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
+        EXIT1(FAIL_EXT_LIB_CALL, EXIT, "Error: %s.", FAIL_EXTERNAL_LIBRARY_CALL);
 
     *p_ucSim = iStat;    
 
