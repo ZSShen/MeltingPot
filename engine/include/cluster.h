@@ -49,6 +49,7 @@
 #define C_PATH_ROOT_OUTPUT          "PATH_ROOT_OUTPUT"
 #define C_PATH_PLUGIN_SLICE         "PATH_PLUGIN_SLICE"
 #define C_PATH_PLUGIN_SIMILARITY    "PATH_PLUGIN_SIMILARITY"
+#define C_PATH_PLUGIN_FORMAT        "PATH_PLUGIN_FORMAT"
 
 
 /* The structure lists down the process control parameters. */
@@ -65,10 +66,9 @@ typedef struct _CONFIG_T {
                                  which is the basic unit of clustering process. */
     char *szPathRootIn;       /* The root pathname of the input sample set. */
     char *szPathRootOut;      /* The root pathname of the output patterns. */
-    char *szPathPluginSlc;    /* The pathname of the plugin which is to be used for 
-                                 file slicing. */
-    char *szPathPluginSim;    /* The pathname of the plugin which is to be used for 
-                                 similarity computation. */
+    char *szPathPluginSlc;    /* The pathname of the plugin which is for file slicing. */
+    char *szPathPluginSim;    /* The pathname of the plugin which is for similarity computation. */
+    char *szPathPluginFmt;    /* The pathname of the plugin which is for pattern generation. */
 } CONFIG;
 
 /* The structure recording the entire process context. */

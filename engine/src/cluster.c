@@ -148,13 +148,17 @@ ClsInit(char *szPathCfg)
     if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
-    /* Load the file slicing and similarity computation plugins. */
+    /* Load the relevant plugins. */
     CONFIG *p_Conf = p_Ctx->p_Conf;
     cStat = _ClsInitPluginSlice(&(p_Ctx->plgSlc), p_Conf->szPathPluginSlc);
     if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
     cStat = _ClsInitPluginSimilarity(&(p_Ctx->plgSim), p_Conf->szPathPluginSim);
+    if (cStat != SUCCESS)
+        EXITQ(cStat, EXIT);
+
+    cStat = _ClsInitPluginFormat(&(p_Ctx->plgFmt), p_Conf->szPathPluginFmt);
     if (cStat != SUCCESS)
         EXITQ(cStat, EXIT);
 
@@ -176,6 +180,7 @@ ClsDeinit()
     _ClsDeinitConfig(p_Ctx->p_Conf);
     _ClsDeinitPluginSlice(p_Ctx->plgSlc);
     _ClsDeinitPluginSimilarity(p_Ctx->plgSim);
+    _ClsDeinitPluginFormat(p_Ctx->plgFmt);
 
     free(p_Ctx);
     return SUCCESS;
@@ -339,6 +344,11 @@ _ClsInitConfig(CONFIG **pp_Conf, char *szPath)
                                 (const char**)&(p_Conf->szPathPluginSim));
     if (cStat == CONFIG_FALSE)
         EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_SIMILARITY);
+
+    cStat = config_lookup_string(&cfg, C_PATH_PLUGIN_FORMAT,
+                                (const char**)&(p_Conf->szPathPluginFmt));
+    if (cStat == CONFIG_FALSE)
+        EXIT1(FAIL_CONF_PARSE, EXIT, "Error: %s missed.", C_PATH_PLUGIN_FORMAT);                            
 
 EXIT:
     return cRtnCode;
