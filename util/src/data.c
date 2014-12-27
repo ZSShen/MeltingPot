@@ -134,7 +134,7 @@ DsDeletePatternText(PATTERN_TEXT *p_Text)
 
 
 int8_t
-DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
+DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t ucSizeCtn)
 {
     int8_t cRtnCode = SUCCESS;
 
@@ -148,12 +148,13 @@ DsNewBlockCand(BLOCK_CAND **pp_BlkCand, uint8_t usSizeCtn)
     if (!p_BlkCand->t_CtnAddr)
         EXIT1(FAIL_MEM_ALLOC, FREEBLK, "Error: %s.", strerror(errno));
 
-    p_BlkCand->a_usCtn = (uint16_t*)malloc(sizeof(uint16_t) * usSizeCtn);
+    p_BlkCand->a_usCtn = (uint16_t*)malloc(sizeof(uint16_t) * ucSizeCtn);
     if (!p_BlkCand->a_usCtn)
         EXIT1(FAIL_MEM_ALLOC, FREEADDR, "Error: %s.", strerror(errno));
 
     p_BlkCand->ucCntNoise = 0;
     p_BlkCand->ucCntWild = 0;
+    p_BlkCand->ucSizeCtn = ucSizeCtn;
     goto EXIT;
 
 FREEADDR:
@@ -384,7 +385,7 @@ gboolean
 DsTravContentAddrSize(gpointer gp_Key, gpointer gp_Val, gpointer gp_ulSize)
 {
     uint64_t *p_ulSize = (uint64_t*)gp_ulSize;
-    p_ulSize++;
+    *p_ulSize += 1;
 
     return false;
 }

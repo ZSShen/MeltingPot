@@ -25,6 +25,7 @@ typedef struct _CONTENT_ADDR_T {
 typedef struct _BLOCK_CAND_T {
     uint8_t ucCntNoise;     /* The number of noise bytes. */
     uint8_t ucCntWild;      /* The number of wildcard characters. */
+    uint8_t ucSizeCtn;      /* The block content size. */
     uint16_t *a_usCtn;      /* The normalized byte sequence. */
     GTree *t_CtnAddr;       /* The map of addresses to locate this block. */
 } BLOCK_CAND;

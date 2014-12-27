@@ -42,7 +42,7 @@ _FmtAppendSecCond(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav);
  * 
  * @param gp_Key        The pointer to the key: CONTENT_ADDR key.
  * @param gp_Val        The pointer to the value: pathname array.
- * @param gp_Trav        The pointer to the TRAV structure.
+ * @param gp_Trav       The pointer to the TRAV structure.
  * 
  * @return traversal control flag
  */
@@ -55,11 +55,13 @@ _FmtAppendComment(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav);
  *
  * @param p_Text        The pointer to the PATTERN_TEXT structure.
  * @param szPathOut     The output pathname.
- *
+ * @param ulIdxGrp      The group index.
+ * @param bComt         The control flag for pattern comments.
+ * 
  * @return status code
  */
 int8_t
-_FmtFinalize(PATTERN_TEXT *p_Text, char *szPathOut);
+_FmtFinalize(PATTERN_TEXT *p_Text, char *szPathOut, uint64_t ulIdxGrp, bool bComt);
 
 
 /*======================================================================*
@@ -100,10 +102,7 @@ FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp, bool bComt)
     if (cStat != SUCCESS)
         EXIT1(FAIL_MEM_ALLOC, FREEPATH, "Error: %s.", strerror(errno));
 
-    FILE *fp = fopen(gszPath->str, "w");
-    if (!fp)
-        EXIT1(FAIL_FILE_IO, FREEPTN, "Error: %s.", strerror(errno));
-
+    /* Prepare the texts for string section, condition section, and comment. */
     uint8_t ucLen = a_BlkCand->len;
     uint8_t ucIdx;
     TRAV paraTrav;
@@ -114,23 +113,26 @@ FmtPrint(char *szPathRoot, uint64_t ulIdxGrp, GROUP *p_Grp, bool bComt)
         paraTrav.ucCntBlk = ucLen;
 
         BLOCK_CAND *p_BlkCand = g_ptr_array_index(a_BlkCand, ucIdx);        
+        uint16_t *a_usCtn = p_BlkCand->a_usCtn;
+        uint8_t ucSize = p_BlkCand->ucSizeCtn;
+        _FmtAppendSecStr(&paraTrav, a_usCtn, ucSize);
+
         GTree *t_CtnAddr = p_BlkCand->t_CtnAddr;
         uint64_t ulCntCond = 0;
         g_tree_foreach(t_CtnAddr, DsTravContentAddrSize, &ulCntCond);
         paraTrav.ulCntCond = ulCntCond;
-        
+
         paraTrav.ulIdxCond = 0;
         g_tree_foreach(t_CtnAddr, _FmtAppendSecCond, &paraTrav);
-        
         if (bComt) {
             paraTrav.ulIdxCond = 0;
             g_tree_foreach(t_CtnAddr, _FmtAppendComment, &paraTrav);
         }
     }
 
-CLOSE:
-    if (fp)
-        fclose(fp);
+    /* Merge the texts and write to file. */
+    cRtnCode = _FmtFinalize(p_Text, gszPath->str, ulIdxGrp, bComt);
+
 FREEPTN:
     if (p_Text)
         DsDeletePatternText(p_Text);
@@ -197,13 +199,13 @@ _FmtAppendSecCond(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav)
     TAG_SECTION, iIdSec, TAG_RAW_DATA_OFFSET, ulOfstRel);
 
     if ((p_Trav->ulIdxCond < p_Trav->ulCntCond) && (p_Trav->ulIdxCond != 0))
-        g_string_append_printf(gszSecCond, " %s\n", CONJUNCTOR_OR);
+        g_string_append(gszSecCond, " or\n");
     else
         g_string_append(gszSecCond, "\n");
 
     if (ucIdxBlk < (p_Trav->ucCntBlk - 1))
-        g_string_append_printf(gszSecCond, "%s%s%s\n", SPACE_SUBS_TAB,
-        SPACE_SUBS_TAB, CONJUNCTOR_OR);
+        g_string_append_printf(gszSecCond, "%s%sor\n", SPACE_SUBS_TAB,
+        SPACE_SUBS_TAB);
 
     p_Trav->ulIdxCond++;
     return false;
@@ -228,7 +230,7 @@ _FmtAppendComment(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav)
         p_Trav->bDeclare = true;
     }
 
-    g_string_append_printf(gszComt, "%s%s[%d] %s 0x%lx:", SPACE_SUBS_TAB,
+    g_string_append_printf(gszComt, "%s%s[%d] %s 0x%lx:\n", SPACE_SUBS_TAB,
     TAG_SECTION, iIdSec, COMMENT_RELATIVE_OFFSET, ulOfstRel);
 
     uint64_t ulLen = a_Path->len;
@@ -244,4 +246,49 @@ _FmtAppendComment(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav)
 
     p_Trav->ulIdxCond++;
     return false;
+}
+
+
+int8_t
+_FmtFinalize(PATTERN_TEXT *p_Text, char *szPathOut, uint64_t ulIdxGrp, bool bComt)
+{
+    int8_t cRtnCode = SUCCESS;
+
+    GString *gszSecStr = p_Text->gszSecStr;
+    GString *gszSecCond = p_Text->gszSecCond;
+    GString *gszComt = p_Text->gszComt;
+    GString *gszFullPtn = p_Text->gszFullPtn;
+    
+    /* Declare the import modules. */
+    g_string_append_printf(gszFullPtn, "import \"%s\"\n", IMPORT_MODULE_PE);
+
+    /* Declare the rule name. */
+    g_string_append_printf(gszFullPtn, "\nrule %s_%lu\n", PREFIX_PATTERN, ulIdxGrp);
+
+    /* Fill in the main pattern body. */
+    g_string_append(gszFullPtn, "{\n");
+    g_string_append_printf(gszFullPtn, "%sstrings:\n", SPACE_SUBS_TAB);
+    g_string_append_printf(gszFullPtn, "%s\n", gszSecStr->str);
+    g_string_append_printf(gszFullPtn, "%scondition:\n", SPACE_SUBS_TAB);
+    g_string_append_printf(gszFullPtn, "%s\n", gszSecCond->str);
+    g_string_append(gszFullPtn, "}\n");
+
+    /* Attach the pattern comment if necessary. */
+    if (bComt)
+        g_string_append_printf(gszFullPtn, "\n/*\n%s*/\n", gszComt->str);
+
+    FILE *fp = fopen(szPathOut, "w");
+    if (!fp)
+        EXIT1(FAIL_FILE_IO, EXIT, "Error: %s.", strerror(errno));
+
+    size_t nWrtExpt = gszFullPtn->len;
+    size_t nWrtReal = fwrite(gszFullPtn->str, sizeof(char), nWrtExpt, fp);
+    if (nWrtExpt != nWrtReal)
+        EXIT1(FAIL_FILE_IO, CLOSE, "Error: %s.", strerror(errno));
+
+CLOSE:
+    if (fp)
+        fclose(fp);
+EXIT:
+    return cRtnCode;
 }

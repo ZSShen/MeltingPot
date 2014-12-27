@@ -17,7 +17,6 @@
 
 #define PREFIX_PATTERN          "AUTO"  /* The prefix for pattern name. */
 #define PREFIX_HEX_STRING       "SEQ"   /* The prefix for hex string name. */
-#define CONJUNCTOR_OR           "or"    /* The logic "OR" conjunctor. */
 #define SPACE_SUBS_TAB          "    "  /* The spaces substituting a tab. */
 #define COMMENT_CONTRIBUTE      "Contributed By"
 #define COMMENT_RELATIVE_OFFSET "Relative Offset"
