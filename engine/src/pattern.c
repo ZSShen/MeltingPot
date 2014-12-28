@@ -382,7 +382,8 @@ _PtnReduceCraft(THREAD_CRAFT *p_Param)
         if (uiIdx == p_Conf->ucCntBlk)
             break;   
     }
-    g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
+    if (uiIdx < uiLen)
+        g_ptr_array_remove_range(a_BlkCand, uiIdx, (uiLen - uiIdx));
 
     return SUCCESS;
 }
