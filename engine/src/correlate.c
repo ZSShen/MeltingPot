@@ -418,7 +418,7 @@ _CrlMapCompare(void *vp_Param)
         uint32_t uiLenTge = strlen(szTge);
         uint8_t ucSim;
         int8_t cStat = plgSim->CompareHashPair(szSrc, uiLenSrc,
-                                                szTge, uiLenTge, &ucSim);
+                                               szTge, uiLenTge, &ucSim);
         if (cStat != SUCCESS)
             EXITQ(cStat, EXIT);
 

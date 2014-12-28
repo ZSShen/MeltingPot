@@ -25,8 +25,11 @@ set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
 set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
 set(HEADER "${PATH_INC}/similarity.h")
 set(SRC_SSDEEP "similarity_ssdeep.c")
+set(SRC_BIGRAM "similarity_bigram.c")
 set(TGE_SSDEEP "SIM_SSDEEP")
+set(TGE_BIGRAM "SIM_BIGRAM")
 set(OUT_SSDEEP "sim_ssdeep")
+set(OUT_BIGRAM "sim_bigram")
 set(IMPORT_FUZZY "-lfuzzy")
 
 
@@ -55,6 +58,7 @@ include_directories(${PATH_INC})
 
 add_library(${TGE_SSDEEP} ${LIB_TYPE} ${SRC_SSDEEP})
 target_link_libraries(${TGE_SSDEEP} ${IMPORT_FUZZY})
+add_library(${TGE_BIGRAM} ${LIB_TYPE} ${SRC_BIGRAM})
 
 set_target_properties( ${TGE_SSDEEP} PROPERTIES
     PUBLIC_HEADER ${HEADER}
@@ -62,10 +66,15 @@ set_target_properties( ${TGE_SSDEEP} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PATH_OUT}
     OUTPUT_NAME ${OUT_SSDEEP}
 )
-
+set_target_properties( ${TGE_BIGRAM} PROPERTIES
+    PUBLIC_HEADER ${HEADER}
+    ARCHIVE_OUTPUT_DIRECTORY ${PATH_OUT}
+    LIBRARY_OUTPUT_DIRECTORY ${PATH_OUT}
+    OUTPUT_NAME ${OUT_BIGRAM}
+)
 
 # List the installation rules
-install(TARGETS ${TGE_SSDEEP}
+install(TARGETS ${TGE_SSDEEP} ${TGE_BIGRAM}
     LIBRARY DESTINATION ${NAME_LIB}
     ARCHIVE DESTINATION ${NAME_LIB_STATIC}
     PUBLIC_HEADER DESTINATION ${NAME_INC}
