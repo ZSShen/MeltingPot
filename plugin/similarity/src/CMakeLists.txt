@@ -25,11 +25,11 @@ set(PATH_INC "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_INC}")
 set(PATH_LIB "${CMAKE_CURRENT_SOURCE_DIR}/../${NAME_LIB}")
 set(HEADER "${PATH_INC}/similarity.h")
 set(SRC_SSDEEP "similarity_ssdeep.c")
-set(SRC_BIGRAM "similarity_bigram.c")
+set(SRC_NGRAM "similarity_ngram.c")
 set(TGE_SSDEEP "SIM_SSDEEP")
-set(TGE_BIGRAM "SIM_BIGRAM")
+set(TGE_NGRAM "SIM_NGRAM")
 set(OUT_SSDEEP "sim_ssdeep")
-set(OUT_BIGRAM "sim_bigram")
+set(OUT_NGRAM "sim_ngram")
 set(IMPORT_FUZZY "-lfuzzy")
 
 
@@ -42,6 +42,14 @@ else()
     message("${RED}-- Error: LIB_TYPE is not properly specified.${RESET}")
     return()
 endif()
+# The specialized options for ngram similarity comparison.
+if (NGRAM_DIMENSION)
+    add_definitions(-DNGRAM_DIMENSION=${NGRAM_DIMENSION})
+endif()
+if (BLOOM_FILTER_WIDTH)
+    add_definitions(-DBLOOM_FILTER_WIDTH=${BLOOM_FILTER_WIDTH})
+endif()
+
 
 if (CMAKE_BUILD_TYPE STREQUAL OPT_BUILD_DEBUG)
     set(PATH_OUT "${PATH_LIB}/debug")
@@ -58,7 +66,7 @@ include_directories(${PATH_INC})
 
 add_library(${TGE_SSDEEP} ${LIB_TYPE} ${SRC_SSDEEP})
 target_link_libraries(${TGE_SSDEEP} ${IMPORT_FUZZY})
-add_library(${TGE_BIGRAM} ${LIB_TYPE} ${SRC_BIGRAM})
+add_library(${TGE_NGRAM} ${LIB_TYPE} ${SRC_NGRAM})
 
 set_target_properties( ${TGE_SSDEEP} PROPERTIES
     PUBLIC_HEADER ${HEADER}
@@ -66,17 +74,16 @@ set_target_properties( ${TGE_SSDEEP} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PATH_OUT}
     OUTPUT_NAME ${OUT_SSDEEP}
 )
-set_target_properties( ${TGE_BIGRAM} PROPERTIES
+set_target_properties( ${TGE_NGRAM} PROPERTIES
     PUBLIC_HEADER ${HEADER}
     ARCHIVE_OUTPUT_DIRECTORY ${PATH_OUT}
     LIBRARY_OUTPUT_DIRECTORY ${PATH_OUT}
-    OUTPUT_NAME ${OUT_BIGRAM}
+    OUTPUT_NAME ${OUT_NGRAM}
 )
 
 # List the installation rules
-install(TARGETS ${TGE_SSDEEP} ${TGE_BIGRAM}
+install(TARGETS ${TGE_SSDEEP} ${TGE_NGRAM}
     LIBRARY DESTINATION ${NAME_LIB}
     ARCHIVE DESTINATION ${NAME_LIB_STATIC}
     PUBLIC_HEADER DESTINATION ${NAME_INC}
 )
-
