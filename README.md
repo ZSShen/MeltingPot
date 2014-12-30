@@ -5,9 +5,8 @@
 ###Introduction  
 + Input - A homogeneous file set with the same format type.  
 + Objective - Similarity clustering for the files.  
-+ Output - A pattern set each of which represents a file cluster.
-+ Brief Engine Workflow
-+ ![Brief Engine Workflow] (https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/EngineIntro.png)  
++ Output - A pattern set each of which represents a file cluster.  
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/EngineIntro.png" width="550px" height="550px" />  
 
 ###Usage  
 ####1. Source Building  
