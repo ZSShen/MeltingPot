@@ -10,7 +10,25 @@
 
 ###Introduction  
 This engine correlates files by examining the similar byte sequences shared among them.  
-To summarize the result, the engine produces a set of YARA formatted patterns each of  
+To summarize the result, the engine produces a set of [YARA] formatted patterns each of  
 which represents the common features extracted from a certain file group. Essentially,  
 such patterns can be directly applied by YARA engine.
+
  
+###Installation  
+First of all, you need to prepare the following utilities:
+- [CMake] - A cross platform and open source build system.
+- [Valgrind] - An instrumentation framework help for memory debug.
+- [SSDeep] - A fuzzy hash generation and comparison library.
+- [GLib] - A large set of libraries to handle common data structures.
+- [libconfig] - A library to process structured configuration file.
+
+
+
+[YARA]:http://plusvic.github.io/yara/
+[CMake]:http://www.cmake.org/
+[Valgrind]:http://valgrind.org/
+[SSDeep]:http://ssdeep.sourceforge.net/
+[GLib]:https://developer.gnome.org/glib/
+[libconfig]:http://www.hyperrealm.com/libconfig/
+
