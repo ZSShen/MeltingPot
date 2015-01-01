@@ -16,7 +16,11 @@ In general, the tool is composed of the main engine and the supporting plugins. 
 + It then applies the `file slicing plugin` to divide each input file into smaller pieces of biniries each of which is called slice.  
 + It then correlates the slices by examining their binary similarity with the help of `similarity comparison plugin`.  
 + At this stage, the engine acquire the slice groups. It then extracts a set of byte sequences from each group. Such sequences are small (only tens of bytes) and should contain less dummy information.  
-+ Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns which can be used to scan the corresponding file type.   
++ Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns which can be used to scan the corresponding file type.  
+
+
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="600" height="400" /> 
+
 
 
 ###Installation  
