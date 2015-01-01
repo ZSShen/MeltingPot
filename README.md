@@ -9,11 +9,25 @@
 <img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/EngineIntro.png" width="650px" height="550px" />  
 
 ###Introduction  
-This engine correlates files by examining the similar byte sequences shared among them.  
+This tool correlates files by examining the similar byte sequences shared among them.  
 To summarize the result, the engine produces a set of [YARA] formatted patterns each of  
 which represents the common features extracted from a certain file group. Essentially,  
-such patterns can be directly applied by YARA engine.
- 
+such patterns can be directly applied by YARA scan engine.
+
+In general, the tool is composed of the main engine and the supporting plugins. Their  
+interaction is briefly illustrated here:  
++ The engine first loads the user specified configuration to determine the workflow.  
++ It then applies the `file slicing plugin` to divide each input file into smaller  
+pieces of biniries each of which is called slice.  
++ It then correlats the slices by examining their binary similarity with the help of  
+`similarity comparison plugin`.  
++ At this stage, the engine acquire the slice groups. It then extracts a set of byte  
+sequences from each group. Such sequences are small (only tens of bytes) and  
+should contain less dummy information.  
++ Finally, the engine formats the sequences with `pattern formating plugin` to output  
+the patterns which can be used to scan the corresponding file type.  
+
+
 ###Installation  
 ####***Basic***
 First of all, we need to prepare the following utilities:
@@ -69,8 +83,8 @@ $ cd build
 $ cmake .. --DCMAKE_BUILD_TYPE=Debug|Release
 $ make
 ```
-Again, we must specify the build type for compiliation. Upon finishing, the corresponding binaries  
-should locate at `/plugin/slice/debug/libslc_*.so` and `/plugin/slice/release/libslc_*.so`.  
+Again, we must specify the build type for compiliation. Upon finishing, the corresponding binary  
+should locate at `/plugin/slice/debug/libslc_*.so` or `/plugin/slice/release/libslc_*.so`.  
 Also note that I just use the file slicing plugin to illustrate the approach. The other two plugins  
 can be built with the same way.
 
