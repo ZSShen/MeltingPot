@@ -6,21 +6,26 @@
 + Input - A homogeneous file set with the same format type.  
 + Objective - Similarity clustering for the files.  
 + Output - A pattern set each of which represents a file cluster.  
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Engine Intro.png" width="650px" height="550px" style="float: center"/>  
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Engine Intro.png" width="520px" height="440px"/>  
 
 ###Introduction  
 This tool correlates files by examining the similar byte sequences shared among them. To summarize the result, the engine produces a set of [YARA] formatted patterns each of which represents the common features extracted from a certain file group. Essentially, such patterns can be directly applied by YARA scan engine.
 
-In general, the tool is composed of the main engine and the supporting plugins. Their interaction is briefly illustrated here:   
+In general, the tool is composed of the main engine and the supporting plugins. The relation is briefly illustrated here:   
 + The engine first loads the user specified configuration to determine the workflow.  
 + It then applies the `file slicing plugin` to divide each input file into smaller pieces of biniries each of which is called slice.  
 + It then correlates the slices by examining their binary similarity with the help of `similarity comparison plugin`.  
 + At this stage, the engine acquire the slice groups. It then extracts a set of byte sequences from each group. Such sequences are small (only tens of bytes) and should contain less dummy information.  
-+ Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns which can be used to scan the corresponding file type.  
++ Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns.  
 
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="450px" height="500px" style="float: center"/> 
 
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="600" height="400" style="float: center"/> 
+As mentioned above, we have three kinds of plugins:  
++ File slicing - Dividing files into slices by parsing its header information. (E.g. PE, DEX)  
++ Similarity comparison - Measuring the similarity for a pair of slices. (E.g. ssdeep, ngram)  
++ Pattern formation - Producing YARA format pattern with appropriate file type information.  
 
+If we would like to parse other categories of files or apply different kinds of similarity comparison algorithm, we can patch the code in the plugin source directory and use the build system introduced below to come out the new plugins.  
 
 
 ###Installation  
