@@ -6,7 +6,7 @@
 + Input - A homogeneous file set with the same format type.  
 + Objective - Similarity clustering for the files.  
 + Output - A pattern set each of which represents a file cluster.  
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/EngineIntro.png" width="650px" height="550px" />  
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Engine Intro.png" width="650px" height="550px" style="float: center"/>  
 
 ###Introduction  
 This tool correlates files by examining the similar byte sequences shared among them. To summarize the result, the engine produces a set of [YARA] formatted patterns each of which represents the common features extracted from a certain file group. Essentially, such patterns can be directly applied by YARA scan engine.
@@ -19,7 +19,7 @@ In general, the tool is composed of the main engine and the supporting plugins. 
 + Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns which can be used to scan the corresponding file type.  
 
 
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="600" height="400" /> 
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="600" height="400" style="float: center"/> 
 
 
 
