@@ -86,6 +86,7 @@ Again, we must specify the build type for compiliation. Upon finishing, the corr
 ###Usage
 To run the engine, we should first specify some relevant configurations.  
 The example is shown in `/engine/cluster.conf`. And we discuss these parameters below:  
+```
 - SIZE_SLICE - The size of binary slice derived from file which is the basic unit of clustering process.  
 - SIZE_HEX_BLOCK - The length of distilled common byte sequence (called hex block) extracted from a slice group.  
 - COUNT_HEX_BLOCK - The number of to be extracted hex blocks per each group.  
@@ -94,6 +95,17 @@ The example is shown in `/engine/cluster.conf`. And we discuss these parameters 
 - RATIO_WILDCARD - The ratio of the wildcard characters in a hex block.  
 - TRUNCATE_GROUP_SIZE_LESS_THAN - The threshold to truncate trivial slice groups.  
 - FLAG_COMMENT - The control flag for the detailed clustering comment shown in pattern.  
+- PATH_ROOT_INPUT - The root absolute pathname of the input sample set.  
+- PATH_ROOT_OUTPUT - The root absolute pathname of the output pattern folder.
+- PATH_PLUGIN_SLICE - The absolute pathname of the file slicing plugin.
+- PATH_PLUGIN_SIMILARITY - The absolute pathname of the similarity comparison plugin.
+- PATH_PLUGIN_FORMAT - The absolute pathname of the pattern formation plugin.
+```
+In addition, we have the following advanced parameters:  
+```
+- COUNT_THREAD - The number of running threads.  
+- IO_BANDWIDTH - The maximum number of files a thread can simultaneously open.  
+```
 
 
 [YARA]:http://plusvic.github.io/yara/
