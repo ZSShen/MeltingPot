@@ -18,7 +18,7 @@ In general, the tool is composed of the main engine and the supporting plugins. 
 + At this stage, the engine acquire the slice groups. It then extracts a set of byte sequences from each group. Such sequences are small (only tens of bytes) and should contain less dummy information.  
 + Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns.  
 
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="450px" height="500px" style="float: center"/> 
+<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="450px" height="500px"/> 
 
 As mentioned above, we have three kinds of plugins:  
 + File slicing - Dividing files into slices by parsing its header information. (E.g. PE, DEX)  
@@ -84,6 +84,17 @@ Again, we must specify the build type for compiliation. Upon finishing, the corr
 
 
 ###Usage
+To run the engine, we should first specify some relevant configurations.  
+The example is shown in `/engine/cluster.conf`. And we discuss these parameters below:  
+- SIZE_SLICE - The size of binary slice derived from file which is the basic unit of clustering process.  
+- SIZE_HEX_BLOCK - The length of distilled common byte sequence (called hex block) extracted from a slice group.  
+- COUNT_HEX_BLOCK - The number of to be extracted hex blocks per each group.  
+- THRESHOLD_SIMILARITY - The threshold to group similar slices.  
+- RATIO_NOISE - The ratio of the dummy bytes (0x00 or 0xff) in a hex block.  
+- RATIO_WILDCARD - The ratio of the wildcard characters in a hex block.  
+- TRUNCATE_GROUP_SIZE_LESS_THAN - The threshold to truncate trivial slice groups.  
+- FLAG_COMMENT - The control flag for the detailed clustering comment shown in pattern.  
+
 
 [YARA]:http://plusvic.github.io/yara/
 [CMake]:http://www.cmake.org/
