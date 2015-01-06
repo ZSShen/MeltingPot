@@ -53,12 +53,12 @@ $ cmake ..
 $ make
 ```
 Then the engine should be under:  
-- `/engine/bin/release/cluster`  
+- `./engine/bin/release/cluster`  
 
 And the relevant plugins should be under:
-- `/plugin/slice/lib/release/libslc_*.so`
-- `/plugin/similarity/lib/release/libsim_*.so`
-- `/plugin/format/lib/release/libfmt_*.so`
+- `./plugin/slice/lib/release/libslc_*.so`
+- `./plugin/similarity/lib/release/libsim_*.so`
+- `./plugin/format/lib/release/libfmt_*.so`
 
 ####***Advanced***
 If we change the functionalities of main engine or plugins, we can move to the corresponding subtree to rebuild the binary.   
@@ -70,7 +70,7 @@ $ cd build
 $ cmake .. -DCMAKE_BUILD_TYPE=Debug|Release
 $ make
 ```
- Note that we have two build types. For debug build, the relevant debug flags are turned on for compiler, and the binary should locate at `/engine/bin/debug/cluster`. For release build, the optimized binary should locate at `/engine/bin/release/cluster`.
+ Note that we have two build types. For debug build, the relevant debug flags are turned on for compiler, and the binary should locate at `./engine/bin/debug/cluster`. For release build, the optimized binary should locate at `./engine/bin/release/cluster`.
 
 To build the plugin independently:   
 ``` sh
@@ -80,12 +80,12 @@ $ cd build
 $ cmake .. --DCMAKE_BUILD_TYPE=Debug|Release
 $ make
 ```
-Again, we must specify the build type for compiliation. Upon finishing, the corresponding binary should locate at `/plugin/slice/debug/libslc_*.so` or `/plugin/slice/release/libslc_*.so`. Also note that I just use the file slicing plugin to illustrate the approach. The other two plugins can be built with the same way.
+Again, we must specify the build type for compiliation. Upon finishing, the corresponding binary should locate at `./plugin/slice/debug/libslc_*.so` or `./plugin/slice/release/libslc_*.so`. Also note that I just use the file slicing plugin to illustrate the approach. The other two plugins can be built with the same way.
 
 
 ###Usage
 To run the engine, we should first specify some relevant configurations.  
-The example is shown in `/engine/cluster.conf`.  
+The example is shown in `./engine/cluster.conf`.  
 <img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Configuration.png" width="450px" height="370px"/> 
 
 And we discuss these parameters below:  
@@ -112,6 +112,12 @@ In addition, we have the following advanced parameters:
 | ------------- | ------------- |
 | `COUNT_THREAD` | The number of running threads |
 | `IO_BANDWIDTH` | The maximum number of files a thread can simultaneously open |
+
+With the configuration file prepared, we can run the engine like:  
+`./engine/bin/release/cluster --conf ./engine/cluster.conf` or  
+`valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf`  
+Of course, the usage depends on our objective.  
+Also note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect provided by GLib. Essentially, the entire project source is memory safe :-).  
 
 
 [YARA]:http://plusvic.github.io/yara/
