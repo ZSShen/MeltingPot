@@ -221,6 +221,10 @@ PtnOutputResult()
     uint64_t ulIdxGrp = 0;
     while (g_hash_table_iter_next(&iterHash, &gpKey, &gpValue)) {
         GROUP *p_Grp = (GROUP*)gpValue;
+        /* Discard the groups having no block candidates. */
+        if (p_Grp->a_BlkCand->len == 0)
+            continue;
+
         char *szPathRootOut = p_Conf->szPathRootOut;
         bool bComt = p_Conf->bComt;
         int8_t cStat = plgFmt->Print(szPathRootOut, ulIdxGrp, p_Grp, bComt);
