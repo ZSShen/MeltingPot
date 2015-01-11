@@ -198,14 +198,14 @@ _FmtAppendSecCond(gpointer gp_Key, gpointer gp_Val, gpointer gp_Trav)
     SPACE_SUBS_TAB, SPACE_SUBS_TAB, PREFIX_HEX_STRING, ucIdxBlk, IMPORT_MODULE_PE,
     TAG_SECTION, iIdSec, TAG_RAW_DATA_OFFSET, ulOfstRel);
 
-    if ((p_Trav->ulIdxCond < p_Trav->ulCntCond) && (p_Trav->ulIdxCond != 0))
+    if (p_Trav->ulIdxCond < (p_Trav->ulCntCond - 1))
         g_string_append(gszSecCond, " or\n");
-    else
+    else {
         g_string_append(gszSecCond, "\n");
-
-    if (ucIdxBlk < (p_Trav->ucCntBlk - 1))
-        g_string_append_printf(gszSecCond, "%s%sor\n", SPACE_SUBS_TAB,
-        SPACE_SUBS_TAB);
+        if (ucIdxBlk < (p_Trav->ucCntBlk - 1))
+            g_string_append_printf(gszSecCond, "%s%sor\n", SPACE_SUBS_TAB,
+            SPACE_SUBS_TAB);
+    }
 
     p_Trav->ulIdxCond++;
     return false;
