@@ -91,20 +91,21 @@ For the other two kinds of plugins, the build rule is the same.
 ###Usage
 To run the engine, we should first specify some relevant configurations.  
 The example is shown in `./engine/cluster.conf`.  
+  
 <img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Configuration.png" width="450px" height="370px"/> 
 
 And we discuss these parameters below:  
 
 | Parameter     | Description           |
 | ------------- | ------------- |
-| `SIZE_SLICE` | The size of file slice which is the basic unit of clustering process |
-| `SIZE_HEX_BLOCK` | The length of distilled common byte sequence extracted from a slice group |
-| `COUNT_HEX_BLOCK` | The number of to be extracted sequences per each group |
-| `THRESHOLD_SIMILARITY` | The threshold to group similar slices |
-| `RATIO_NOISE` | The ratio of dummy bytes (0x00 or 0xff) in a hex block (extracted sequence) |
+| `SIZE_SLICE` | The size of file slice |
+| `SIZE_HEX_BLOCK` | The length of common byte sequence extracted from a slice cluster |
+| `COUNT_HEX_BLOCK` | The number of to be extracted sequences per each cluster |
+| `THRESHOLD_SIMILARITY` | The threshold to cluster similar slices |
+| `RATIO_NOISE` | The ratio of dummy bytes (00 or ff) in a hex block (extracted sequence) |
 | `RATIO_WILDCARD` | The ratio of wildcard characters in a hex block |
-| `TRUNCATE_GROUP_SIZE_LESS_THAN` | The threshold to truncate trivial slice groups |
-| `FLAG_COMMENT` | The control flag for detailed clustering comment to be shown in pattern |
+| `TRUNCATE_GROUP_SIZE_LESS_THAN` | The threshold to truncate trivial slice clusters |
+| `FLAG_COMMENT` | The control flag for detailed comments to be shown in pattern |
 | `PATH_ROOT_INPUT` | The pathname of input sample set |
 | `PATH_ROOT_OUTPUT` | The pathname of output pattern folder |
 | `PATH_PLUGIN_SLICE` | The pathname of the file slicing plugin |
@@ -119,10 +120,9 @@ In addition, we have the following advanced parameters:
 | `IO_BANDWIDTH` | The maximum number of files a thread can simultaneously open |
 
 With the configuration file prepared, we can run the engine like:  
-`./engine/bin/release/cluster --conf ./engine/cluster.conf` or  
-`valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf`  
-Of course, the usage depends on our objective.  
-Also note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect provided by GLib. Essentially, the entire project source is memory safe :-).  
+For normal task, run `./engine/bin/release/cluster --conf ./engine/cluster.conf`.  
+For memory debug, run `valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf`  
+Note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect provided by GLib. Essentially, the entire project source is memory safe :-).  
 
 
 [YARA]:http://plusvic.github.io/yara/
