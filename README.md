@@ -61,7 +61,7 @@ And the relevant plugins should be under:
 - `./plugin/format/lib/release/libfmt_*.so`
 
 ####***Advanced***
-If we change the functionalities of main engine or plugins, we can move to the corresponding subtree to rebuild the binary.   
+If we patch the main engine or the plugins, we can move to the corresponding subtree to rebuild the binary.   
 To build the engine independently:
 ``` sh
 $ cd engine
@@ -70,9 +70,11 @@ $ cd build
 $ cmake .. -DCMAKE_BUILD_TYPE=Debug|Release
 $ make
 ```
- Note that we have two build types. For debug build, the relevant debug flags are turned on for compiler, and the binary should locate at `./engine/bin/debug/cluster`. For release build, the optimized binary should locate at `./engine/bin/release/cluster`.
+Note that we have two build types.  
+For debug build, the compiler debug flags are on, and the binary locates at `./engine/bin/debug/cluster`.  
+For release build, the optimized binary locates at `./engine/bin/release/cluster`.  
 
-To build the plugin independently:   
+To build the plugin independently (using File Slicing plugin as example):   
 ``` sh
 $ cd plugin/slice
 $ ./clean.py --rebuild
@@ -80,7 +82,10 @@ $ cd build
 $ cmake .. --DCMAKE_BUILD_TYPE=Debug|Release
 $ make
 ```
-Again, we must specify the build type for compiliation. Upon finishing, the corresponding binary should locate at `./plugin/slice/debug/libslc_*.so` or `./plugin/slice/release/libslc_*.so`. Also note that I just use the file slicing plugin to illustrate the approach. The other two plugins can be built with the same way.
+Again, we must specify the build type for compiliation.  
+For debug build, the binary locates at `./plugin/slice/debug/libslc_*.so`.  
+For release build, the binary locates at `./plugin/slice/release/libslc_*.so`.  
+For the other two kinds of plugins, the build rule is the same.  
 
 
 ###Usage
