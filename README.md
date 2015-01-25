@@ -121,7 +121,7 @@ In addition, we have the following advanced parameters:
 
 With the configuration file prepared, we can run the engine like:  
 For normal task, run `./engine/bin/release/cluster --conf ./engine/cluster.conf`.  
-For memory debug, run `valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf`  
+For memory debug, use debug build and run `valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf`.  
 Note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect provided by GLib. Essentially, the entire project source is memory safe :-).  
 
 
