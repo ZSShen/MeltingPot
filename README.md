@@ -1,34 +1,31 @@
-##BinaryCluster-YaraGenerator
-+ Continuous Integration (Travis-CI)  
 [![Build Status](https://travis-ci.org/ZSShen/BinaryCluster-YaraGenerator.svg?branch=master)](https://travis-ci.org/ZSShen/BinaryCluster-YaraGenerator)
 
-###Abstract  
-+ Input - A set of files with the same format type.  
-+ Objective - Similarity clustering for the file slices and common byte sequence extraction for the slice clusters.    
-+ Output - A set of patterns each of which describes the attributes of the common sequences of a slice cluster.  
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Engine Intro.png" width="520px" height="440px"/>  
+# **MeltingPot** 
+|<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Engine Intro.png" width="660px" height="570"/>  |
+|---|
+| MeltingPot is an ***automated common binary signature extractor and pattern generator***. For the given sample set with the ***same file format***, it slices each file into small pieces of binary sequences and correlates the files sharing the similar sequences. To show the result, MeltingPot generates a set of ***[YARA] formatted patterns*** each of which represents the common signature of a certain file cluster. Such patterns can be directly applied by YARA scan engine. |
 
-###Introduction  
-In this project, we term the `slice` as an arbitrary binary segment of a file with a designated size. This tool correlates such file slices by examining the similar byte sequences shared among them. To summarize the result, the tool produces a set of [YARA] formatted patterns each of which represents the common byte sequences extracted from a certain file cluster. Essentially, such patterns can be directly applied by YARA scan engine.
 
-In general, the tool is composed of the main engine and the supporting plugins. The relation is briefly illustrated here:   
+## **Introduction**  
+**MeltingPot is composed of the main engine and the supporting plugins. The relation is briefly illustrated here:**  
 + The engine first loads the user specified configuration.  
-+ It then applies the `file slicing plugin` to slice input files.
-+ It then correlates the slices by examining their similarity with the help of `similarity comparison plugin`.  
-+ At this stage, the engine acquires the slice clusters. It then extracts common byte sequences from each cluster . Such sequences are small (only tens of bytes) and should contain less dummy information.  
-+ Finally, the engine formats the sequences with `pattern formation plugin` to output the patterns.  
++ It applies the **`file slicing plugin`** to slice the input files.  
++ It correlates the slices by examining their similarity with the help of **`similarity comparison plugin`**.  
++ Now the engine acquires the file slice clusters. It then extracts the common binary signature from each cluster.  
++ Finally, the engine outputs the signatures with **`pattern formation plugin`**.  
 
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="450px" height="500px"/> 
+| <img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Pattern.png" width="450px" height="500px"/> |
+|---|
+| The example pattern for the Windows Notepad and its packed version using several kinds of software protectors. |
 
-As mentioned above, we have three kinds of plugins:  
-+ File slicing - Slicing an input file via specific format parsing. (E.g. PE, DEX)  
-+ Similarity comparison - Measuring the similarity for a pair of slices. (E.g. ssdeep, ngram)  
-+ Pattern formation - Producing YARA pattern with external file format module if necessary.   
+**As mentioned above, we have three kinds of plugins:**  
++ **`File slicing`** - Slicing an input file by format parsing. (E.g. Windows PE, Android DEX)  
++ **`Similarity comparison`** - Measuring the similarity for a pair of slices. (E.g. ssdeep, ngram)  
++ **`Pattern formation`** - Producing YARA pattern.
 
-If developers intend for additional supports , they can patch new plugins in the plugin source directory and use the build system introduced below to come out the libraries.  
+If analysts intend for custom research purpose, they can craft the custom plugins in the plugin source directory and use the MeltingPot build script to create the libraries.  
 
-
-###Installation  
+## **Installation**  
 ####***Basic***
 First of all, we need to prepare the following utilities:
 - [CMake] - A cross platform build system.
