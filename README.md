@@ -26,7 +26,7 @@
 If analysts intend for custom research purpose, they can craft the custom plugins in the plugin source directory and use the MeltingPot build script to create the libraries.  
 
 ## **Installation**  
-####***Basic***
+#### **Basic**  
 First of all, we need to prepare the following utilities:
 - [CMake] - A cross platform build system.
 - [Valgrind] - An instrumentation framework help for memory debug.
@@ -57,8 +57,8 @@ And the relevant plugins should be under:
 - `./plugin/similarity/lib/release/libsim_*.so`
 - `./plugin/format/lib/release/libfmt_*.so`
 
-####***Advanced***
-If we patch the main engine or the plugins, we can move to the corresponding subtree to rebuild the binary.   
+#### **Advanced**  
+If we modify the main engine or the plugins, we can move to the corresponding subdirectory to rebuild the binary.   
 To build the engine independently:
 ``` sh
 $ cd engine
@@ -69,7 +69,7 @@ $ make
 ```
 Note that we have two build types.  
 For debug build, the compiler debug flags are on, and the binary locates at `./engine/bin/debug/cluster`.  
-For release build, the optimized binary locates at `./engine/bin/release/cluster`.  
+For optimized build, the binary locates at `./engine/bin/release/cluster`.  
 
 To build the plugin independently (using File Slicing plugin as example):   
 ``` sh
@@ -81,28 +81,23 @@ $ make
 ```
 Again, we must specify the build type for compiliation.  
 For debug build, the binary locates at `./plugin/slice/debug/libslc_*.so`.  
-For release build, the binary locates at `./plugin/slice/release/libslc_*.so`.  
+For optimized build, the binary locates at `./plugin/slice/release/libslc_*.so`.  
 For the other two kinds of plugins, the build rule is the same.  
 
-
-###Usage
-To run the engine, we should first specify some relevant configurations.  
-The example is shown in `./engine/cluster.conf`.  
-  
-<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Configuration.png" width="450px" height="370px"/> 
-
+## **Usage**
+To run the engine, we should first specify some relevant configurations. The example is shown in `./engine/cluster.conf`.  
 And we discuss these parameters below:  
 
-| Parameter     | Description           |
+| Parameter | Description |
 | ------------- | ------------- |
-| `SIZE_SLICE` | The size of file slice |
-| `SIZE_HEX_BLOCK` | The length of common byte sequence extracted from a slice cluster |
-| `COUNT_HEX_BLOCK` | The number of to be extracted sequences per each cluster |
-| `THRESHOLD_SIMILARITY` | The threshold to cluster similar slices |
-| `RATIO_NOISE` | The ratio of dummy bytes (00 or ff) in a hex block (extracted sequence) |
-| `RATIO_WILDCARD` | The ratio of wildcard characters in a hex block |
-| `TRUNCATE_GROUP_SIZE_LESS_THAN` | The threshold to truncate trivial slice clusters |
-| `FLAG_COMMENT` | The control flag for detailed comments to be shown in pattern |
+| `SIZE_SLICE` | The size of the sliced file binary |
+| `SIZE_HEX_BLOCK` | The length of the signature extracted from a slice cluster |
+| `COUNT_HEX_BLOCK` | The number of to be extracted signatures from a cluster |
+| `THRESHOLD_SIMILARITY` | The threshold to group similar slices |
+| `RATIO_NOISE` | The ratio of dummy bytes (00 or ff) in a signature |
+| `RATIO_WILDCARD` | The ratio of wildcard characters in a signature |
+| `TRUNCATE_GROUP_SIZE_LESS_THAN` | The threshold to ignore trivial clusters |
+| `FLAG_COMMENT` | The knob for pattern comments |
 | `PATH_ROOT_INPUT` | The pathname of input sample set |
 | `PATH_ROOT_OUTPUT` | The pathname of output pattern folder |
 | `PATH_PLUGIN_SLICE` | The pathname of the file slicing plugin |
@@ -111,16 +106,24 @@ And we discuss these parameters below:
 
 In addition, we have the following advanced parameters:  
 
-| Parameter     | Description           |
+| Parameter | Description |
 | ------------- | ------------- |
 | `COUNT_THREAD` | The number of running threads |
 | `IO_BANDWIDTH` | The maximum number of files a thread can simultaneously open |
 
-With the configuration file prepared, we can run the engine like:  
-For normal task, run `./engine/bin/release/cluster --conf ./engine/cluster.conf`.  
-For memory debug, use debug build and run `valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf`.  
-Note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect provided by GLib. Essentially, the entire project source is memory safe :-).  
+With the configuration file prepared, we can launch the MeltPot engine:  
++ For normal task, run:  
+```sh
+./engine/bin/release/cluster --conf ./engine/cluster.conf
+```
++ For memory debug, use debug build and run:  
+```sh
+valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf
+```
+Note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect produced by GLib. MeltingPot should be memory safe :-).  
 
+## **Contact**
+Please contact me via the mail ***andy.zsshen@gmail.com***.  
 
 [YARA]:http://plusvic.github.io/yara/
 [CMake]:http://www.cmake.org/
