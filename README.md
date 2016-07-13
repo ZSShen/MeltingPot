@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ZSShen/C-Common-Data-Structures.svg?branch=master)](https://travis-ci.org/ZSShen/C-Common-Data-Structures)  
+[![Build Status](https://travis-ci.org/ZSShen/MeltingPot.svg?branch=master)](https://travis-ci.org/ZSShen/MeltingPot)
 
 # **MeltingPot** 
 |<img src="https://raw.githubusercontent.com/ZSShen/BinaryCluster-YaraGenerator/master/res/picture/Engine Intro.png" width="660px" height="570"/>  |
