@@ -68,7 +68,7 @@ $ cmake .. -DCMAKE_BUILD_TYPE=Debug|Release
 $ make
 ```
 Note that we have two build types.  
-For debug build, the compiler debug flags are on, and the binary locates at `./engine/bin/debug/cluster`.  
+For debug build, the compiler debug flags are turned on, and the binary locates at `./engine/bin/debug/cluster`.  
 For optimized build, the binary locates at `./engine/bin/release/cluster`.  
 
 To build the plugin independently (using File Slicing plugin as example):   
@@ -85,8 +85,8 @@ For optimized build, the binary locates at `./plugin/slice/release/libslc_*.so`.
 For the other two kinds of plugins, the build rule is the same.  
 
 ## **Usage**
-To run the engine, we should first specify some relevant configurations. The example is shown in `./engine/cluster.conf`.  
-And we discuss these parameters below:  
+To run the engine, we should specify some relevant configurations. The example is shown in `./engine/cluster.conf`.  
+We discuss these parameters below:  
 
 | Parameter | Description |
 | ------------- | ------------- |
@@ -120,7 +120,7 @@ With the configuration file prepared, we can launch the MeltPot engine:
 ```sh
 valgrind ./engine/bin/debug/cluster --conf ./engine/cluster.conf
 ```
-Note that if we apply valgrind for memory debugging, there will be a "still-reachable" alert in the summary report. This is due to the side effect produced by GLib. MeltingPot should be memory safe :-).  
+Note that if we apply valgrind for memory debugging, valgrind will produce a "still-reachable" alert in the summary report. This is due to the side effect produced by GLib. MeltingPot should be memory safe :-).  
 
 ## **Contact**
 Please contact me via the mail ***andy.zsshen@gmail.com***.  
